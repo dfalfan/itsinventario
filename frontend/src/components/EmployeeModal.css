@@ -1,0 +1,136 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.employee-card {
+    text-align: center;
+}
+
+.employee-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: #e6f3ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.avatar-icon {
+    font-size: 3rem;
+    color: #0066cc;
+}
+
+.employee-name {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.employee-title {
+    color: #666;
+    margin: 0.5rem 0 1.5rem;
+}
+
+.employee-details {
+    text-align: left;
+    margin: 2rem 0;
+}
+
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.detail-icon {
+    color: #0066cc;
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+}
+
+.detail-text {
+    flex: 1;
+}
+
+.detail-text strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.detail-text p {
+    margin: 0.2rem 0;
+    color: #666;
+}
+
+.employee-equipment {
+    text-align: left;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

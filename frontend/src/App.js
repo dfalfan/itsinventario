@@ -9,6 +9,7 @@ import {
 import { FaCog, FaPlus } from 'react-icons/fa';
 import Navbar from './components/Navbar';
 import './App.css';
+import EmployeeModal from './components/EmployeeModal';
 
 function App() {
   const [data, setData] = useState([]);
@@ -20,6 +21,7 @@ function App() {
     ficha: false,
   });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,7 +98,7 @@ function App() {
       header: 'Más',
       cell: ({ row }) => (
         <button 
-          onClick={() => console.log('Más info de:', row.original)}
+          onClick={() => setSelectedEmployee(row.original)}
           className="more-button"
         >
           •••
@@ -250,6 +252,13 @@ function App() {
             </table>
           )}
         </div>
+
+        {selectedEmployee && (
+          <EmployeeModal 
+            employee={selectedEmployee} 
+            onClose={() => setSelectedEmployee(null)}
+          />
+        )}
       </div>
     </div>
   );
