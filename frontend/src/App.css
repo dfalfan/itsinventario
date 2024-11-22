@@ -89,3 +89,43 @@ tr:hover {
 .search-input::placeholder {
     color: #999;
 }
+
+.more-button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.more-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Ajustamos el ancho de las columnas específicas */
+table th:nth-child(9), /* Ext. */
+table td:nth-child(9) {
+    width: 80px;
+    min-width: 80px;
+}
+
+table th:last-child, /* Más */
+table td:last-child {
+    width: 60px;
+    min-width: 60px;
+    text-align: center;
+}
+
+table th:nth-child(10), /* Correo */
+table td:nth-child(10) {
+    min-width: 200px;
+}
+
+table th:nth-child(8), /* Equipo Asignado */
+table td:nth-child(8) {
+    min-width: 150px;
+}

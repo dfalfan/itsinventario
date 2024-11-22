@@ -75,6 +75,29 @@ function App() {
       header: 'Cargo',
       accessorKey: 'cargo',
     },
+    {
+      header: 'Equipo Asignado',
+      accessorKey: 'equipo_asignado',
+    },
+    {
+      header: 'Ext.',
+      accessorKey: 'extension',
+    },
+    {
+      header: 'Correo',
+      accessorKey: 'correo',
+    },
+    {
+      header: 'Más',
+      cell: ({ row }) => (
+        <button 
+          onClick={() => console.log('Más info de:', row.original)}
+          className="more-button"
+        >
+          •••
+        </button>
+      ),
+    },
   ];
 
   const table = useReactTable({
@@ -93,16 +116,22 @@ function App() {
 
   if (loading) {
     return (
-      <div className="App">
-        <div className="loading">Cargando datos...</div>
+      <div className="app-container">
+        <Navbar />
+        <div className="App">
+          <div className="loading">Cargando datos...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="App">
-        <div className="error">{error}</div>
+      <div className="app-container">
+        <Navbar />
+        <div className="App">
+          <div className="error">{error}</div>
+        </div>
       </div>
     );
   }

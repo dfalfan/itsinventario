@@ -45,6 +45,9 @@ class Empleado(db.Model):
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'))
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'))
     cargo_id = db.Column(db.Integer, db.ForeignKey('cargos.id'))
+    equipo_asignado = db.Column(db.String(200), nullable=True)
+    extension = db.Column(db.String(10), nullable=True)
+    correo = db.Column(db.String(200), nullable=True)
 
     sede = db.relationship('Sede')
     gerencia = db.relationship('Gerencia')
@@ -66,7 +69,10 @@ def get_empleados():
         'gerencia': ger.nombre,
         'departamento': dep.nombre,
         'area': area.nombre,
-        'cargo': cargo.nombre
+        'cargo': cargo.nombre,
+        'equipo_asignado': emp.equipo_asignado or '',
+        'extension': emp.extension or '',
+        'correo': emp.correo or '',
     } for emp, sede, ger, dep, area, cargo in empleados])
 
 if __name__ == '__main__':
