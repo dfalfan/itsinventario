@@ -7,7 +7,7 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { FaCog, FaPlus } from 'react-icons/fa';
+import { FaCog, FaPlus, FaPencilAlt, FaTimes, FaEllipsisH } from 'react-icons/fa';
 import Navbar from './components/Navbar';
 import './App.css';
 import EmployeeModal from './components/EmployeeModal';
@@ -21,6 +21,8 @@ function App() {
   const [error, setError] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     ficha: false,
+    area: false,
+    gerencia: false
   });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -104,17 +106,42 @@ function App() {
       accessorKey: 'correo',
     },
     {
-      header: 'Más',
+      header: 'Acciones',
       cell: ({ row }) => (
-        <button 
-          onClick={() => setSelectedEmployee(row.original)}
-          className="more-button"
-        >
-          •••
-        </button>
+        <div className="action-buttons">
+          <button 
+            onClick={() => setSelectedEmployee(row.original)}
+            className="action-button view-button"
+            title="Ver detalles"
+          >
+            <FaEllipsisH />
+          </button>
+          <button 
+            onClick={() => handleEdit(row.original)}
+            className="action-button edit-button"
+            title="Editar empleado"
+          >
+            <FaPencilAlt />
+          </button>
+          <button 
+            onClick={() => handleDelete(row.original)}
+            className="action-button delete-button"
+            title="Eliminar empleado"
+          >
+            <FaTimes />
+          </button>
+        </div>
       ),
     },
   ];
+
+  const handleEdit = (employee) => {
+    console.log('Editar empleado:', employee);
+  };
+
+  const handleDelete = (employee) => {
+    console.log('Eliminar empleado:', employee);
+  };
 
   const table = useReactTable({
     data,

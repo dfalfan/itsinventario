@@ -115,8 +115,8 @@ table td:nth-child(8) {
 
 table th:last-child, /* Más */
 table td:last-child {
-    width: 60px;
-    min-width: 60px;
+    width: 120px;
+    min-width: 120px;
     text-align: center;
 }
 
@@ -297,4 +297,35 @@ table td:nth-child(7) {
 
 .pagination strong {
   color: #333;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.view-button:hover {
+  color: #0066cc;
+  background-color: rgba(0, 102, 204, 0.1);
+}
+
+.edit-button:hover {
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.delete-button:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
 }
