@@ -62,23 +62,23 @@ class Empleado(db.Model):
 
 @app.route('/api/empleados')
 def get_empleados():
-    empleados = db.session.query(
-        Empleado, Sede, Gerencia, Departamento, Area, Cargo
-    ).join(Sede).join(Gerencia).join(Departamento).join(Area).join(Cargo).all()
-    
-    return jsonify([{
-        'id': emp.id,
-        'ficha': emp.ficha,
-        'nombre': emp.nombre_completo,
-        'sede': sede.nombre,
-        'gerencia': ger.nombre,
-        'departamento': dep.nombre,
-        'area': area.nombre,
-        'cargo': cargo.nombre,
-        'equipo_asignado': emp.equipo_asignado or '',
-        'extension': emp.extension or '',
-        'correo': emp.correo or '',
-    } for emp, sede, ger, dep, area, cargo in empleados])
+    try:
+        empleados = db.session.query(Empleado).all()
+        return jsonify([{
+            'ficha': emp.ficha,
+            'nombre': emp.nombre_completo,
+            'sede': emp.sede.nombre if emp.sede else '',
+            'gerencia': emp.gerencia.nombre if emp.gerencia else '',
+            'departamento': emp.departamento.nombre if emp.departamento else '',
+            'area': emp.area.nombre if emp.area else '',
+            'cargo': emp.cargo.nombre if emp.cargo else '',
+            'equipo_asignado': emp.equipo_asignado or '',
+            'extension': emp.extension or '',
+            'correo': emp.correo or ''
+        } for emp in empleados])
+    except Exception as e:
+        print(f"Error en get_empleados: {str(e)}")
+        return jsonify([])
 
 @app.route('/api/sedes')
 def get_sedes():

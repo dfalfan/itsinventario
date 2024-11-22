@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import { FaCog, FaPlus } from 'react-icons/fa';
@@ -24,6 +25,10 @@ function App() {
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 30,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +46,8 @@ function App() {
         }
 
         const jsonData = await response.json();
-        setData(jsonData);
+        const uniqueData = Array.from(new Map(jsonData.map(item => [item.ficha, item])).values());
+        setData(uniqueData);
         setError(null);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -59,6 +65,7 @@ function App() {
     {
       header: 'Ficha',
       accessorKey: 'ficha',
+      id: 'ficha',
     },
     {
       header: 'Nombre',
@@ -116,13 +123,17 @@ function App() {
       sorting,
       globalFilter,
       columnVisibility,
+      pagination,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getRowId: row => row.ficha,
   });
 
   const ColumnVisibilityControls = () => (
@@ -217,41 +228,77 @@ function App() {
           {data.length === 0 ? (
             <p>No hay datos disponibles</p>
           ) : (
-            <table>
-              <thead>
-                {table.getHeaderGroups().map(headerGroup => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <th 
-                        key={header.id}
-                        onClick={header.column.getToggleSortingHandler()}
-                        className={header.column.getCanSort() ? 'sortable' : ''}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: ' 🔼',
-                          desc: ' 🔽',
-                        }[header.column.getIsSorted()] ?? null}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map(row => (
-                  <tr key={row.id}>
-                    {row.getVisibleCells().map(cell => (
-                      <td key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              <table>
+                <thead>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <th 
+                          key={header.id}
+                          onClick={header.column.getToggleSortingHandler()}
+                          className={header.column.getCanSort() ? 'sortable' : ''}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: ' 🔼',
+                            desc: ' 🔽',
+                          }[header.column.getIsSorted()] ?? null}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map(row => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div className="pagination">
+                <button
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  {'<<'}
+                </button>
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  {'<'}
+                </button>
+                <span>
+                  Página{' '}
+                  <strong>
+                    {table.getState().pagination.pageIndex + 1} de{' '}
+                    {table.getPageCount()}
+                  </strong>
+                </span>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  {'>'}
+                </button>
+                <button
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                >
+                  {'>>'}
+                </button>
+              </div>
+            </>
           )}
         </div>
 
