@@ -6,6 +6,7 @@ import {
   getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import Navbar from './components/Navbar';
 import './App.css';
 
 function App() {
@@ -107,59 +108,62 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <h1>Lista de Empleados</h1>
-      
-      <div className="search-container">
-        <input
-          type="text"
-          value={globalFilter ?? ''}
-          onChange={e => setGlobalFilter(e.target.value)}
-          placeholder="Buscar en todas las columnas..."
-          className="search-input"
-        />
-      </div>
+    <div className="app-container">
+      <Navbar />
+      <div className="App">
+        <h1>Lista de Empleados</h1>
+        
+        <div className="search-container">
+          <input
+            type="text"
+            value={globalFilter ?? ''}
+            onChange={e => setGlobalFilter(e.target.value)}
+            placeholder="Buscar en todas las columnas..."
+            className="search-input"
+          />
+        </div>
 
-      <div className="table-container">
-        {data.length === 0 ? (
-          <p>No hay datos disponibles</p>
-        ) : (
-          <table>
-            <thead>
-              {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
-                    <th 
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
-                      className={header.column.getCanSort() ? 'sortable' : ''}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: ' 🔼',
-                        desc: ' 🔽',
-                      }[header.column.getIsSorted()] ?? null}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map(row => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <div className="table-container">
+          {data.length === 0 ? (
+            <p>No hay datos disponibles</p>
+          ) : (
+            <table>
+              <thead>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th 
+                        key={header.id}
+                        onClick={header.column.getToggleSortingHandler()}
+                        className={header.column.getCanSort() ? 'sortable' : ''}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: ' 🔼',
+                          desc: ' 🔽',
+                        }[header.column.getIsSorted()] ?? null}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map(row => (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
