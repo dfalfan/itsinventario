@@ -107,8 +107,8 @@ tr:hover {
 }
 
 /* Ajustamos el ancho de las columnas específicas */
-table th:nth-child(9), /* Ext. */
-table td:nth-child(9) {
+table th:nth-child(8), /* Ext. */
+table td:nth-child(8) {
     width: 80px;
     min-width: 80px;
 }
@@ -120,12 +120,145 @@ table td:last-child {
     text-align: center;
 }
 
-table th:nth-child(10), /* Correo */
-table td:nth-child(10) {
+table th:nth-child(9), /* Correo */
+table td:nth-child(9) {
     min-width: 200px;
 }
 
-table th:nth-child(8), /* Equipo Asignado */
-table td:nth-child(8) {
+table th:nth-child(7), /* Equipo Asignado */
+table td:nth-child(7) {
     min-width: 150px;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-button {
+    background: #6c757d;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.settings-icon {
+    vertical-align: middle;
+}
+
+.column-settings {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100vh;
+    background-color: white;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+}
+
+.column-settings.show {
+    right: 0;
+}
+
+.column-settings-content {
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.column-settings h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.column-toggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.column-toggle input {
+    margin-right: 10px;
+}
+
+/* Ajuste para el contenido cuando el panel está abierto */
+.App {
+    transition: margin-right 0.3s ease;
+}
+
+.App.shifted {
+    margin-right: 300px;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.add-button {
+    background: #28a745;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.add-icon {
+    vertical-align: middle;
+}
+
+.column-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-settings-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.close-settings-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
 }

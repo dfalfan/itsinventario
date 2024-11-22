@@ -6,6 +6,7 @@ import {
   getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import { FaCog, FaPlus } from 'react-icons/fa';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -15,6 +16,10 @@ function App() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [columnVisibility, setColumnVisibility] = useState({
+    ficha: false,
+  });
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,13 +111,45 @@ function App() {
     state: {
       sorting,
       globalFilter,
+      columnVisibility,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  const ColumnVisibilityControls = () => (
+    <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
+      <div className="column-settings-content">
+        <div className="column-settings-header">
+          <h3>Mostrar/Ocultar Columnas</h3>
+          <button 
+            className="close-settings-button"
+            onClick={() => setShowColumnSettings(false)}
+          >
+            ×
+          </button>
+        </div>
+        {table.getAllLeafColumns().map(column => {
+          if (column.id === 'Más') return null;
+          
+          return (
+            <label key={column.id} className="column-toggle">
+              <input
+                type="checkbox"
+                checked={column.getIsVisible()}
+                onChange={column.getToggleVisibilityHandler()}
+              />
+              {column.columnDef.header}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -140,7 +177,25 @@ function App() {
     <div className="app-container">
       <Navbar />
       <div className="App">
-        <h1>Lista de Empleados</h1>
+        <div className="header-container">
+          <h1>Lista de Empleados</h1>
+          <div className="header-buttons">
+            <button 
+              className="add-button"
+              onClick={() => console.log('Añadir nuevo empleado')}
+              title="Añadir nuevo empleado"
+            >
+              <FaPlus className="add-icon" />
+            </button>
+            <button 
+              className="settings-button"
+              onClick={() => setShowColumnSettings(!showColumnSettings)}
+              title="Configurar columnas"
+            >
+              <FaCog className="settings-icon" />
+            </button>
+          </div>
+        </div>
         
         <div className="search-container">
           <input
@@ -151,6 +206,8 @@ function App() {
             className="search-input"
           />
         </div>
+
+        <ColumnVisibilityControls />
 
         <div className="table-container">
           {data.length === 0 ? (
