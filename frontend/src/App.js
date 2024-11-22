@@ -1,44 +1,150 @@
 import React, { useState, useEffect } from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+} from '@tanstack/react-table';
 import './App.css';
 
 function App() {
-  const [empleados, setEmpleados] = useState([]);
+  const [data, setData] = useState([]);
+  const [sorting, setSorting] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/empleados')
-      .then(response => response.json())
-      .then(data => setEmpleados(data));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:5000/api/empleados');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new TypeError("La respuesta no es JSON!");
+        }
+
+        const jsonData = await response.json();
+        setData(jsonData);
+        setError(null);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError(`Error cargando datos: ${error.message}`);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  const columns = [
+    {
+      header: 'Ficha',
+      accessorKey: 'ficha',
+    },
+    {
+      header: 'Nombre',
+      accessorKey: 'nombre',
+    },
+    {
+      header: 'Sede',
+      accessorKey: 'sede',
+    },
+    {
+      header: 'Gerencia',
+      accessorKey: 'gerencia',
+    },
+    {
+      header: 'Departamento',
+      accessorKey: 'departamento',
+    },
+    {
+      header: 'Área',
+      accessorKey: 'area',
+    },
+    {
+      header: 'Cargo',
+      accessorKey: 'cargo',
+    },
+  ];
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  if (loading) {
+    return (
+      <div className="App">
+        <div className="loading">Cargando datos...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="App">
+        <div className="error">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
       <h1>Lista de Empleados</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Ficha</th>
-            <th>Nombre</th>
-            <th>Sede</th>
-            <th>Gerencia</th>
-            <th>Departamento</th>
-            <th>Área</th>
-            <th>Cargo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {empleados.map((empleado, index) => (
-            <tr key={index}>
-              <td>{empleado.ficha}</td>
-              <td>{empleado.nombre}</td>
-              <td>{empleado.sede}</td>
-              <td>{empleado.gerencia}</td>
-              <td>{empleado.departamento}</td>
-              <td>{empleado.area}</td>
-              <td>{empleado.cargo}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-container">
+        {data.length === 0 ? (
+          <p>No hay datos disponibles</p>
+        ) : (
+          <table>
+            <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <th 
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className={header.column.getCanSort() ? 'sortable' : ''}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {{
+                        asc: ' 🔼',
+                        desc: ' 🔽',
+                      }[header.column.getIsSorted()] ?? null}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map(row => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map(cell => (
+                    <td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
