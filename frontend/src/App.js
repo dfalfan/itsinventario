@@ -10,6 +10,7 @@ import { FaCog, FaPlus } from 'react-icons/fa';
 import Navbar from './components/Navbar';
 import './App.css';
 import EmployeeModal from './components/EmployeeModal';
+import NewEmployeeModal from './components/NewEmployeeModal';
 
 function App() {
   const [data, setData] = useState([]);
@@ -22,6 +23,7 @@ function App() {
   });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -184,7 +186,7 @@ function App() {
           <div className="header-buttons">
             <button 
               className="add-button"
-              onClick={() => console.log('Añadir nuevo empleado')}
+              onClick={() => setShowNewEmployeeModal(true)}
               title="Añadir nuevo empleado"
             >
               <FaPlus className="add-icon" />
@@ -253,6 +255,12 @@ function App() {
           )}
         </div>
 
+        {showNewEmployeeModal && (
+          <NewEmployeeModal 
+            onClose={() => setShowNewEmployeeModal(false)}
+          />
+        )}
+        
         {selectedEmployee && (
           <EmployeeModal 
             employee={selectedEmployee} 
