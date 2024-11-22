@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaLaptop } from 'react-icons/fa';
+import { FaTimes, FaLaptop, FaIdCard, FaUser, FaBuilding, FaSitemap, FaPhone, FaEnvelope, FaBriefcase, FaUsers, FaLayerGroup } from 'react-icons/fa';
 import './NewEmployeeModal.css';
 
 // Agregar esta función de utilidad al inicio del componente
@@ -150,19 +150,23 @@ function NewEmployeeModal({ onClose }) {
         <form onSubmit={handleSubmit} className="new-employee-form">
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="ficha">Ficha</label>
+              <label htmlFor="ficha">
+                <FaIdCard className="input-icon" /> Ficha
+              </label>
               <input
                 type="text"
                 id="ficha"
                 name="ficha"
                 value={formData.ficha}
                 onChange={handleChange}
-                placeholder="Ej: F12345"
+                placeholder="####"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="apellidos">Apellidos</label>
+              <label htmlFor="apellidos">
+                 <FaUser className="input-icon" />Apellidos
+              </label>
               <input
                 type="text"
                 id="apellidos"
@@ -174,7 +178,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="nombres">Nombres</label>
+              <label htmlFor="nombres">
+                <FaUser className="input-icon" /> Nombres
+              </label>
               <input
                 type="text"
                 id="nombres"
@@ -186,7 +192,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="sede_id">Sede</label>
+              <label htmlFor="sede_id">
+                <FaBuilding className="input-icon" /> Sede
+              </label>
               <select
                 id="sede_id"
                 name="sede_id"
@@ -203,7 +211,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="gerencia_id">Gerencia</label>
+              <label htmlFor="gerencia_id">
+                <FaSitemap className="input-icon" /> Gerencia
+              </label>
               <select
                 id="gerencia_id"
                 name="gerencia_id"
@@ -220,7 +230,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="departamento_id">Departamento</label>
+              <label htmlFor="departamento_id">
+                <FaUsers className="input-icon" /> Departamento
+              </label>
               <select
                 id="departamento_id"
                 name="departamento_id"
@@ -238,7 +250,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="area_id">Área</label>
+              <label htmlFor="area_id">
+                <FaLayerGroup className="input-icon" /> Área
+              </label>
               <select
                 id="area_id"
                 name="area_id"
@@ -256,7 +270,9 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="cargo_id">Cargo</label>
+              <label htmlFor="cargo_id">
+                <FaBriefcase className="input-icon" /> Cargo
+              </label>
               <select
                 id="cargo_id"
                 name="cargo_id"
@@ -274,27 +290,41 @@ function NewEmployeeModal({ onClose }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="extension">Extensión</label>
+              <label htmlFor="extension">
+                <FaPhone className="input-icon" /> Extensión
+              </label>
               <input
                 type="text"
                 id="extension"
                 name="extension"
                 value={formData.extension}
-                onChange={handleChange}
-                placeholder="Ext."
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setFormData(prev => ({ ...prev, extension: value }));
+                }}
+                placeholder="####"
+                maxLength="4"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="correo">Correo</label>
-              <input
-                type="email"
-                id="correo"
-                name="correo"
-                value={formData.correo}
-                onChange={handleChange}
-                placeholder="correo@ejemplo.com"
-              />
+              <label htmlFor="correo">
+                <FaEnvelope className="input-icon" /> Correo
+              </label>
+              <div className="email-input-container">
+                <input
+                  type="text"
+                  id="correo"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase().replace(/[^a-z0-9.]/g, '');
+                    setFormData(prev => ({ ...prev, correo: value }));
+                  }}
+                  placeholder="usuario"
+                />
+                <span className="email-domain">@sura.com.ve</span>
+              </div>
             </div>
           </div>
 
