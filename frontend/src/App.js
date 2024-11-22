@@ -3,6 +3,7 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table';
 import './App.css';
@@ -10,6 +11,7 @@ import './App.css';
 function App() {
   const [data, setData] = useState([]);
   const [sorting, setSorting] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -79,10 +81,13 @@ function App() {
     columns,
     state: {
       sorting,
+      globalFilter,
     },
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   if (loading) {
@@ -104,6 +109,17 @@ function App() {
   return (
     <div className="App">
       <h1>Lista de Empleados</h1>
+      
+      <div className="search-container">
+        <input
+          type="text"
+          value={globalFilter ?? ''}
+          onChange={e => setGlobalFilter(e.target.value)}
+          placeholder="Buscar en todas las columnas..."
+          className="search-input"
+        />
+      </div>
+
       <div className="table-container">
         {data.length === 0 ? (
           <p>No hay datos disponibles</p>
