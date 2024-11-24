@@ -22,6 +22,7 @@ class Area(db.Model):
 
 class Cargo(db.Model):
     __tablename__ = 'cargos'
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=False)

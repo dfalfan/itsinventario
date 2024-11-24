@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -60,10 +61,33 @@ class Empleado(db.Model):
     area = db.relationship('Area')
     cargo = db.relationship('Cargo')
 
+class Asset(db.Model):
+    __tablename__ = 'assets'
+    id = db.Column(db.Integer, primary_key=True)
+    sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'))
+    tipo = db.Column(db.String(20))
+    nombre_equipo = db.Column(db.String(50))
+    modelo = db.Column(db.String(50))
+    marca = db.Column(db.String(50))
+    serial = db.Column(db.String(100))
+    ram = db.Column(db.String(20))
+    disco = db.Column(db.String(50))
+    estado = db.Column(db.String(20))
+    activo_fijo = db.Column(db.String(20))
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
+    notas = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+
 @app.route('/api/empleados')
 def get_empleados():
     try:
-        empleados = db.session.query(Empleado).all()
+        empleados = db.session.query(
+            Empleado, Asset
+        ).outerjoin(
+            Asset, Empleado.id == Asset.empleado_id
+        ).all()
+        
         return jsonify([{
             'ficha': emp.ficha,
             'nombre': emp.nombre_completo,
@@ -72,10 +96,10 @@ def get_empleados():
             'departamento': emp.departamento.nombre if emp.departamento else '',
             'area': emp.area.nombre if emp.area else '',
             'cargo': emp.cargo.nombre if emp.cargo else '',
-            'equipo_asignado': emp.equipo_asignado or '',
+            'equipo_asignado': asset.tipo if asset else '',
             'extension': emp.extension or '',
             'correo': emp.correo or ''
-        } for emp in empleados])
+        } for emp, asset in empleados])
     except Exception as e:
         print(f"Error en get_empleados: {str(e)}")
         return jsonify([])

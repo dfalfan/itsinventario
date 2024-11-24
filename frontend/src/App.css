@@ -329,3 +329,18 @@ table td:nth-child(7) {
   color: #dc3545;
   background-color: rgba(220, 53, 69, 0.1);
 }
+
+.equipment-type {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.no-equipment {
+    color: #999;
+    font-style: italic;
+    font-size: 0.9em;
+}

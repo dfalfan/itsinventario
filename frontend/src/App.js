@@ -96,6 +96,14 @@ function App() {
     {
       header: 'Equipo Asignado',
       accessorKey: 'equipo_asignado',
+      cell: ({ getValue }) => {
+        const tipo = getValue();
+        return tipo ? (
+          <span className="equipment-type">{tipo}</span>
+        ) : (
+          <span className="no-equipment">Sin equipo</span>
+        );
+      }
     },
     {
       header: 'Ext.',
