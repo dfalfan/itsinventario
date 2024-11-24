@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { FaUser, FaChartBar, FaUsers, FaLaptop } from 'react-icons/fa';
 import logoSura from './logo sura color.png';
 import './Navbar.css';
@@ -15,18 +16,33 @@ function Navbar() {
       </div>
       
       <div className="navbar-menu">
-        <a href="/dashboard" className="navbar-item">
+        <NavLink 
+          to="/dashboard" 
+          className={({ isActive }) => 
+            `navbar-item ${isActive ? 'active' : ''}`
+          }
+        >
           <FaChartBar className="navbar-icon" />
           <span>Dashboard</span>
-        </a>
-        <a href="/activos" className="navbar-item">
+        </NavLink>
+        <NavLink 
+          to="/activos" 
+          className={({ isActive }) => 
+            `navbar-item ${isActive ? 'active' : ''}`
+          }
+        >
           <FaLaptop className="navbar-icon" />
           <span>Activos</span>
-        </a>
-        <a href="/empleados" className="navbar-item active">
+        </NavLink>
+        <NavLink 
+          to="/empleados" 
+          className={({ isActive }) => 
+            `navbar-item ${isActive ? 'active' : ''}`
+          }
+        >
           <FaUsers className="navbar-icon" />
           <span>Empleados</span>
-        </a>
+        </NavLink>
       </div>
 
       <div className="navbar-user">
