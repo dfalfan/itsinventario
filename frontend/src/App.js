@@ -12,6 +12,7 @@ import { FaCog, FaPlus, FaPencilAlt, FaTimes, FaEllipsisH } from 'react-icons/fa
 import Navbar from './components/Navbar';
 import EmployeeModal from './components/EmployeeModal';
 import NewEmployeeModal from './components/NewEmployeeModal';
+import DashboardView from './components/DashboardView';
 import './App.css';
 
 // Componentes de vista
@@ -594,9 +595,10 @@ function App() {
       <div className="app-container">
         <Navbar />
         <Routes>
+          <Route path="/dashboard" element={<DashboardView />} />
           <Route path="/empleados" element={<EmployeesView />} />
           <Route path="/activos" element={<AssetsView />} />
-          <Route path="/" element={<EmployeesView />} />
+          <Route path="/" element={<DashboardView />} />
         </Routes>
       </div>
     </BrowserRouter>

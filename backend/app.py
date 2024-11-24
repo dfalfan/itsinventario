@@ -211,5 +211,53 @@ def get_activos():
         print(f"Error en get_activos: {str(e)}")
         return jsonify([])
 
+@app.route('/api/dashboard/stats')
+def get_dashboard_stats():
+    try:
+        # Total de equipos
+        total_equipos = Asset.query.count()
+        
+        # Empleados sin equipo
+        empleados_con_equipo = db.session.query(Asset.empleado_id).distinct()
+        empleados_sin_equipo = Empleado.query.filter(
+            ~Empleado.id.in_(empleados_con_equipo)
+        ).count()
+        
+        # Equipos en reparación
+        equipos_reparacion = Asset.query.filter_by(estado='REPARACION').count()
+        
+        # Equipos en stock (sin asignar)
+        equipos_stock = Asset.query.filter_by(empleado_id=None).count()
+        
+        # Distribución por tipo de equipo
+        equipos_por_tipo = db.session.query(
+            Asset.tipo,
+            db.func.count(Asset.id).label('cantidad')
+        ).group_by(Asset.tipo).all()
+        
+        # Distribución por sede
+        equipos_por_sede = db.session.query(
+            Sede.nombre,
+            db.func.count(Asset.id).label('cantidad')
+        ).join(Asset).group_by(Sede.nombre).all()
+        
+        return jsonify({
+            'totalEquipos': total_equipos,
+            'empleadosSinEquipo': empleados_sin_equipo,
+            'equiposEnReparacion': equipos_reparacion,
+            'equiposEnStock': equipos_stock,
+            'equiposPorTipo': [
+                {'tipo': tipo, 'cantidad': cantidad}
+                for tipo, cantidad in equipos_por_tipo
+            ],
+            'equiposPorSede': [
+                {'sede': sede, 'cantidad': cantidad}
+                for sede, cantidad in equipos_por_sede
+            ]
+        })
+    except Exception as e:
+        print(f"Error en get_dashboard_stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
