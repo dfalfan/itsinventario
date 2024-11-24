@@ -1,0 +1,29 @@
+.assets-view {
+    padding: 20px;
+}
+
+.estado-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.estado-badge.activo {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estado-badge.inactivo {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.estado-badge.reparacion {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+/* Resto de los estilos similares a App.css */
+

@@ -181,5 +181,35 @@ def get_cargos(area_id):
         print(f"Error en get_cargos: {str(e)}")
         return jsonify([])
 
+@app.route('/api/activos')
+def get_activos():
+    try:
+        activos = db.session.query(
+            Asset, Empleado, Sede
+        ).outerjoin(
+            Empleado, Asset.empleado_id == Empleado.id
+        ).outerjoin(
+            Sede, Asset.sede_id == Sede.id
+        ).all()
+        
+        return jsonify([{
+            'id': asset.id,
+            'tipo': asset.tipo,
+            'nombre_equipo': asset.nombre_equipo,
+            'modelo': asset.modelo,
+            'marca': asset.marca,
+            'serial': asset.serial,
+            'ram': asset.ram,
+            'disco': asset.disco,
+            'estado': asset.estado,
+            'activo_fijo': asset.activo_fijo,
+            'sede': sede.nombre if sede else '',
+            'empleado': empleado.nombre_completo if empleado else '',
+            'notas': asset.notas
+        } for asset, empleado, sede in activos])
+    except Exception as e:
+        print(f"Error en get_activos: {str(e)}")
+        return jsonify([])
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
