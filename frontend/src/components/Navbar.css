@@ -49,7 +49,7 @@
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: #0066cc;
+    background-color: var(--primary);
     bottom: 0;
     transform: scaleX(0);
     transition: transform 0.3s ease;
@@ -65,12 +65,12 @@
 
 .navbar-item:hover {
     background-color: #f8f9fa;
-    color: #0066cc;
+    color: var(--primary);
 }
 
 .navbar-item.active {
     background-color: #f8f9fa;
-    color: #0066cc;
+    color: var(--primary);
     font-weight: 500;
 }
 
@@ -105,7 +105,7 @@
 
 .user-button:hover {
     background-color: #f5f5f5;
-    color: #0066cc;
+    color: var(--primary);
 }
 
 .navbar {
@@ -138,4 +138,8 @@
     .navbar-logo {
         height: 35px;
     }
+}
+
+.stat-icon {
+    color: var(--primary);
 }

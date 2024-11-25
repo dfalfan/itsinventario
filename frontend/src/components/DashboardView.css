@@ -28,7 +28,7 @@
 .stat-icon {
     font-size: 2.5em;
     margin-right: 20px;
-    color: #0066cc;
+    color: var(--primary);
 }
 
 .stat-info h3 {
@@ -56,6 +56,7 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--primary);
 }
 
 .chart-card h3 {

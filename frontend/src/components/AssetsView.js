@@ -16,10 +16,24 @@ function AssetsView() {
   const [globalFilter, setGlobalFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState({});
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 30,
   });
+
+  const handleView = (asset) => {
+    console.log('Ver activo:', asset);
+  };
+
+  const handleEdit = (asset) => {
+    console.log('Editar activo:', asset);
+  };
+
+  const handleDelete = (asset) => {
+    console.log('Eliminar activo:', asset);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,22 +143,161 @@ function AssetsView() {
     },
   ];
 
-  // ... resto del código similar al de App.js para la tabla
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+      columnVisibility,
+      pagination,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const ColumnVisibilityControls = () => (
+    <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
+      <div className="column-settings-content">
+        <div className="column-settings-header">
+          <h3>Mostrar/Ocultar Columnas</h3>
+          <button 
+            className="close-settings-button"
+            onClick={() => setShowColumnSettings(false)}
+          >
+            ×
+          </button>
+        </div>
+        {table.getAllLeafColumns().map(column => {
+          if (column.id === 'Acciones') return null;
+          return (
+            <label key={column.id} className="column-toggle">
+              <input
+                type="checkbox"
+                checked={column.getIsVisible()}
+                onChange={column.getToggleVisibilityHandler()}
+              />
+              {column.columnDef.header}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  if (loading) return <div className="loading">Cargando...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
-    <div className="assets-view">
+    <div className="App">
       <div className="header-container">
         <h1>Inventario de Activos</h1>
-        <button 
-          className="add-button"
-          onClick={() => {/* Manejar nuevo activo */}}
-          title="Añadir nuevo activo"
+        <div className="header-buttons">
+          <button 
+            className="add-button"
+            onClick={() => {/* Manejar nuevo activo */}}
+            title="Añadir nuevo activo"
+          >
+            <FaPlus className="add-icon" />
+          </button>
+          <button 
+            className="settings-button"
+            onClick={() => setShowColumnSettings(!showColumnSettings)}
+            title="Configurar columnas"
+          >
+            <FaCog className="settings-icon" />
+          </button>
+        </div>
+      </div>
+
+      <div className="search-container">
+        <input
+          type="text"
+          value={globalFilter ?? ''}
+          onChange={e => setGlobalFilter(e.target.value)}
+          placeholder="Buscar en todas las columnas..."
+          className="search-input"
+        />
+      </div>
+
+      <ColumnVisibilityControls />
+
+      <div className="table-container">
+        <table>
+          <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th 
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                    className={header.column.getCanSort() ? 'sortable' : ''}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {header.column.getIsSorted() && (
+                      header.column.getIsSorted() === 'asc' ? ' 🔼' : ' 🔽'
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="pagination">
+        <button
+          onClick={() => table.setPageIndex(0)}
+          disabled={!table.getCanPreviousPage()}
         >
-          <FaPlus className="add-icon" />
+          {'<<'}
+        </button>
+        <button
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {'<'}
+        </button>
+        <span>
+          Página{' '}
+          <strong>
+            {table.getState().pagination.pageIndex + 1} de{' '}
+            {table.getPageCount()}
+          </strong>
+        </span>
+        <button
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>'}
+        </button>
+        <button
+          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>>'}
         </button>
       </div>
-      
-      {/* Resto del JSX similar al de App.js */}
     </div>
   );
 }

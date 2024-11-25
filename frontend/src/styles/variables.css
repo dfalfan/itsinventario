@@ -1,0 +1,31 @@
+/* Paleta de colores corporativa */
+:root {
+    /* Colores principales */
+    --primary: #132752;
+    /* Azul corporativo */
+    --primary-light: #1e3a7b;
+    /* Azul más claro para hovers */
+    --primary-dark: #0b1a3b;
+    /* Azul más oscuro para elementos activos */
+
+    /* Colores complementarios */
+    --accent: #ff6b6b;
+    /* Coral para elementos de acción secundarios */
+    --success: #2ecc71;
+    /* Verde para éxito/confirmación */
+    --warning: #f39c12;
+    /* Naranja para advertencias */
+    --danger: #e74c3c;
+    /* Rojo para errores/peligro */
+
+    /* Grises */
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+}

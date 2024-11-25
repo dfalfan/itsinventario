@@ -11,19 +11,55 @@
 }
 
 .estado-badge.activo {
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--success);
 }
 
 .estado-badge.inactivo {
-    background-color: #ffebee;
-    color: #c62828;
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--danger);
 }
 
 .estado-badge.reparacion {
-    background-color: #fff3e0;
-    color: #ef6c00;
+    background-color: rgba(243, 156, 18, 0.1);
+    color: var(--warning);
 }
 
 /* Resto de los estilos similares a App.css */
+
+.column-settings {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+  transition: right 0.3s ease;
+  z-index: 1000;
+}
+
+.column-settings.show {
+  right: 0;
+}
+
+.column-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.column-toggle {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.column-toggle input {
+  margin-right: 10px;
+}
 

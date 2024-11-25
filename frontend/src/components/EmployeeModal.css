@@ -60,7 +60,7 @@
 
 .avatar-icon {
     font-size: 3rem;
-    color: #0066cc;
+    color: var(--primary);
 }
 
 .employee-name {
@@ -87,7 +87,7 @@
 }
 
 .detail-icon {
-    color: #0066cc;
+    color: var(--primary);
     font-size: 1.2rem;
     margin-top: 0.2rem;
 }
