@@ -17,10 +17,23 @@ function AssetsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({
+    sede: true,
+    tipo: true,
+    nombre_equipo: true,
+    marca: true,
+    estado: true,
+    empleado: true,
+    Acciones: true,
+    modelo: false,
+    serial: false,
+    ram: false,
+    disco: false,
+    activo_fijo: false,
+  });
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 30,
+    pageSize: 100,
   });
 
   const handleView = (asset) => {
@@ -62,32 +75,20 @@ function AssetsView() {
 
   const columns = [
     {
+      header: 'Sede',
+      accessorKey: 'sede',
+    },
+    {
       header: 'Tipo',
       accessorKey: 'tipo',
     },
     {
-      header: 'Nombre Equipo',
+      header: 'Nombre',
       accessorKey: 'nombre_equipo',
-    },
-    {
-      header: 'Modelo',
-      accessorKey: 'modelo',
     },
     {
       header: 'Marca',
       accessorKey: 'marca',
-    },
-    {
-      header: 'Serial',
-      accessorKey: 'serial',
-    },
-    {
-      header: 'RAM',
-      accessorKey: 'ram',
-    },
-    {
-      header: 'Disco',
-      accessorKey: 'disco',
     },
     {
       header: 'Estado',
@@ -100,14 +101,6 @@ function AssetsView() {
           </span>
         );
       }
-    },
-    {
-      header: 'Activo Fijo',
-      accessorKey: 'activo_fijo',
-    },
-    {
-      header: 'Sede',
-      accessorKey: 'sede',
     },
     {
       header: 'Asignado a',
@@ -140,6 +133,26 @@ function AssetsView() {
           </button>
         </div>
       ),
+    },
+    {
+      header: 'Modelo',
+      accessorKey: 'modelo',
+    },
+    {
+      header: 'Serial',
+      accessorKey: 'serial',
+    },
+    {
+      header: 'RAM',
+      accessorKey: 'ram',
+    },
+    {
+      header: 'Disco',
+      accessorKey: 'disco',
+    },
+    {
+      header: 'Activo Fijo',
+      accessorKey: 'activo_fijo',
     },
   ];
 

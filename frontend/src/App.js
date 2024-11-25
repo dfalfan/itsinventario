@@ -26,10 +26,22 @@ function EmployeesView() {
   const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({
+    sede: true,
+    nombre: true,
+    departamento: true,
+    cargo: true,
+    equipo_asignado: true,
+    extension: true,
+    correo: true,
+    Acciones: true,
+    ficha: false,
+    gerencia: false,
+    area: false,
+  });
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 30,
+    pageSize: 100,
   });
 
   useEffect(() => {
@@ -60,29 +72,16 @@ function EmployeesView() {
 
   const columns = [
     {
-      header: 'Ficha',
-      accessorKey: 'ficha',
-      id: 'ficha',
+      header: 'Sede',
+      accessorKey: 'sede',
     },
     {
       header: 'Nombre',
       accessorKey: 'nombre',
     },
     {
-      header: 'Sede',
-      accessorKey: 'sede',
-    },
-    {
-      header: 'Gerencia',
-      accessorKey: 'gerencia',
-    },
-    {
       header: 'Departamento',
       accessorKey: 'departamento',
-    },
-    {
-      header: 'Área',
-      accessorKey: 'area',
     },
     {
       header: 'Cargo',
@@ -135,6 +134,19 @@ function EmployeesView() {
           </button>
         </div>
       ),
+    },
+    {
+      header: 'Ficha',
+      accessorKey: 'ficha',
+      id: 'ficha',
+    },
+    {
+      header: 'Gerencia',
+      accessorKey: 'gerencia',
+    },
+    {
+      header: 'Área',
+      accessorKey: 'area',
     },
   ];
 
