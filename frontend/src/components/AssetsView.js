@@ -94,10 +94,20 @@ function AssetsView() {
       header: 'Estado',
       accessorKey: 'estado',
       cell: ({ getValue }) => {
-        const estado = getValue();
+        const estado = getValue()?.toLowerCase() || '';
+        
+        // Mapa simplificado de estados
+        const estadosMap = {
+          'asignado': 'Asignado',
+          'disponible': 'Disponible',
+          'reparacion': 'En Reparación'
+        };
+
+        const displayText = estadosMap[estado] || estado;
+
         return (
-          <span className={`estado-badge ${estado.toLowerCase()}`}>
-            {estado}
+          <span className={`estado-badge ${estado}`}>
+            {displayText}
           </span>
         );
       }

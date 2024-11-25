@@ -7,22 +7,23 @@
     border-radius: 4px;
     font-size: 0.9em;
     font-weight: 500;
-    text-transform: uppercase;
+    text-transform: capitalize;
+    display: inline-block;
 }
 
-.estado-badge.activo {
-    background-color: rgba(46, 204, 113, 0.1);
-    color: var(--success);
+.estado-badge.asignado {
+    background-color: #e3f2fd;
+    color: #1976d2;
 }
 
-.estado-badge.inactivo {
-    background-color: rgba(231, 76, 60, 0.1);
-    color: var(--danger);
+.estado-badge.disponible {
+    background-color: #e8f5e9;
+    color: #2e7d32;
 }
 
 .estado-badge.reparacion {
-    background-color: rgba(243, 156, 18, 0.1);
-    color: var(--warning);
+    background-color: #fff3e0;
+    color: #ef6c00;
 }
 
 /* Resto de los estilos similares a App.css */
