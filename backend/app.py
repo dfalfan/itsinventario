@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -258,6 +258,77 @@ def get_dashboard_stats():
     except Exception as e:
         print(f"Error en get_dashboard_stats: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empleados/sin-equipo', methods=['GET'])
+def get_empleados_sin_equipo():
+    try:
+        empleados = db.session.query(
+            Empleado.id,
+            Empleado.ficha,
+            Empleado.nombre_completo,
+            Sede.nombre.label('sede_nombre'),
+            Departamento.nombre.label('departamento_nombre'),
+            Cargo.nombre.label('cargo_nombre')
+        ).outerjoin(
+            Sede, Empleado.sede_id == Sede.id
+        ).outerjoin(
+            Departamento, Empleado.departamento_id == Departamento.id
+        ).outerjoin(
+            Cargo, Empleado.cargo_id == Cargo.id
+        ).filter(
+            Empleado.equipo_asignado.is_(None)
+        ).order_by(Empleado.nombre_completo).all()
+        
+        return jsonify([{
+            'id': id,
+            'ficha': ficha,
+            'sede': sede_nombre,
+            'nombre': nombre_completo,
+            'departamento': departamento_nombre,
+            'cargo': cargo_nombre
+        } for id, ficha, nombre_completo, sede_nombre, departamento_nombre, cargo_nombre in empleados])
+        
+    except Exception as e:
+        print("Error en get_empleados_sin_equipo:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/activos/<int:asset_id>/asignar', methods=['POST'])
+def asignar_activo(asset_id):
+    try:
+        data = request.get_json()
+        empleado_id = data.get('empleado_id')
+        
+        if not empleado_id:
+            return jsonify({"error": "empleado_id es requerido"}), 400
+            
+        asset = Asset.query.get(asset_id)
+        if not asset:
+            return jsonify({"error": "Activo no encontrado"}), 404
+            
+        # Verificar si el empleado existe
+        empleado = Empleado.query.get(empleado_id)
+        if not empleado:
+            return jsonify({"error": "Empleado no encontrado"}), 404
+            
+        asset.empleado_id = empleado_id
+        asset.estado = 'ASIGNADO'
+        asset.updated_at = datetime.utcnow()
+        
+        # También actualizamos el empleado
+        empleado.equipo_asignado = f"{asset.tipo} - {asset.nombre_equipo}"
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Activo asignado exitosamente",
+            "empleado": empleado.nombre_completo,
+            "activo": asset.nombre_equipo
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error en asignar_activo:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

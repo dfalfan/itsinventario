@@ -1,0 +1,102 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.employees-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.employees-list th,
+.employees-list td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.employees-list th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.employees-list tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.employees-list tbody tr:hover {
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+.employees-list tbody tr.selected {
+    background-color: rgba(25, 118, 210, 0.12);
+    font-weight: 500;
+}
+
+.employees-list tbody tr.selected:hover {
+    background-color: rgba(25, 118, 210, 0.16);
+}
+
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.assign-button {
+    padding: 8px 16px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.assign-button:hover {
+    background-color: #1565c0;
+}
+
+.assign-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}

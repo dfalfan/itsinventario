@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table';
 import { FaCog, FaPlus, FaPencilAlt, FaTimes, FaEllipsisH } from 'react-icons/fa';
 import './AssetsView.css';
+import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -35,6 +36,9 @@ function AssetsView() {
     pageIndex: 0,
     pageSize: 100,
   });
+  const [showEmployeesModal, setShowEmployeesModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState(null);
 
   const handleView = (asset) => {
     console.log('Ver activo:', asset);
@@ -48,28 +52,40 @@ function AssetsView() {
     console.log('Eliminar activo:', asset);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:5000/api/activos');
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const jsonData = await response.json();
-        setData(jsonData);
-        setError(null);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError(`Error cargando datos: ${error.message}`);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleAssignClick = (asset) => {
+    setSelectedAsset(asset);
+    setShowModal(true);
+  };
 
+  const handleAssignSuccess = () => {
+    // Recargar los datos después de asignar
+    fetchData();  // Asegúrate de tener esta función definida
+    setShowModal(false);
+    setSelectedAsset(null);
+  };
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/activos');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const jsonData = await response.json();
+      setData(jsonData);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError(`Error cargando datos: ${error.message}`);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -93,10 +109,9 @@ function AssetsView() {
     {
       header: 'Estado',
       accessorKey: 'estado',
-      cell: ({ getValue }) => {
+      cell: ({ row, getValue }) => {
         const estado = getValue()?.toLowerCase() || '';
         
-        // Mapa simplificado de estados
         const estadosMap = {
           'asignado': 'Asignado',
           'disponible': 'Disponible',
@@ -106,7 +121,16 @@ function AssetsView() {
         const displayText = estadosMap[estado] || estado;
 
         return (
-          <span className={`estado-badge ${estado}`}>
+          <span 
+            className={`estado-badge ${estado}`}
+            onClick={() => {
+              if (estado === 'disponible') {
+                handleAssignClick(row.original);
+              }
+            }}
+            style={{ cursor: estado === 'disponible' ? 'pointer' : 'default' }}
+            title={estado === 'disponible' ? "Click para ver empleados sin equipo" : ""}
+          >
             {displayText}
           </span>
         );
@@ -321,6 +345,14 @@ function AssetsView() {
           {'>>'}
         </button>
       </div>
+
+      {showModal && (
+        <EmployeesWithoutEquipmentModal
+          asset={selectedAsset}
+          onClose={() => setShowModal(false)}
+          onAssign={handleAssignSuccess}
+        />
+      )}
     </div>
   );
 }
