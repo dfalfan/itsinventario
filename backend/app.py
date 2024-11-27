@@ -307,16 +307,14 @@ def asignar_activo(asset_id):
         if not asset:
             return jsonify({"error": "Activo no encontrado"}), 404
             
-        # Verificar si el empleado existe
         empleado = Empleado.query.get(empleado_id)
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
             
         asset.empleado_id = empleado_id
-        asset.estado = 'ASIGNADO'
+        asset.estado = 'Asignado'
         asset.updated_at = datetime.utcnow()
         
-        # También actualizamos el empleado
         empleado.equipo_asignado = f"{asset.tipo} - {asset.nombre_equipo}"
         
         db.session.commit()
@@ -339,14 +337,12 @@ def desasignar_activo(asset_id):
         if not asset:
             return jsonify({"error": "Activo no encontrado"}), 404
             
-        # Obtener el empleado antes de desasignar
         empleado = Empleado.query.get(asset.empleado_id)
         if empleado:
             empleado.equipo_asignado = None
             
-        # Desasignar el activo
         asset.empleado_id = None
-        asset.estado = 'DISPONIBLE'
+        asset.estado = 'Disponible'
         asset.updated_at = datetime.utcnow()
         
         db.session.commit()
@@ -359,6 +355,36 @@ def desasignar_activo(asset_id):
     except Exception as e:
         db.session.rollback()
         print("Error en desasignar_activo:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/activos/disponibles', methods=['GET'])
+def get_activos_disponibles():
+    try:
+        # La consulta modificada para usar 'Disponible' en lugar de 'DISPONIBLE'
+        activos = db.session.query(
+            Asset
+        ).filter(
+            Asset.empleado_id.is_(None),
+            Asset.estado == 'Disponible'  # Cambiado de 'DISPONIBLE' a 'Disponible'
+        ).order_by(Asset.tipo, Asset.nombre_equipo).all()
+
+        resultado = [{
+            'id': asset.id,
+            'tipo': asset.tipo,
+            'nombre_equipo': asset.nombre_equipo,
+            'marca': asset.marca,
+            'modelo': asset.modelo,
+            'serial': asset.serial,
+            'ram': asset.ram,
+            'disco': asset.disco,
+            'activo_fijo': asset.activo_fijo
+        } for asset in activos]
+
+        print(f"Enviando {len(resultado)} activos disponibles")  # Log para debug
+        return jsonify(resultado)
+
+    except Exception as e:
+        print("Error en get_activos_disponibles:", str(e))
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

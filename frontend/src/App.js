@@ -15,6 +15,7 @@ import NewEmployeeModal from './components/NewEmployeeModal';
 import DashboardView from './components/DashboardView';
 import AssetsView from './components/AssetsView'; 
 import UnassignAssetModal from './components/UnassignAssetModal';
+import AssignEquipmentModal from './components/AssignEquipmentModal';
 import './App.css';
 
 // Componentes de vista
@@ -46,6 +47,8 @@ function EmployeesView() {
   });
   const [showUnassignModal, setShowUnassignModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -78,6 +81,12 @@ function EmployeesView() {
     setSelectedAsset(null);
   };
 
+  const handleAssignSuccess = async () => {
+    await fetchData();
+    setShowAssignModal(false);
+    setSelectedEmployeeForAssign(null);
+  };
+
   const columns = [
     {
       header: 'Sede',
@@ -102,7 +111,18 @@ function EmployeesView() {
         const equipo = row.original.equipo_asignado;
         
         if (!equipo) {
-          return <span className="no-equipment">Sin equipo</span>;
+          return (
+            <span 
+              className="no-equipment clickable"
+              onClick={() => {
+                setSelectedEmployeeForAssign(row.original);
+                setShowAssignModal(true);
+              }}
+              title="Click para asignar equipo"
+            >
+              Sin equipo
+            </span>
+          );
         }
 
         const asset = {
@@ -361,6 +381,14 @@ function EmployeesView() {
         <EmployeeModal 
           employee={selectedEmployee} 
           onClose={() => setSelectedEmployee(null)}
+        />
+      )}
+      
+      {showAssignModal && (
+        <AssignEquipmentModal
+          employee={selectedEmployeeForAssign}
+          onClose={() => setShowAssignModal(false)}
+          onAssign={handleAssignSuccess}
         />
       )}
       

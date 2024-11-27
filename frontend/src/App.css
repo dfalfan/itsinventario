@@ -370,3 +370,16 @@ table td:nth-child(7) {
   background-color: #fff3e0;
   color: #ef6c00;
 }
+
+.no-equipment.clickable {
+  color: #d21919;
+  font-style: italic;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.no-equipment.clickable:hover {
+  background-color: #e3f2fd;
+}

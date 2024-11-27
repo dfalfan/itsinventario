@@ -1,0 +1,121 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.assets-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.assets-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.assets-list th,
+.assets-list td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.assets-list th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.assets-list tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.assets-list tr:hover {
+    background-color: #f5f5f5;
+}
+
+.assets-list tr.selected {
+    background-color: #e3f2fd;
+}
+
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.assign-button {
+    padding: 8px 16px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.assign-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.assign-button:hover:not(:disabled) {
+    background-color: #1565c0;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.error {
+    color: #d32f2f;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #ffebee;
+    border-radius: 4px;
+}
