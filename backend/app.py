@@ -89,6 +89,7 @@ def get_empleados():
         ).all()
         
         return jsonify([{
+            'id': emp.id,
             'ficha': emp.ficha,
             'nombre': emp.nombre_completo,
             'sede': emp.sede.nombre if emp.sede else '',
@@ -96,13 +97,14 @@ def get_empleados():
             'departamento': emp.departamento.nombre if emp.departamento else '',
             'area': emp.area.nombre if emp.area else '',
             'cargo': emp.cargo.nombre if emp.cargo else '',
-            'equipo_asignado': asset.tipo if asset else '',
+            'equipo_asignado': f"{asset.tipo} - {asset.nombre_equipo}" if asset else None,
+            'asset_id': asset.id if asset else None,
             'extension': emp.extension or '',
             'correo': emp.correo or ''
         } for emp, asset in empleados])
     except Exception as e:
         print(f"Error en get_empleados: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/sedes')
 def get_sedes():

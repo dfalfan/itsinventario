@@ -14,6 +14,7 @@ import EmployeeModal from './components/EmployeeModal';
 import NewEmployeeModal from './components/NewEmployeeModal';
 import DashboardView from './components/DashboardView';
 import AssetsView from './components/AssetsView'; 
+import UnassignAssetModal from './components/UnassignAssetModal';
 import './App.css';
 
 // Componentes de vista
@@ -43,32 +44,39 @@ function EmployeesView() {
     pageIndex: 0,
     pageSize: 100,
   });
+  const [showUnassignModal, setShowUnassignModal] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/empleados');
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new TypeError("La respuesta no es JSON!");
-        }
-
-        const jsonData = await response.json();
-        const uniqueData = Array.from(new Map(jsonData.map(item => [item.ficha, item])).values());
-        setData(uniqueData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setData([]);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/empleados');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const jsonData = await response.json();
+      setData(jsonData);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError(`Error cargando datos: ${error.message}`);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnassignSuccess = async () => {
+    await fetchData();
+    setShowUnassignModal(false);
+    setSelectedAsset(null);
+  };
 
   const columns = [
     {
@@ -90,12 +98,32 @@ function EmployeesView() {
     {
       header: 'Equipo Asignado',
       accessorKey: 'equipo_asignado',
-      cell: ({ getValue }) => {
-        const tipo = getValue();
-        return tipo ? (
-          <span className="equipment-type">{tipo}</span>
-        ) : (
-          <span className="no-equipment">Sin equipo</span>
+      cell: ({ row }) => {
+        const equipo = row.original.equipo_asignado;
+        
+        if (!equipo) {
+          return <span className="no-equipment">Sin equipo</span>;
+        }
+
+        const asset = {
+          id: row.original.asset_id,
+          tipo: equipo.split(' - ')[0],
+          nombre_equipo: equipo.split(' - ')[1] || equipo,
+          empleado: row.original.nombre
+        };
+
+        return (
+          <span 
+            className="equipment-type"
+            onClick={() => {
+              setSelectedAsset(asset);
+              setShowUnassignModal(true);
+            }}
+            style={{ cursor: 'pointer' }}
+            title="Click para ver detalles del equipo"
+          >
+            {equipo}
+          </span>
         );
       }
     },
@@ -333,6 +361,14 @@ function EmployeesView() {
         <EmployeeModal 
           employee={selectedEmployee} 
           onClose={() => setSelectedEmployee(null)}
+        />
+      )}
+      
+      {showUnassignModal && (
+        <UnassignAssetModal
+          asset={selectedAsset}
+          onClose={() => setShowUnassignModal(false)}
+          onUnassign={handleUnassignSuccess}
         />
       )}
     </div>

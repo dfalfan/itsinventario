@@ -334,13 +334,18 @@ table td:nth-child(7) {
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.9em;
-    font-weight: 500;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+.equipment-type:hover {
+    background-color: #bbdefb;
+    cursor: pointer;
 }
 
 .no-equipment {
-    color: #999;
+    color: #757575;
     font-style: italic;
-    font-size: 0.9em;
 }
 
 .estado-badge {
