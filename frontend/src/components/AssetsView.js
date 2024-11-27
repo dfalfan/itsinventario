@@ -10,6 +10,7 @@ import {
 import { FaCog, FaPlus, FaPencilAlt, FaTimes, FaEllipsisH } from 'react-icons/fa';
 import './AssetsView.css';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
+import UnassignAssetModal from './UnassignAssetModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -39,6 +40,7 @@ function AssetsView() {
   const [showEmployeesModal, setShowEmployeesModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [showUnassignModal, setShowUnassignModal] = useState(false);
 
   const handleView = (asset) => {
     console.log('Ver activo:', asset);
@@ -54,13 +56,23 @@ function AssetsView() {
 
   const handleAssignClick = (asset) => {
     setSelectedAsset(asset);
-    setShowModal(true);
+    if (asset.estado?.toLowerCase() === 'asignado') {
+      setShowUnassignModal(true);
+    } else {
+      setShowModal(true);
+    }
   };
 
   const handleAssignSuccess = () => {
     // Recargar los datos después de asignar
     fetchData();  // Asegúrate de tener esta función definida
     setShowModal(false);
+    setSelectedAsset(null);
+  };
+
+  const handleUnassignSuccess = () => {
+    fetchData();
+    setShowUnassignModal(false);
     setSelectedAsset(null);
   };
 
@@ -123,13 +135,12 @@ function AssetsView() {
         return (
           <span 
             className={`estado-badge ${estado}`}
-            onClick={() => {
-              if (estado === 'disponible') {
-                handleAssignClick(row.original);
-              }
-            }}
-            style={{ cursor: estado === 'disponible' ? 'pointer' : 'default' }}
-            title={estado === 'disponible' ? "Click para ver empleados sin equipo" : ""}
+            onClick={() => handleAssignClick(row.original)}
+            style={{ cursor: ['disponible', 'asignado'].includes(estado) ? 'pointer' : 'default' }}
+            title={estado === 'disponible' ? 
+              "Click para asignar equipo" : 
+              estado === 'asignado' ? 
+              "Click para ver detalles de asignación" : ""}
           >
             {displayText}
           </span>
@@ -351,6 +362,14 @@ function AssetsView() {
           asset={selectedAsset}
           onClose={() => setShowModal(false)}
           onAssign={handleAssignSuccess}
+        />
+      )}
+
+      {showUnassignModal && (
+        <UnassignAssetModal
+          asset={selectedAsset}
+          onClose={() => setShowUnassignModal(false)}
+          onUnassign={handleUnassignSuccess}
         />
       )}
     </div>
