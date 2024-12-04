@@ -13,6 +13,7 @@ import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
 import DeleteAssetModal from './DeleteAssetModal';
 import NewAssetModal from './NewAssetModal';
+import AssetModal from './AssetModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -71,9 +72,11 @@ function AssetsView() {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNewAssetModal, setShowNewAssetModal] = useState(false);
+  const [showAssetModal, setShowAssetModal] = useState(false);
 
   const handleView = (asset) => {
-    console.log('Ver activo:', asset);
+    setSelectedAsset(asset);
+    setShowAssetModal(true);
   };
 
   const handleEdit = (asset) => {
@@ -683,6 +686,13 @@ function AssetsView() {
         <NewAssetModal 
           onClose={() => setShowNewAssetModal(false)}
           onAssetAdded={handleAssetAdded}
+        />
+      )}
+
+      {showAssetModal && (
+        <AssetModal
+          asset={selectedAsset}
+          onClose={() => setShowAssetModal(false)}
         />
       )}
     </div>

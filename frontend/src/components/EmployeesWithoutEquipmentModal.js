@@ -62,8 +62,8 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="employees-modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Asignar {asset.tipo} - {asset.nombre_equipo}</h2>
           <button className="close-button" onClick={onClose}>&times;</button>
