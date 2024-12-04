@@ -300,6 +300,12 @@ function AssetsView() {
 
   const columns = [
     {
+      header: 'ID',
+      accessorKey: 'id',
+      cell: ({ getValue }) => getValue(),
+      size: 70,
+    },
+    {
       header: 'Sede',
       accessorKey: 'sede',
       cell: ({ row, getValue }) => (
@@ -324,7 +330,25 @@ function AssetsView() {
       )
     },
     {
-      header: 'Nombre',
+      header: 'Estado',
+      accessorKey: 'estado',
+      cell: ({ row, getValue }) => (
+        <span 
+          className={`estado-badge ${getValue()?.toLowerCase()}`}
+          onClick={() => handleAssignClick(row.original)}
+          style={{ cursor: 'pointer' }}
+        >
+          {getValue()}
+        </span>
+      )
+    },
+    {
+      header: 'Asignado a',
+      accessorKey: 'empleado',
+      cell: ({ getValue }) => getValue() || '-'
+    },
+    {
+      header: 'Nombre Equipo',
       accessorKey: 'nombre_equipo',
       cell: ({ row, getValue }) => (
         <EditableCell 
@@ -347,40 +371,67 @@ function AssetsView() {
       )
     },
     {
-      header: 'Estado',
-      accessorKey: 'estado',
-      cell: ({ row, getValue }) => {
-        const estado = getValue()?.toLowerCase() || '';
-        
-        const estadosMap = {
-          'asignado': 'Asignado',
-          'disponible': 'Disponible',
-          'reparacion': 'En Reparación'
-        };
-
-        const displayText = estadosMap[estado] || estado;
-
-        return (
-          <span 
-            className={`estado-badge ${estado}`}
-            onClick={() => handleAssignClick(row.original)}
-            style={{ cursor: ['disponible', 'asignado'].includes(estado) ? 'pointer' : 'default' }}
-            title={estado === 'disponible' ? 
-              "Click para asignar equipo" : 
-              estado === 'asignado' ? 
-              "Click para ver detalles de asignación" : ""}
-          >
-            {displayText}
-          </span>
-        );
-      }
+      header: 'Modelo',
+      accessorKey: 'modelo',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="modelo"
+        />
+      )
     },
     {
-      header: 'Asignado a',
-      accessorKey: 'empleado',
+      header: 'Serial',
+      accessorKey: 'serial',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="serial"
+        />
+      )
+    },
+    {
+      header: 'Activo Fijo',
+      accessorKey: 'activo_fijo',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="activo_fijo"
+        />
+      )
+    },
+    {
+      header: 'RAM',
+      accessorKey: 'ram',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="ram"
+          options={rams}
+        />
+      ),
+      show: false // Oculta por defecto
+    },
+    {
+      header: 'Disco',
+      accessorKey: 'disco',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="disco"
+          options={discos}
+        />
+      ),
+      show: false // Oculta por defecto
     },
     {
       header: 'Acciones',
+      id: 'Acciones',
       cell: ({ row }) => (
         <div className="action-buttons">
           <button 
@@ -406,63 +457,6 @@ function AssetsView() {
           </button>
         </div>
       ),
-    },
-    {
-      header: 'Modelo',
-      accessorKey: 'modelo',
-      cell: ({ row, getValue }) => (
-        <EditableCell 
-          value={getValue()} 
-          row={row} 
-          field="modelo"
-        />
-      )
-    },
-    {
-      header: 'Serial',
-      accessorKey: 'serial',
-      cell: ({ row, getValue }) => (
-        <EditableCell 
-          value={getValue()} 
-          row={row} 
-          field="serial"
-        />
-      )
-    },
-    {
-      header: 'RAM',
-      accessorKey: 'ram',
-      cell: ({ row, getValue }) => (
-        <EditableCellSelect
-          value={getValue()}
-          row={row}
-          field="ram"
-          options={rams}
-        />
-      )
-    },
-    {
-      header: 'Disco',
-      accessorKey: 'disco',
-      cell: ({ row, getValue }) => (
-        <EditableCellSelect
-          value={getValue()}
-          row={row}
-          field="disco"
-          options={discos}
-        />
-      )
-    },
-    {
-      header: 'Activo Fijo',
-      accessorKey: 'activo_fijo',
-      cell: ({ row, getValue }) => (
-        <EditableCell 
-          value={getValue()} 
-          row={row} 
-          field="activo_fijo"
-        />
-      )
     },
   ];
 

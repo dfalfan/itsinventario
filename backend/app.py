@@ -196,17 +196,17 @@ def get_activos():
         
         return jsonify([{
             'id': asset.id,
+            'sede': sede.nombre if sede else '',
             'tipo': asset.tipo,
+            'estado': asset.estado,
+            'empleado': empleado.nombre_completo if empleado else '',
             'nombre_equipo': asset.nombre_equipo,
-            'modelo': asset.modelo,
             'marca': asset.marca,
+            'modelo': asset.modelo,
             'serial': asset.serial,
+            'activo_fijo': asset.activo_fijo,
             'ram': asset.ram,
             'disco': asset.disco,
-            'estado': asset.estado,
-            'activo_fijo': asset.activo_fijo,
-            'sede': sede.nombre if sede else '',
-            'empleado': empleado.nombre_completo if empleado else '',
             'notas': asset.notas
         } for asset, empleado, sede in activos])
     except Exception as e:
