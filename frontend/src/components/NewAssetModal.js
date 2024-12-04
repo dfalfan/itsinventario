@@ -61,12 +61,15 @@ function NewAssetModal({ onClose, onAssetAdded }) {
       });
 
       if (!response.ok) {
-        throw new Error('Error al crear activo');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear activo');
       }
 
       const data = await response.json();
       onAssetAdded(data.asset);
+      setError(null);
     } catch (error) {
+      console.error('Error:', error);
       setError(error.message);
     }
   };
@@ -228,6 +231,19 @@ function NewAssetModal({ onClose, onAssetAdded }) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="nombre_equipo">
+                <FaLaptop className="input-icon" /> Nombre Equipo
+              </label>
+              <input
+                type="text"
+                id="nombre_equipo"
+                name="nombre_equipo"
+                value={formData.nombre_equipo}
+                onChange={handleChange}
+              />
             </div>
           </div>
 

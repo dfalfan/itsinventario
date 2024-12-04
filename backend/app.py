@@ -486,16 +486,21 @@ def create_asset():
     try:
         data = request.get_json()
         
-        # Validar campos requeridos
-        required_fields = ['tipo', 'nombre_equipo', 'sede_id']
+        # Validar campos requeridos - removemos nombre_equipo
+        required_fields = ['tipo', 'sede_id']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'El campo {field} es requerido'}), 400
 
+        # Obtener el último ID y sumar 1
+        last_asset = Asset.query.order_by(Asset.id.desc()).first()
+        next_id = (last_asset.id + 1) if last_asset else 1
+
         new_asset = Asset(
+            id=next_id,  # Asignar el ID consecutivo
             sede_id=data['sede_id'],
             tipo=data['tipo'],
-            nombre_equipo=data['nombre_equipo'],
+            nombre_equipo=data.get('nombre_equipo', ''),  # Ahora es opcional
             modelo=data.get('modelo', ''),
             marca=data.get('marca', ''),
             serial=data.get('serial', ''),
@@ -508,6 +513,9 @@ def create_asset():
 
         db.session.add(new_asset)
         db.session.commit()
+
+        # Obtener la sede para incluirla en la respuesta
+        sede = Sede.query.get(data['sede_id'])
 
         return jsonify({
             'message': 'Activo creado exitosamente',
@@ -522,7 +530,9 @@ def create_asset():
                 'activo_fijo': new_asset.activo_fijo,
                 'ram': new_asset.ram,
                 'disco': new_asset.disco,
-                'notas': new_asset.notas
+                'notas': new_asset.notas,
+                'sede': sede.nombre if sede else '',
+                'empleado': ''  # Nuevo activo, sin empleado asignado
             }
         }), 201
 

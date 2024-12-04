@@ -528,7 +528,8 @@ function AssetsView() {
   };
 
   const handleAssetAdded = (newAsset) => {
-    fetchData(); // Recargar la tabla
+    // Agregar el nuevo activo al inicio de la tabla
+    setData(prevData => [newAsset, ...prevData]);
     setShowNewAssetModal(false);
   };
 
