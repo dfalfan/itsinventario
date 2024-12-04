@@ -1,10 +1,11 @@
 .app-container {
     min-height: 100vh;
     background-color: #f8f9fa;
+    font-size: 14px;
 }
 
 .App {
-    padding: 20px;
+    padding: 15px;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -37,7 +38,7 @@ table {
 
 th,
 td {
-    padding: 12px 15px;
+    padding: 8px 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
@@ -141,9 +142,9 @@ table td:nth-child(7) {
     background: #6c757d;
     border: none;
     color: white;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     border-radius: 4px;
     transition: all 0.2s ease;
     display: flex;
@@ -219,9 +220,9 @@ table td:nth-child(7) {
     background: #28a745;
     border: none;
     color: white;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     border-radius: 4px;
     transition: all 0.2s ease;
     display: flex;

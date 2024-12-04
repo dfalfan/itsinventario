@@ -28,4 +28,21 @@
     --gray-700: #495057;
     --gray-800: #343a40;
     --gray-900: #212529;
+
+    /* Factores de escala */
+    --scale-factor: 0.875; /* 87.5% del tamaño original */
+    
+    /* Espaciado */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    
+    /* Tamaños de fuente */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 0.875rem; /* 14px */
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.25rem;
 }
