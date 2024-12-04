@@ -5,7 +5,8 @@ import {
   FaTools, 
   FaWarehouse,
   FaChartPie,
-  FaBuilding
+  FaBuilding,
+  FaBell
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -124,6 +125,8 @@ function DashboardView() {
             <p>{stats.equiposEnStock}</p>
           </div>
         </div>
+
+
       </div>
 
       {/* Gráficos */}

@@ -1,4 +1,4 @@
-.modal-overlay {
+.assign-equipment-modal .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -11,17 +11,17 @@
     z-index: 1000;
 }
 
-.modal-content {
+.assign-equipment-modal .modal-content {
     background-color: white;
-    padding: 20px;
+    padding: 24px;
     border-radius: 8px;
-    width: 80%;
-    max-width: 800px;
+    width: 90%;
+    max-width: 1000px;
     max-height: 90vh;
     overflow-y: auto;
 }
 
-.modal-header {
+.assign-equipment-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -30,56 +30,62 @@
     border-bottom: 1px solid #eee;
 }
 
-.modal-header h2 {
+.assign-equipment-modal .modal-header h2 {
     margin: 0;
     font-size: 1.5rem;
+    color: #333;
 }
 
-.close-button {
+.assign-equipment-modal .close-button {
     background: none;
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0 5px;
+    color: #666;
 }
 
-.assets-list {
+.assign-equipment-modal .assets-list {
     margin: 20px 0;
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
 }
 
-.assets-list table {
+.assign-equipment-modal .assets-list table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.assets-list th,
-.assets-list td {
-    padding: 8px 12px;
+.assign-equipment-modal .assets-list th,
+.assign-equipment-modal .assets-list td {
+    padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid #eee;
 }
 
-.assets-list th {
-    background-color: #f5f5f5;
+.assign-equipment-modal .assets-list th {
+    background-color: #f8f9fa;
     font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
-.assets-list tr {
+.assign-equipment-modal .assets-list tr {
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.assets-list tr:hover {
-    background-color: #f5f5f5;
+.assign-equipment-modal .assets-list tr:hover {
+    background-color: #f8f9fa;
 }
 
-.assets-list tr.selected {
+.assign-equipment-modal .assets-list tr.selected {
     background-color: #e3f2fd;
 }
 
-.modal-footer {
+.assign-equipment-modal .modal-footer {
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #eee;
@@ -87,35 +93,38 @@
     justify-content: flex-end;
 }
 
-.assign-button {
-    padding: 8px 16px;
+.assign-equipment-modal .assign-button {
+    padding: 10px 20px;
     background-color: #1976d2;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-.assign-button:disabled {
+.assign-equipment-modal .assign-button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
 }
 
-.assign-button:hover:not(:disabled) {
+.assign-equipment-modal .assign-button:hover:not(:disabled) {
     background-color: #1565c0;
 }
 
-.loading {
+.assign-equipment-modal .loading {
     text-align: center;
     padding: 20px;
     color: #666;
+    font-size: 1.1rem;
 }
 
-.error {
+.assign-equipment-modal .error {
     color: #d32f2f;
-    padding: 10px;
+    padding: 12px;
     margin: 10px 0;
     background-color: #ffebee;
     border-radius: 4px;
+    font-size: 1rem;
 }

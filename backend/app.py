@@ -220,9 +220,8 @@ def get_dashboard_stats():
         total_equipos = Asset.query.count()
         
         # Empleados sin equipo
-        empleados_con_equipo = db.session.query(Asset.empleado_id).distinct()
         empleados_sin_equipo = Empleado.query.filter(
-            ~Empleado.id.in_(empleados_con_equipo)
+            Empleado.equipo_asignado.is_(None)
         ).count()
         
         # Equipos en reparación
@@ -447,6 +446,40 @@ def get_discos():
     except Exception as e:
         print(f"Error en get_discos: {str(e)}")
         return jsonify([])
+
+@app.route('/api/activos/<int:asset_id>/estado', methods=['PATCH'])
+def update_asset_state(asset_id):
+    try:
+        asset = Asset.query.get(asset_id)
+        if not asset:
+            return jsonify({'error': 'Activo no encontrado'}), 404
+
+        data = request.get_json()
+        new_state = data.get('estado')
+        
+        if new_state not in ['REPARACION', 'DESINCORPORADO']:
+            return jsonify({'error': 'Estado no válido'}), 400
+
+        # Si el activo está asignado, desasignarlo primero
+        if asset.empleado_id:
+            empleado = Empleado.query.get(asset.empleado_id)
+            if empleado:
+                empleado.equipo_asignado = None
+            asset.empleado_id = None
+
+        asset.estado = new_state
+        asset.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Estado del activo actualizado exitosamente',
+            'nuevo_estado': new_state
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -11,6 +11,7 @@ import { FaCog, FaPlus, FaPencilAlt, FaTimes, FaEllipsisH } from 'react-icons/fa
 import './AssetsView.css';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
+import DeleteAssetModal from './DeleteAssetModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -62,6 +63,7 @@ function AssetsView() {
     rams: null,
     discos: null
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleView = (asset) => {
     console.log('Ver activo:', asset);
@@ -72,7 +74,8 @@ function AssetsView() {
   };
 
   const handleDelete = (asset) => {
-    console.log('Eliminar activo:', asset);
+    setSelectedAsset(asset);
+    setShowDeleteModal(true);
   };
 
   const handleAssignClick = (asset) => {
@@ -435,7 +438,7 @@ function AssetsView() {
       cell: ({ row }) => (
         <div className="acciones-cell">
           <FaEllipsisH onClick={() => handleView(row.original)} title="Ver detalles" />
-          <FaTimes onClick={() => handleDelete(row.original)} title="Eliminar empleado" />
+          <FaTimes onClick={() => handleDelete(row.original)} title="Eliminar activo" />
         </div>
       )
     },
@@ -488,6 +491,33 @@ function AssetsView() {
       </div>
     </div>
   );
+
+  const handleDeleteConfirm = async (assetId, newState) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/activos/${assetId}/estado`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ estado: newState })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el estado del activo');
+      }
+
+      // Actualizar los datos localmente
+      setData(prevData => prevData.map(item => 
+        item.id === assetId ? { ...item, estado: newState } : item
+      ));
+
+      setShowDeleteModal(false);
+      setSelectedAsset(null);
+    } catch (error) {
+      console.error('Error:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
 
   if (loading) return <div className="loading">Cargando...</div>;
   if (error) return <div className="error">{error}</div>;
@@ -610,6 +640,14 @@ function AssetsView() {
           asset={selectedAsset}
           onClose={() => setShowUnassignModal(false)}
           onUnassign={handleUnassignSuccess}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteAssetModal
+          asset={selectedAsset}
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={handleDeleteConfirm}
         />
       )}
     </div>
