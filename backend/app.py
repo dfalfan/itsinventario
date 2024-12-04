@@ -383,5 +383,70 @@ def get_activos_disponibles():
         print("Error en get_activos_disponibles:", str(e))
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/activos/<int:asset_id>', methods=['PATCH'])
+def update_asset(asset_id):
+    try:
+        asset = Asset.query.get(asset_id)
+        if not asset:
+            return jsonify({'error': 'Activo no encontrado'}), 404
+
+        data = request.get_json()
+        
+        # Lista actualizada de campos permitidos para editar
+        allowed_fields = ['nombre_equipo', 'modelo', 'serial', 'activo_fijo', 'tipo', 'marca', 'ram', 'disco']
+        
+        for field in data:
+            if field in allowed_fields:
+                setattr(asset, field, data[field])
+        
+        asset.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Activo actualizado exitosamente',
+            'updated_fields': list(data.keys())
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tipos')
+def get_tipos():
+    try:
+        # Obtener tipos únicos de la base de datos
+        tipos = db.session.query(Asset.tipo).distinct().all()
+        return jsonify([tipo[0] for tipo in tipos if tipo[0]])
+    except Exception as e:
+        print(f"Error en get_tipos: {str(e)}")
+        return jsonify([])
+
+@app.route('/api/marcas')
+def get_marcas():
+    try:
+        marcas = db.session.query(Asset.marca).distinct().all()
+        return jsonify([marca[0] for marca in marcas if marca[0]])
+    except Exception as e:
+        print(f"Error en get_marcas: {str(e)}")
+        return jsonify([])
+
+@app.route('/api/rams')
+def get_rams():
+    try:
+        rams = db.session.query(Asset.ram).distinct().all()
+        return jsonify([ram[0] for ram in rams if ram[0]])
+    except Exception as e:
+        print(f"Error en get_rams: {str(e)}")
+        return jsonify([])
+
+@app.route('/api/discos')
+def get_discos():
+    try:
+        discos = db.session.query(Asset.disco).distinct().all()
+        return jsonify([disco[0] for disco in discos if disco[0]])
+    except Exception as e:
+        print(f"Error en get_discos: {str(e)}")
+        return jsonify([])
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

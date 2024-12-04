@@ -41,6 +41,27 @@ function AssetsView() {
   const [showModal, setShowModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showUnassignModal, setShowUnassignModal] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [sedes, setSedes] = useState([]);
+  const [tipos, setTipos] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [rams, setRams] = useState([]);
+  const [discos, setDiscos] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState({
+    sedes: false,
+    tipos: false,
+    marcas: false,
+    rams: false,
+    discos: false
+  });
+  const [optionsError, setOptionsError] = useState({
+    sedes: null,
+    tipos: null,
+    marcas: null,
+    rams: null,
+    discos: null
+  });
 
   const handleView = (asset) => {
     console.log('Ver activo:', asset);
@@ -97,26 +118,233 @@ function AssetsView() {
     }
   };
 
+  const fetchSedes = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/sedes');
+      if (!response.ok) {
+        throw new Error('Error al cargar sedes');
+      }
+      const data = await response.json();
+      setSedes(data.map(sede => ({
+        id: sede.id,
+        nombre: sede.nombre
+      })));
+    } catch (error) {
+      console.error('Error cargando sedes:', error);
+      setOptionsError(prev => ({ ...prev, sedes: error.message }));
+    }
+  };
+
+  const fetchOptions = async () => {
+    const endpoints = {
+      tipos: '/api/tipos',
+      marcas: '/api/marcas',
+      rams: '/api/rams',
+      discos: '/api/discos'
+    };
+
+    for (const [key, endpoint] of Object.entries(endpoints)) {
+      try {
+        setLoadingOptions(prev => ({ ...prev, [key]: true }));
+        setOptionsError(prev => ({ ...prev, [key]: null }));
+
+        const response = await fetch(`http://localhost:5000${endpoint}`);
+        if (!response.ok) throw new Error(`Error al cargar ${key}`);
+        
+        const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error(`Formato de datos inválido para ${key}`);
+        }
+
+        switch(key) {
+          case 'tipos': setTipos(data); break;
+          case 'marcas': setMarcas(data); break;
+          case 'rams': setRams(data); break;
+          case 'discos': setDiscos(data); break;
+          default: break;
+        }
+      } catch (error) {
+        console.error(`Error cargando ${key}:`, error);
+        setOptionsError(prev => ({ ...prev, [key]: error.message }));
+      } finally {
+        setLoadingOptions(prev => ({ ...prev, [key]: false }));
+      }
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchSedes();
+    fetchOptions();
   }, []);
+
+  const handleSaveEdit = async (assetId, field, value) => {
+    try {
+      console.log('Saving edit:', { assetId, field, value }); // Para debugging
+      const response = await fetch(`http://localhost:5000/api/activos/${assetId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          [field]: value
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el activo');
+      }
+
+      // Actualizar los datos localmente
+      setData(prevData => prevData.map(item => 
+        item.id === assetId ? { ...item, [field]: value } : item
+      ));
+
+      setEditingCell(null);
+      setEditValue('');
+    } catch (error) {
+      console.error('Error:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const EditableCell = ({ value, row, field, displayField = field }) => {
+    const isEditing = editingCell?.id === row.original.id && editingCell?.field === field;
+    
+    return isEditing ? (
+      <input
+        type="text"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={() => handleSaveEdit(row.original.id, field, editValue)}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            handleSaveEdit(row.original.id, field, editValue);
+          }
+        }}
+        autoFocus
+        className="editable-cell-input"
+      />
+    ) : (
+      <span
+        onDoubleClick={() => {
+          setEditingCell({ id: row.original.id, field: field });
+          setEditValue(value);
+        }}
+        className="editable-cell"
+        title="Doble clic para editar"
+      >
+        {value}
+      </span>
+    );
+  };
+
+  const EditableCellSelect = ({ value, row, field, options }) => {
+    const isEditing = editingCell?.id === row.original.id && editingCell?.field === field;
+    const isLoading = loadingOptions[field];
+    const error = optionsError[field];
+
+    const handleDoubleClick = () => {
+      console.log('Double click detected', field, row.original.id); // Para debugging
+      setEditingCell({ id: row.original.id, field: field });
+      setEditValue(value || '');
+    };
+    
+    return isEditing ? (
+      <div className="editable-cell-container">
+        <select
+          value={editValue}
+          onChange={(e) => {
+            handleSaveEdit(row.original.id, field, e.target.value);
+            setEditingCell(null);
+          }}
+          onBlur={() => setEditingCell(null)}
+          autoFocus
+          className={`editable-cell-select ${isLoading ? 'loading' : ''} ${error ? 'error' : ''}`}
+          disabled={isLoading}
+        >
+          <option value="">Seleccionar...</option>
+          {options?.map(option => (
+            <option 
+              key={option.id || option} 
+              value={option.nombre || option}
+            >
+              {option.nombre || option}
+            </option>
+          ))}
+        </select>
+        {isLoading && (
+          <div className="editable-cell-loading">
+            <span className="loading-spinner"></span>
+          </div>
+        )}
+        {error && (
+          <div className="editable-cell-error" title={error}>
+            ⚠️
+          </div>
+        )}
+      </div>
+    ) : (
+      <div 
+        className="editable-cell-wrapper"
+        onDoubleClick={handleDoubleClick}
+        title="Doble clic para editar"
+      >
+        <span className="editable-cell">
+          {value || ''}
+        </span>
+        <span className="edit-indicator">✎</span>
+      </div>
+    );
+  };
 
   const columns = [
     {
       header: 'Sede',
       accessorKey: 'sede',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="sede"
+          options={sedes}
+        />
+      )
     },
     {
       header: 'Tipo',
       accessorKey: 'tipo',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="tipo"
+          options={tipos}
+        />
+      )
     },
     {
       header: 'Nombre',
       accessorKey: 'nombre_equipo',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="nombre_equipo"
+        />
+      )
     },
     {
       header: 'Marca',
       accessorKey: 'marca',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="marca"
+          options={marcas}
+        />
+      )
     },
     {
       header: 'Estado',
@@ -182,22 +410,59 @@ function AssetsView() {
     {
       header: 'Modelo',
       accessorKey: 'modelo',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="modelo"
+        />
+      )
     },
     {
       header: 'Serial',
       accessorKey: 'serial',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="serial"
+        />
+      )
     },
     {
       header: 'RAM',
       accessorKey: 'ram',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="ram"
+          options={rams}
+        />
+      )
     },
     {
       header: 'Disco',
       accessorKey: 'disco',
+      cell: ({ row, getValue }) => (
+        <EditableCellSelect
+          value={getValue()}
+          row={row}
+          field="disco"
+          options={discos}
+        />
+      )
     },
     {
       header: 'Activo Fijo',
       accessorKey: 'activo_fijo',
+      cell: ({ row, getValue }) => (
+        <EditableCell 
+          value={getValue()} 
+          row={row} 
+          field="activo_fijo"
+        />
+      )
     },
   ];
 
