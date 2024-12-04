@@ -231,3 +231,26 @@
   color: #333;
 }
 
+/* Estilos para las columnas ordenables */
+th.sortable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 20px; /* Espacio para el indicador de ordenamiento */
+}
+
+th.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Estilo para el indicador de ordenamiento activo */
+th.sortable[data-sorted="true"] {
+  background-color: rgba(25, 118, 210, 0.05);
+  font-weight: 600;
+}
+
+/* Ajustar el tamaño de los indicadores de ordenamiento */
+th.sortable span {
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+

@@ -16,7 +16,12 @@ import NewAssetModal from './NewAssetModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState([
+    {
+      id: 'id',
+      desc: true
+    }
+  ]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -463,6 +468,14 @@ function AssetsView() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      sorting: [
+        {
+          id: 'id',
+          desc: true
+        }
+      ]
+    }
   });
 
   const ColumnVisibilityControls = () => (
