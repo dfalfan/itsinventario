@@ -1,15 +1,34 @@
 import React, { useState } from 'react';
 import './DeleteAssetModal.css';
+import PropTypes from 'prop-types';
 
-function DeleteAssetModal({ asset, onClose, onDelete }) {
+function DeleteAssetModal({ asset, onClose, onDelete, onSuccess }) {
   const [selectedState, setSelectedState] = useState('');
 
   const handleDelete = async () => {
     if (!selectedState) {
       return;
     }
-    await onDelete(asset.id, selectedState);
-    onClose();
+
+    try {
+      // Desasignar el activo del empleado
+      const unassignResponse = await fetch(`http://localhost:5000/api/activos/${asset.id}/desasignar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!unassignResponse.ok) {
+        throw new Error('Error al desasignar el activo');
+      }
+
+      // Cambiar el estado del activo
+      await onDelete(asset.id, selectedState);
+      onSuccess();
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   return (
@@ -59,5 +78,12 @@ function DeleteAssetModal({ asset, onClose, onDelete }) {
     </div>
   );
 }
+
+DeleteAssetModal.propTypes = {
+  asset: PropTypes.object.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onSuccess: PropTypes.func.isRequired,
+};
 
 export default DeleteAssetModal; 

@@ -519,6 +519,12 @@ function AssetsView() {
     }
   };
 
+  const handleDeleteSuccess = () => {
+    fetchData();  // Recargar los datos
+    setShowDeleteModal(false);
+    setSelectedAsset(null);
+  };
+
   if (loading) return <div className="loading">Cargando...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -648,6 +654,7 @@ function AssetsView() {
           asset={selectedAsset}
           onClose={() => setShowDeleteModal(false)}
           onDelete={handleDeleteConfirm}
+          onSuccess={handleDeleteSuccess}
         />
       )}
     </div>
