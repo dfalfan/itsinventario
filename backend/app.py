@@ -481,5 +481,55 @@ def update_asset_state(asset_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/activos', methods=['POST'])
+def create_asset():
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        required_fields = ['tipo', 'nombre_equipo', 'sede_id']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'El campo {field} es requerido'}), 400
+
+        new_asset = Asset(
+            sede_id=data['sede_id'],
+            tipo=data['tipo'],
+            nombre_equipo=data['nombre_equipo'],
+            modelo=data.get('modelo', ''),
+            marca=data.get('marca', ''),
+            serial=data.get('serial', ''),
+            ram=data.get('ram', ''),
+            disco=data.get('disco', ''),
+            estado='Disponible',  # Estado inicial
+            activo_fijo=data.get('activo_fijo', ''),
+            notas=data.get('notas', '')
+        )
+
+        db.session.add(new_asset)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Activo creado exitosamente',
+            'asset': {
+                'id': new_asset.id,
+                'tipo': new_asset.tipo,
+                'nombre_equipo': new_asset.nombre_equipo,
+                'estado': new_asset.estado,
+                'marca': new_asset.marca,
+                'modelo': new_asset.modelo,
+                'serial': new_asset.serial,
+                'activo_fijo': new_asset.activo_fijo,
+                'ram': new_asset.ram,
+                'disco': new_asset.disco,
+                'notas': new_asset.notas
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print("Error en create_asset:", str(e))
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -12,6 +12,7 @@ import './AssetsView.css';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
 import DeleteAssetModal from './DeleteAssetModal';
+import NewAssetModal from './NewAssetModal';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -64,6 +65,7 @@ function AssetsView() {
     discos: null
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showNewAssetModal, setShowNewAssetModal] = useState(false);
 
   const handleView = (asset) => {
     console.log('Ver activo:', asset);
@@ -525,6 +527,11 @@ function AssetsView() {
     setSelectedAsset(null);
   };
 
+  const handleAssetAdded = (newAsset) => {
+    fetchData(); // Recargar la tabla
+    setShowNewAssetModal(false);
+  };
+
   if (loading) return <div className="loading">Cargando...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -535,7 +542,7 @@ function AssetsView() {
         <div className="header-buttons">
           <button 
             className="add-button"
-            onClick={() => {/* Manejar nuevo activo */}}
+            onClick={() => setShowNewAssetModal(true)}
             title="Añadir nuevo activo"
           >
             <FaPlus className="add-icon" />
@@ -655,6 +662,13 @@ function AssetsView() {
           onClose={() => setShowDeleteModal(false)}
           onDelete={handleDeleteConfirm}
           onSuccess={handleDeleteSuccess}
+        />
+      )}
+
+      {showNewAssetModal && (
+        <NewAssetModal 
+          onClose={() => setShowNewAssetModal(false)}
+          onAssetAdded={handleAssetAdded}
         />
       )}
     </div>
