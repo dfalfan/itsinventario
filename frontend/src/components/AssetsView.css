@@ -213,3 +213,21 @@
   visibility: visible;
 }
 
+/* Si había estilos específicos para el lápiz de edición en la columna "Acciones", elimínalos */
+.acciones-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.acciones-cell svg {
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.acciones-cell svg:hover {
+  color: #333;
+}
+

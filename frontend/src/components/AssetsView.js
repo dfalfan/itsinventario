@@ -433,30 +433,11 @@ function AssetsView() {
       header: 'Acciones',
       id: 'Acciones',
       cell: ({ row }) => (
-        <div className="action-buttons">
-          <button 
-            onClick={() => handleView(row.original)}
-            className="action-button view-button"
-            title="Ver detalles"
-          >
-            <FaEllipsisH />
-          </button>
-          <button 
-            onClick={() => handleEdit(row.original)}
-            className="action-button edit-button"
-            title="Editar activo"
-          >
-            <FaPencilAlt />
-          </button>
-          <button 
-            onClick={() => handleDelete(row.original)}
-            className="action-button delete-button"
-            title="Eliminar activo"
-          >
-            <FaTimes />
-          </button>
+        <div className="acciones-cell">
+          <FaEllipsisH onClick={() => handleView(row.original)} title="Ver detalles" />
+          <FaTimes onClick={() => handleDelete(row.original)} title="Eliminar empleado" />
         </div>
-      ),
+      )
     },
   ];
 
