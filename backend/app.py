@@ -360,12 +360,9 @@ def desasignar_activo(asset_id):
 @app.route('/api/activos/disponibles', methods=['GET'])
 def get_activos_disponibles():
     try:
-        # La consulta modificada para usar 'Disponible' en lugar de 'DISPONIBLE'
-        activos = db.session.query(
-            Asset
-        ).filter(
+        activos = Asset.query.filter(
             Asset.empleado_id.is_(None),
-            Asset.estado == 'Disponible'  # Cambiado de 'DISPONIBLE' a 'Disponible'
+            Asset.estado == 'Disponible'
         ).order_by(Asset.tipo, Asset.nombre_equipo).all()
 
         resultado = [{
@@ -380,7 +377,6 @@ def get_activos_disponibles():
             'activo_fijo': asset.activo_fijo
         } for asset in activos]
 
-        print(f"Enviando {len(resultado)} activos disponibles")  # Log para debug
         return jsonify(resultado)
 
     except Exception as e:

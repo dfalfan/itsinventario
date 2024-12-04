@@ -87,6 +87,11 @@ function EmployeesView() {
     setSelectedEmployeeForAssign(null);
   };
 
+  const handleEmployeeAdded = (newEmployee) => {
+    setData(prevData => [...prevData, newEmployee]);
+    setShowNewEmployeeModal(false);
+  };
+
   const columns = [
     {
       header: 'Sede',
@@ -374,6 +379,7 @@ function EmployeesView() {
       {showNewEmployeeModal && (
         <NewEmployeeModal 
           onClose={() => setShowNewEmployeeModal(false)}
+          onEmployeeAdded={handleEmployeeAdded}
         />
       )}
       

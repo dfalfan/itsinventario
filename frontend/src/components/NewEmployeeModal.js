@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaLaptop, FaIdCard, FaUser, FaBuilding, FaSitemap, FaPhone, FaEnvelope, FaBriefcase, FaUsers, FaLayerGroup } from 'react-icons/fa';
+import AssignEquipmentModal from './AssignEquipmentModal';
 import './NewEmployeeModal.css';
 
 // Agregar esta función de utilidad al inicio del componente
@@ -15,7 +16,7 @@ const removeDuplicates = (array, key) => {
   });
 };
 
-function NewEmployeeModal({ onClose }) {
+function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   const [formData, setFormData] = useState({
     ficha: '',
     nombres: '',
@@ -28,6 +29,9 @@ function NewEmployeeModal({ onClose }) {
     extension: '',
     correo: ''
   });
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [savedEmployee, setSavedEmployee] = useState(null);
+  const [error, setError] = useState(null);
 
   const [options, setOptions] = useState({
     sedes: [],
@@ -128,14 +132,45 @@ function NewEmployeeModal({ onClose }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Datos del formulario:', formData);
+    try {
+      const response = await fetch('http://localhost:5000/api/empleados', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          nombre_completo: `${formData.nombres} ${formData.apellidos}`.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar empleado');
+      }
+
+      const savedData = await response.json();
+      setSavedEmployee(savedData);
+      setShowAssignModal(true);
+      if (onEmployeeAdded) onEmployeeAdded(savedData);
+    } catch (error) {
+      console.error('Error:', error);
+      setError(error.message);
+    }
+  };
+
+  const handleAssignSuccess = () => {
+    setShowAssignModal(false);
+    onClose();
   };
 
   const handleAssignEquipment = () => {
-    console.log('Abrir modal para asignar equipo');
-    // Aquí iría la lógica para abrir el modal de asignación de equipo
+    if (savedEmployee) {
+      setShowAssignModal(true);
+    } else {
+      setError("Por favor, guarde el empleado antes de asignar un equipo.");
+    }
   };
 
   return (
@@ -329,14 +364,6 @@ function NewEmployeeModal({ onClose }) {
           </div>
 
           <div className="form-actions">
-            <button 
-              type="button" 
-              className="assign-equipment-button"
-              onClick={handleAssignEquipment}
-            >
-              <FaLaptop className="button-icon" />
-              Asignar Equipo
-            </button>
             <div className="main-actions">
               <button type="button" className="cancel-button" onClick={onClose}>
                 Cancelar
@@ -347,6 +374,14 @@ function NewEmployeeModal({ onClose }) {
             </div>
           </div>
         </form>
+
+        {showAssignModal && savedEmployee && (
+          <AssignEquipmentModal
+            employee={savedEmployee}
+            onClose={() => setShowAssignModal(false)}
+            onAssign={handleAssignSuccess}
+          />
+        )}
       </div>
     </div>
   );

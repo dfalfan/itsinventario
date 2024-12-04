@@ -80,7 +80,7 @@ function AssignEquipmentModal({ employee, onClose, onAssign }) {
         {!loading && !error && (
           <>
             <div className="assets-list">
-              {!assets || assets.length === 0 ? (
+              {assets.length === 0 ? (
                 <p>No hay equipos disponibles</p>
               ) : (
                 <table>
