@@ -14,7 +14,7 @@ function AssignEquipmentModal({ employee, onClose, onAssign }) {
         setLoading(true);
         console.log('Iniciando fetch de activos disponibles');
         
-        const response = await fetch('http://localhost:5000/api/activos/disponibles');
+        const response = await fetch('http://192.168.141.50:5000/api/activos/disponibles');
         console.log('Response status:', response.status);
         
         if (!response.ok) {
@@ -46,7 +46,7 @@ function AssignEquipmentModal({ employee, onClose, onAssign }) {
     }
     
     try {
-      const response = await fetch(`http://localhost:5000/api/activos/${selectedAsset.id}/asignar`, {
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/${selectedAsset.id}/asignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

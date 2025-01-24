@@ -44,8 +44,8 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   // Cargar sedes y gerencias al montar el componente
   useEffect(() => {
     Promise.all([
-      fetch('http://localhost:5000/api/sedes').then(res => res.json()),
-      fetch('http://localhost:5000/api/gerencias').then(res => res.json())
+      fetch('http://192.168.141.50:5000/api/sedes').then(res => res.json()),
+      fetch('http://192.168.141.50:5000/api/gerencias').then(res => res.json())
     ])
       .then(([sedesData, gerenciasData]) => {
         setOptions(prev => ({
@@ -60,7 +60,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   // Cargar departamentos cuando cambia la gerencia
   useEffect(() => {
     if (formData.gerencia_id) {
-      fetch(`http://localhost:5000/api/departamentos/${formData.gerencia_id}`)
+      fetch(`http://192.168.141.50:5000/api/departamentos/${formData.gerencia_id}`)
         .then(res => {
           if (!res.ok) {
             throw new Error('Error al cargar departamentos');
@@ -92,7 +92,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   // Cargar áreas cuando cambia el departamento
   useEffect(() => {
     if (formData.departamento_id) {
-      fetch(`http://localhost:5000/api/areas/${formData.departamento_id}`)
+      fetch(`http://192.168.141.50:5000/api/areas/${formData.departamento_id}`)
         .then(res => res.json())
         .then(data => {
           const uniqueAreas = removeDuplicates(data, 'nombre');
@@ -110,7 +110,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   // Cargar cargos cuando cambia el área
   useEffect(() => {
     if (formData.area_id) {
-      fetch(`http://localhost:5000/api/cargos/${formData.area_id}`)
+      fetch(`http://192.168.141.50:5000/api/cargos/${formData.area_id}`)
         .then(res => res.json())
         .then(data => {
           const uniqueCargos = removeDuplicates(data, 'nombre');
@@ -135,7 +135,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/empleados', {
+      const response = await fetch('http://192.168.141.50:5000/api/empleados', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

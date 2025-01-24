@@ -12,7 +12,7 @@ function DeleteAssetModal({ asset, onClose, onDelete, onSuccess }) {
 
     try {
       // Desasignar el activo del empleado
-      const unassignResponse = await fetch(`http://localhost:5000/api/activos/${asset.id}/desasignar`, {
+      const unassignResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desasignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

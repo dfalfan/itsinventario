@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 function UnassignAssetModal({ asset, onClose, onUnassign }) {
   const handleUnassign = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/activos/${asset.id}/desasignar`, {
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desasignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

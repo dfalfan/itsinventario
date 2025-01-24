@@ -11,7 +11,7 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
   useEffect(() => {
     const fetchEmployeesWithoutEquipment = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/empleados/sin-equipo');
+        const response = await fetch('http://192.168.141.50:5000/api/empleados/sin-equipo');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -40,7 +40,7 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
     }
     
     try {
-      const response = await fetch(`http://localhost:5000/api/activos/${asset.id}/asignar`, {
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/asignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

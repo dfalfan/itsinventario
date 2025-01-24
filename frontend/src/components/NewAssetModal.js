@@ -25,25 +25,25 @@ function NewAssetModal({ onClose, onAssetAdded }) {
 
   useEffect(() => {
     // Cargar sedes
-    fetch('http://localhost:5000/api/sedes')
+    fetch('http://192.168.141.50:5000/api/sedes')
       .then(res => res.json())
       .then(data => setSedes(data))
       .catch(err => setError('Error al cargar sedes'));
 
     // Cargar marcas
-    fetch('http://localhost:5000/api/marcas')
+    fetch('http://192.168.141.50:5000/api/marcas')
       .then(res => res.json())
       .then(data => setMarcas(data))
       .catch(err => setError('Error al cargar marcas'));
 
     // Cargar tipos de RAM
-    fetch('http://localhost:5000/api/rams')
+    fetch('http://192.168.141.50:5000/api/rams')
       .then(res => res.json())
       .then(data => setRams(data))
       .catch(err => setError('Error al cargar tipos de RAM'));
 
     // Cargar tipos de disco
-    fetch('http://localhost:5000/api/discos')
+    fetch('http://192.168.141.50:5000/api/discos')
       .then(res => res.json())
       .then(data => setDiscos(data))
       .catch(err => setError('Error al cargar tipos de disco'));
@@ -52,7 +52,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/activos', {
+      const response = await fetch('http://192.168.141.50:5000/api/activos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

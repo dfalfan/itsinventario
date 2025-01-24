@@ -113,7 +113,7 @@ function AssetsView() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/activos');
+      const response = await fetch('http://192.168.141.50:5000/api/activos');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -133,7 +133,7 @@ function AssetsView() {
 
   const fetchSedes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/sedes');
+      const response = await fetch('http://192.168.141.50:5000/api/sedes');
       if (!response.ok) {
         throw new Error('Error al cargar sedes');
       }
@@ -161,7 +161,7 @@ function AssetsView() {
         setLoadingOptions(prev => ({ ...prev, [key]: true }));
         setOptionsError(prev => ({ ...prev, [key]: null }));
 
-        const response = await fetch(`http://localhost:5000${endpoint}`);
+        const response = await fetch(`http://192.168.141.50:5000${endpoint}`);
         if (!response.ok) throw new Error(`Error al cargar ${key}`);
         
         const data = await response.json();
@@ -194,7 +194,7 @@ function AssetsView() {
   const handleSaveEdit = async (assetId, field, value) => {
     try {
       console.log('Saving edit:', { assetId, field, value }); // Para debugging
-      const response = await fetch(`http://localhost:5000/api/activos/${assetId}`, {
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/${assetId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -512,7 +512,7 @@ function AssetsView() {
 
   const handleDeleteConfirm = async (assetId, newState) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/activos/${assetId}/estado`, {
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/${assetId}/estado`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -25,15 +25,7 @@ function Navbar() {
           <FaChartBar className="navbar-icon" />
           <span>Dashboard</span>
         </NavLink>
-        <NavLink 
-          to="/activos" 
-          className={({ isActive }) => 
-            `navbar-item ${isActive ? 'active' : ''}`
-          }
-        >
-          <FaLaptop className="navbar-icon" />
-          <span>Activos</span>
-        </NavLink>
+        
         <NavLink 
           to="/empleados" 
           className={({ isActive }) => 
@@ -42,6 +34,15 @@ function Navbar() {
         >
           <FaUsers className="navbar-icon" />
           <span>Empleados</span>
+        </NavLink>
+        <NavLink 
+          to="/activos" 
+          className={({ isActive }) => 
+            `navbar-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <FaLaptop className="navbar-icon" />
+          <span>Activos</span>
         </NavLink>
       </div>
 

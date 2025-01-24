@@ -39,7 +39,7 @@ function DashboardView() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/dashboard/stats');
+        const response = await fetch('http://192.168.141.50:5000/api/dashboard/stats');
         if (!response.ok) throw new Error('Error al cargar estadísticas');
         const data = await response.json();
         setStats(data);

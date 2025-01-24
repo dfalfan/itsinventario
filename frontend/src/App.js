@@ -57,7 +57,7 @@ function EmployeesView() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/empleados');
+      const response = await fetch('http://192.168.141.50:5000/api/empleados');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
