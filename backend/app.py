@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 CORS(app)
@@ -55,11 +56,11 @@ class Empleado(db.Model):
     extension = db.Column(db.String(10), nullable=True)
     correo = db.Column(db.String(200), nullable=True)
 
-    sede = db.relationship('Sede')
-    gerencia = db.relationship('Gerencia')
-    departamento = db.relationship('Departamento')
-    area = db.relationship('Area')
-    cargo = db.relationship('Cargo')
+    sede = db.relationship('Sede', lazy='joined')
+    gerencia = db.relationship('Gerencia', lazy='joined')
+    departamento = db.relationship('Departamento', lazy='joined')
+    area = db.relationship('Area', lazy='joined')
+    cargo = db.relationship('Cargo', lazy='joined')
 
 class Asset(db.Model):
     __tablename__ = 'assets'
@@ -82,11 +83,13 @@ class Asset(db.Model):
 @app.route('/api/empleados')
 def get_empleados():
     try:
-        empleados = db.session.query(
-            Empleado, Asset
-        ).outerjoin(
-            Asset, Empleado.id == Asset.empleado_id
-        ).all()
+        empleados = Empleado.query.options(
+            joinedload(Empleado.sede),
+            joinedload(Empleado.gerencia),
+            joinedload(Empleado.departamento),
+            joinedload(Empleado.area),
+            joinedload(Empleado.cargo)
+        ).outerjoin(Asset).all()
         
         return jsonify([{
             'id': emp.id,
@@ -117,7 +120,7 @@ def get_sedes():
         } for sede in sedes])
     except Exception as e:
         print(f"Error en get_sedes: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': 'Error obteniendo sedes'}), 500
 
 @app.route('/api/gerencias')
 def get_gerencias():
@@ -130,7 +133,7 @@ def get_gerencias():
         } for gerencia in gerencias])
     except Exception as e:
         print(f"Error en get_gerencias: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departamentos/<int:gerencia_id>')
 def get_departamentos(gerencia_id):
@@ -147,7 +150,7 @@ def get_departamentos(gerencia_id):
         } for dep in departamentos])
     except Exception as e:
         print(f"Error en get_departamentos: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/areas/<int:departamento_id>')
 def get_areas(departamento_id):
@@ -164,7 +167,7 @@ def get_areas(departamento_id):
         } for area in areas])
     except Exception as e:
         print(f"Error en get_areas: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/cargos/<int:area_id>')
 def get_cargos(area_id):
@@ -181,7 +184,7 @@ def get_cargos(area_id):
         } for cargo in cargos])
     except Exception as e:
         print(f"Error en get_cargos: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos')
 def get_activos():
@@ -211,7 +214,7 @@ def get_activos():
         } for asset, empleado, sede in activos])
     except Exception as e:
         print(f"Error en get_activos: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard/stats')
 def get_dashboard_stats():
@@ -291,7 +294,7 @@ def get_empleados_sin_equipo():
         
     except Exception as e:
         print("Error en get_empleados_sin_equipo:", str(e))
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/<int:asset_id>/asignar', methods=['POST'])
 def asignar_activo(asset_id):
@@ -327,7 +330,7 @@ def asignar_activo(asset_id):
     except Exception as e:
         db.session.rollback()
         print("Error en asignar_activo:", str(e))
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/<int:asset_id>/desasignar', methods=['POST'])
 def desasignar_activo(asset_id):
@@ -354,7 +357,7 @@ def desasignar_activo(asset_id):
     except Exception as e:
         db.session.rollback()
         print("Error en desasignar_activo:", str(e))
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/disponibles', methods=['GET'])
 def get_activos_disponibles():
@@ -380,7 +383,7 @@ def get_activos_disponibles():
 
     except Exception as e:
         print("Error en get_activos_disponibles:", str(e))
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/<int:asset_id>', methods=['PATCH'])
 def update_asset(asset_id):
@@ -418,7 +421,7 @@ def get_tipos():
         return jsonify([tipo[0] for tipo in tipos if tipo[0]])
     except Exception as e:
         print(f"Error en get_tipos: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/marcas')
 def get_marcas():
@@ -427,7 +430,7 @@ def get_marcas():
         return jsonify([marca[0] for marca in marcas if marca[0]])
     except Exception as e:
         print(f"Error en get_marcas: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/rams')
 def get_rams():
@@ -436,7 +439,7 @@ def get_rams():
         return jsonify([ram[0] for ram in rams if ram[0]])
     except Exception as e:
         print(f"Error en get_rams: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/discos')
 def get_discos():
@@ -445,7 +448,7 @@ def get_discos():
         return jsonify([disco[0] for disco in discos if disco[0]])
     except Exception as e:
         print(f"Error en get_discos: {str(e)}")
-        return jsonify([])
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/<int:asset_id>/estado', methods=['PATCH'])
 def update_asset_state(asset_id):
@@ -492,12 +495,7 @@ def create_asset():
             if not data.get(field):
                 return jsonify({'error': f'El campo {field} es requerido'}), 400
 
-        # Obtener el último ID y sumar 1
-        last_asset = Asset.query.order_by(Asset.id.desc()).first()
-        next_id = (last_asset.id + 1) if last_asset else 1
-
         new_asset = Asset(
-            id=next_id,  # Asignar el ID consecutivo
             sede_id=data['sede_id'],
             tipo=data['tipo'],
             nombre_equipo=data.get('nombre_equipo', ''),  # Ahora es opcional

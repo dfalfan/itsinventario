@@ -463,6 +463,8 @@ function AssetsView() {
       columnVisibility,
       pagination,
     },
+    enableRowVirtualization: true,
+    rowVirtualizerOptions: { overscan: 10 },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,

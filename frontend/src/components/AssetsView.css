@@ -254,3 +254,14 @@ th.sortable span {
   margin-left: 5px;
 }
 
+.table-container {
+  max-width: 100%;
+  margin: 20px auto;
+  height: calc(100vh - 200px); /* Altura dinámica */
+  overflow: auto;
+}
+
+table {
+  min-width: 1200px; /* Ancho mínimo para evitar compresión */
+}
+
