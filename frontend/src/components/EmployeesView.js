@@ -3,6 +3,7 @@ import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
+import AssetModal from './AssetModal';
 import './EmployeesView.css';
 
 function EmployeesView() {
@@ -11,6 +12,8 @@ function EmployeesView() {
   const [error, setError] = useState(null);
   const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [showAssetModal, setShowAssetModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
     nombre: true,
@@ -58,6 +61,19 @@ function EmployeesView() {
       {
         header: 'Equipo Asignado',
         accessorKey: 'equipo_asignado',
+        cell: ({ getValue }) => {
+          const equipo = getValue();
+          if (!equipo) return <span className="no-equipment">Sin equipo asignado</span>;
+          
+          return (
+            <span 
+              className="equipment-type"
+              onClick={() => handleViewEquipment(equipo)}
+            >
+              {equipo}
+            </span>
+          );
+        }
       },
       {
         header: 'Acciones',
@@ -130,6 +146,26 @@ function EmployeesView() {
     setShowNewEmployeeModal(false);
   };
 
+  const handleViewEquipment = async (equipoAsignado) => {
+    try {
+      console.log('Equipo asignado (ID):', equipoAsignado);
+      
+      const response = await fetch(`http://192.168.141.50:5000/api/activos/buscar?nombre=${encodeURIComponent(equipoAsignado)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al obtener detalles del equipo');
+      }
+      
+      const asset = await response.json();
+      console.log('Asset encontrado:', asset);
+      setSelectedAsset(asset);
+      setShowAssetModal(true);
+    } catch (error) {
+      console.error('Error completo:', error);
+    }
+  };
+
   return (
     <div className="employees-view">
       <div className="header">
@@ -165,6 +201,16 @@ function EmployeesView() {
         <NewEmployeeModal
           onClose={() => setShowNewEmployeeModal(false)}
           onEmployeeAdded={handleEmployeeAdded}
+        />
+      )}
+
+      {showAssetModal && selectedAsset && (
+        <AssetModal
+          asset={selectedAsset}
+          onClose={() => {
+            setShowAssetModal(false);
+            setSelectedAsset(null);
+          }}
         />
       )}
     </div>

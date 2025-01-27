@@ -5,9 +5,23 @@
 }
 
 .App {
-  padding: 15px 2.5%;
+  padding: 0;
   max-width: 100%;
   margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 2.5%;
+  margin: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
 }
 
 .loading,
@@ -26,9 +40,12 @@
 }
 
 .table-container {
-  margin: 20px auto;
+  margin: 16px auto;
   width: 95%;
   overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 table {
@@ -139,13 +156,14 @@ table td:nth-child(7) {
 
 .header-container {
   padding: 0 2.5%;
-  margin-bottom: 15px;
+  margin: 16px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .settings-button {
+  margin-top: -35px !important;
   background: #6c757d;
   border: none;
   color: white;
@@ -227,14 +245,15 @@ table td:nth-child(7) {
   background: #28a745;
   border: none;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px 16px;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  height: 36px;
 }
 
 .add-button:hover {

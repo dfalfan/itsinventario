@@ -531,5 +531,58 @@ def create_asset():
         print("Error en create_asset:", str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/activos/buscar')
+def buscar_activo():
+    try:
+        tipo = request.args.get('tipo')
+        nombre = request.args.get('nombre')
+        
+        print(f"Buscando activo - ID: {nombre}")
+        
+        if not nombre:
+            return jsonify({'error': 'El ID del equipo es requerido'}), 400
+            
+        # Intentar convertir el nombre a ID
+        try:
+            asset_id = int(nombre)
+        except ValueError:
+            return jsonify({'error': 'ID de activo inválido'}), 400
+            
+        # Buscar por ID
+        asset = Asset.query.get(asset_id)
+        
+        print(f"Resultado de la búsqueda: {asset}")
+        
+        if not asset:
+            return jsonify({'error': f'No se encontró activo con ID {asset_id}'}), 404
+            
+        # Obtener el empleado si está asignado
+        empleado = Empleado.query.get(asset.empleado_id) if asset.empleado_id else None
+        # Obtener la sede
+        sede = Sede.query.get(asset.sede_id)
+        
+        resultado = {
+            'id': asset.id,
+            'tipo': asset.tipo,
+            'nombre_equipo': asset.nombre_equipo,
+            'marca': asset.marca,
+            'modelo': asset.modelo,
+            'serial': asset.serial,
+            'ram': asset.ram,
+            'disco': asset.disco,
+            'estado': asset.estado,
+            'activo_fijo': asset.activo_fijo,
+            'notas': asset.notas,
+            'sede': sede.nombre if sede else None,
+            'empleado': empleado.nombre_completo if empleado else None
+        }
+        
+        print(f"Enviando respuesta: {resultado}")
+        return jsonify(resultado)
+        
+    except Exception as e:
+        print(f"Error en buscar_activo: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

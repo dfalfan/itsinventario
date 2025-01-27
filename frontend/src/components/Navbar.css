@@ -2,13 +2,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
+    padding: 0 2.5%;
     background-color: #ffffff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
-    height: 70px;
+    height: 64px;
+    margin: 0;
+    width: 100%;
 }
 
 .navbar-brand {
@@ -17,18 +19,16 @@
 }
 
 .navbar-logo {
-    height: 45px;
+    height: 40px;
     width: auto;
     object-fit: contain;
-    max-width: 160px;
 }
 
 .navbar-menu {
     display: flex;
-    gap: 1rem;
+    gap: 0;
     align-items: center;
     height: 100%;
-    position: relative;
 }
 
 .navbar-item {

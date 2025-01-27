@@ -210,110 +210,110 @@ const TableView = ({
   );
 
   return (
-    <div className="table-container">
-      <div className="table-controls">
-        <div className="search-container">
-          <input
-            type="text"
-            value={globalFilter ?? ''}
-            onChange={e => setGlobalFilter(e.target.value)}
-            placeholder="Buscar..."
-            className="search-input"
-          />
-        </div>
+      <div className="table-container">
+        <div className="table-controls">
+          <div className="search-container">
+            <input
+              type="text"
+              value={globalFilter ?? ''}
+              onChange={e => setGlobalFilter(e.target.value)}
+              placeholder="Buscar..."
+              className="search-input"
+            />
+          </div>
         <button
           className="settings-button"
           onClick={() => setShowColumnSettings(!showColumnSettings)}
         >
           <FaCog />
         </button>
-      </div>
+        </div>
 
-      {loading ? (
-        <div className="loading">Cargando...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                {table.getHeaderGroups().map(headerGroup => (
-                  <tr key={headerGroup.id}>
-                    <SortableContext
-                      items={columnOrder}
-                      strategy={horizontalListSortingStrategy}
-                    >
-                      {headerGroup.headers.map(header => (
-                        <DraggableHeader
-                          key={header.id}
-                          header={header}
-                          table={table}
-                        />
+        {loading ? (
+          <div className="loading">Cargando...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <tr key={headerGroup.id}>
+                      <SortableContext
+                        items={columnOrder}
+                        strategy={horizontalListSortingStrategy}
+                      >
+                        {headerGroup.headers.map(header => (
+                          <DraggableHeader
+                            key={header.id}
+                            header={header}
+                            table={table}
+                          />
+                        ))}
+                      </SortableContext>
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map(row => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
                       ))}
-                    </SortableContext>
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map(row => (
-                  <tr key={row.id}>
-                    {row.getVisibleCells().map(cell => (
-                      <td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </DndContext>
-      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DndContext>
+        )}
 
-      <div className="pagination">
-        <button
-          onClick={() => table.setPageIndex(0)}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {'<<'}
-        </button>
-        <button
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {'<'}
-        </button>
-        <span>
-          Página{' '}
-          <strong>
-            {table.getState().pagination.pageIndex + 1} de{' '}
-            {table.getPageCount()}
-          </strong>
-        </span>
-        <button
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>'}
-        </button>
-        <button
-          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>>'}
-        </button>
+        <div className="pagination">
+          <button
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<<'}
+          </button>
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<'}
+          </button>
+          <span>
+            Página{' '}
+            <strong>
+              {table.getState().pagination.pageIndex + 1} de{' '}
+              {table.getPageCount()}
+            </strong>
+          </span>
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>'}
+          </button>
+          <button
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>>'}
+          </button>
+        </div>
+
+        <ColumnVisibilityControls />
       </div>
-
-      <ColumnVisibilityControls />
-    </div>
   );
 };
 
