@@ -344,3 +344,39 @@ table {
   min-width: 100%;
 }
 
+.employee-type {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.employee-type:hover {
+  background-color: #bbdefb;
+  transform: translateY(-1px);
+}
+
+.employee-icon {
+  font-size: 1em;
+  color: #1565c0;
+  margin-right: 6px;
+}
+
+.employee-name {
+  font-weight: 500;
+  font-size: 0.95em;
+  color: #1565c0;
+}
+
+.no-employee {
+  color: #757575;
+  font-style: italic;
+  font-size: 0.9em;
+}
+

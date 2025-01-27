@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
 import DeleteAssetModal from './DeleteAssetModal';
 import NewAssetModal from './NewAssetModal';
 import AssetModal from './AssetModal';
+import EmployeeModal from './EmployeeModal';
 import './AssetsView.css';
 
 function AssetsView() {
@@ -19,6 +20,8 @@ function AssetsView() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNewAssetModal, setShowNewAssetModal] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
     tipo: true,
@@ -79,6 +82,23 @@ function AssetsView() {
       {
         header: 'Empleado',
         accessorKey: 'empleado',
+        cell: ({ row }) => {
+          const empleado = row.original.empleado;
+          const empleadoId = row.original.empleado_id;
+          
+          if (!empleado) return <span className="no-employee">Sin asignar</span>;
+          
+          return (
+            <span 
+              className="employee-type"
+              onClick={() => handleViewEmployee(empleadoId)}
+              title={empleado}
+            >
+              <FaUser className="employee-icon" />
+              <span className="employee-name">{empleado}</span>
+            </span>
+          );
+        }
       },
       {
         header: 'Acciones',
@@ -180,6 +200,22 @@ function AssetsView() {
     setShowNewAssetModal(false);
   };
 
+  const handleViewEmployee = async (empleadoId) => {
+    try {
+      const response = await fetch(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener detalles del empleado');
+      }
+      
+      const empleado = await response.json();
+      setSelectedEmployee(empleado);
+      setShowEmployeeModal(true);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   return (
     <div className="assets-view">
       <div className="header">
@@ -243,6 +279,16 @@ function AssetsView() {
             setSelectedAsset(null);
           }}
           onUpdate={fetchData}
+        />
+      )}
+
+      {showEmployeeModal && selectedEmployee && (
+        <EmployeeModal
+          employee={selectedEmployee}
+          onClose={() => {
+            setShowEmployeeModal(false);
+            setSelectedEmployee(null);
+          }}
         />
       )}
     </div>

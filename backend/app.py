@@ -201,6 +201,7 @@ def get_activos():
             'tipo': asset.tipo,
             'estado': asset.estado,
             'empleado': empleado.nombre_completo if empleado else '',
+            'empleado_id': empleado.id if empleado else None,
             'nombre_equipo': asset.nombre_equipo,
             'marca': asset.marca,
             'modelo': asset.modelo,
@@ -588,6 +589,32 @@ def buscar_activo():
         
     except Exception as e:
         print(f"Error en buscar_activo: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empleados/<int:empleado_id>')
+def get_empleado(empleado_id):
+    try:
+        empleado = Empleado.query.get(empleado_id)
+        
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+            
+        return jsonify({
+            'id': empleado.id,
+            'nombre': empleado.nombre_completo,
+            'ficha': empleado.ficha,
+            'extension': empleado.extension,
+            'correo': empleado.correo,
+            'sede': empleado.sede.nombre if empleado.sede else None,
+            'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
+            'departamento': empleado.departamento.nombre if empleado.departamento else None,
+            'area': empleado.area.nombre if empleado.area else None,
+            'cargo': empleado.cargo.nombre if empleado.cargo else None,
+            'equipo_asignado': empleado.equipo_asignado
+        })
+        
+    except Exception as e:
+        print(f"Error en get_empleado: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
