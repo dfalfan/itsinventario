@@ -1,13 +1,41 @@
 .app-container {
   min-height: 100vh;
   background-color: #f8f9fa;
-  font-size: 14px;
 }
 
 .App {
   padding: 0;
   max-width: 100%;
   margin: 0 auto;
+}
+
+/* Variables globales */
+:root {
+  --primary: #1976d2;
+  --success: #28a745;
+  --danger: #dc3545;
+  --warning: #ffc107;
+  --info: #17a2b8;
+  --light: #f8f9fa;
+  --dark: #343a40;
+  --border-color: #dee2e6;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos básicos para mensajes de error/carga globales */
+.loading,
+.error {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.2em;
+}
+
+.error {
+  color: var(--danger);
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin: 20px 0;
 }
 
 .header {
@@ -22,21 +50,6 @@ h1 {
   margin: 0;
   font-size: 24px;
   font-weight: 500;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 20px;
-  font-size: 1.2em;
-}
-
-.error {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  margin: 20px 0;
 }
 
 .table-container {
@@ -87,10 +100,6 @@ tr:hover {
   td {
     padding: 8px;
   }
-}
-
-.search-container {
-  margin-bottom: 20px;
 }
 
 .search-input {
@@ -160,21 +169,6 @@ table td:nth-child(7) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.settings-button {
-  margin-top: -35px !important;
-  background: #6c757d;
-  border: none;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .settings-button:hover {
