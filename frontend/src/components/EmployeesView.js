@@ -150,7 +150,7 @@ function EmployeesView() {
         columnVisibility={columnVisibility}
         setColumnVisibility={setColumnVisibility}
         onFetchData={fetchData}
-        defaultPageSize={10}
+        defaultPageSize={30}
       />
 
       {selectedEmployee && (

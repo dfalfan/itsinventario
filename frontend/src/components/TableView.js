@@ -7,22 +7,70 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { FaCog } from 'react-icons/fa';
+import { FaCog, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { 
   DndContext, 
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors 
+  useSensors
 } from '@dnd-kit/core';
 import { 
   arrayMove,
   SortableContext,
-  horizontalListSortingStrategy 
+  horizontalListSortingStrategy,
+  useSortable
 } from '@dnd-kit/sortable';
-import { SortableTableHeader } from './SortableTableHeader';
 import './TableView.css';
+
+const DraggableHeader = ({ header, table }) => {
+  const isSortable = header.column.getCanSort();
+  const sorted = header.column.getIsSorted();
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: header.id,
+  });
+
+  const style = {
+    transform: transform ? `translateX(${transform.x}px)` : undefined,
+    transition,
+  };
+
+  const handleClick = (e) => {
+    // Si el click fue en el ícono de ordenamiento o en el texto, permitir el ordenamiento
+    if (!e.target.closest('.drag-handle')) {
+      header.column.getToggleSortingHandler()?.(e);
+    }
+  };
+
+  return (
+    <th 
+      ref={setNodeRef}
+      style={style}
+      className={isSortable ? 'sortable' : ''}
+    >
+      <div className="header-content">
+        <div 
+          className="drag-handle" 
+          {...attributes} 
+          {...listeners}
+        >
+          ⋮⋮
+        </div>
+        <div onClick={handleClick} style={{ cursor: 'pointer', flex: 1 }}>
+          {flexRender(header.column.columnDef.header, header.getContext())}
+          {isSortable && (
+            <span className="sort-indicator">
+              {sorted === false && <FaSort />}
+              {sorted === 'asc' && <FaSortUp />}
+              {sorted === 'desc' && <FaSortDown />}
+            </span>
+          )}
+        </div>
+      </div>
+    </th>
+  );
+};
 
 const TableView = ({
   data,
@@ -33,7 +81,7 @@ const TableView = ({
   setColumnVisibility,
   onFetchData,
   defaultSorting = [],
-  defaultPageSize = 10
+  defaultPageSize = 30
 }) => {
   const [sorting, setSorting] = useState(defaultSorting);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -71,6 +119,7 @@ const TableView = ({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    enableSorting: true,
   });
 
   const handleDragEnd = (event) => {
@@ -156,7 +205,7 @@ const TableView = ({
                       strategy={horizontalListSortingStrategy}
                     >
                       {headerGroup.headers.map(header => (
-                        <SortableTableHeader
+                        <DraggableHeader
                           key={header.id}
                           header={header}
                           table={table}

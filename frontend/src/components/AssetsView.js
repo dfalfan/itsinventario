@@ -200,7 +200,7 @@ function AssetsView() {
         columnVisibility={columnVisibility}
         setColumnVisibility={setColumnVisibility}
         onFetchData={fetchData}
-        defaultPageSize={100}
+        defaultPageSize={30}
         defaultSorting={[{ id: 'id', desc: true }]}
       />
 

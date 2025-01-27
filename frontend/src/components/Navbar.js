@@ -1,49 +1,41 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FaUser, FaChartBar, FaUsers, FaLaptop } from 'react-icons/fa';
-import logoSura from './logo sura color.png';
+import logo from './logo sura color.png';
 import './Navbar.css';
 
 function Navbar() {
+  const location = useLocation();
+
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <img 
-          src={logoSura}
-          alt="Sura Logo" 
-          className="navbar-logo"
-        />
+        <img src={logo} alt="Logo SURA" className="navbar-logo" />
       </div>
       
       <div className="navbar-menu">
-        <NavLink 
-          to="/dashboard" 
-          className={({ isActive }) => 
-            `navbar-item ${isActive ? 'active' : ''}`
-          }
+        <Link 
+          to="/" 
+          className={`navbar-item ${location.pathname === '/' ? 'active' : ''}`}
         >
           <FaChartBar className="navbar-icon" />
           <span>Dashboard</span>
-        </NavLink>
+        </Link>
         
-        <NavLink 
+        <Link 
           to="/empleados" 
-          className={({ isActive }) => 
-            `navbar-item ${isActive ? 'active' : ''}`
-          }
+          className={`navbar-item ${location.pathname === '/empleados' ? 'active' : ''}`}
         >
           <FaUsers className="navbar-icon" />
           <span>Empleados</span>
-        </NavLink>
-        <NavLink 
+        </Link>
+        <Link 
           to="/activos" 
-          className={({ isActive }) => 
-            `navbar-item ${isActive ? 'active' : ''}`
-          }
+          className={`navbar-item ${location.pathname === '/activos' ? 'active' : ''}`}
         >
           <FaLaptop className="navbar-icon" />
           <span>Activos</span>
-        </NavLink>
+        </Link>
       </div>
 
       <div className="navbar-user">
