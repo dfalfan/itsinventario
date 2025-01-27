@@ -5,4 +5,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
 
-CMD ["python", "app.py"]
+# Cambiar el comando para usar modo debug
+ENV FLASK_DEBUG=1
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
