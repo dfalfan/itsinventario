@@ -1,266 +1,270 @@
 .app-container {
-    min-height: 100vh;
-    background-color: #f8f9fa;
-    font-size: 14px;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  font-size: 14px;
 }
 
 .App {
-    padding: 15px;
-    max-width: 1200px;
-    margin: 0 auto;
+  padding: 15px 2.5%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
-.loading, .error {
-    text-align: center;
-    padding: 20px;
-    font-size: 1.2em;
+.loading,
+.error {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.2em;
 }
 
 .error {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    margin: 20px 0;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin: 20px 0;
 }
 
 .table-container {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 th,
 td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
 }
 
 th {
-    background-color: #f8f9fa;
-    font-weight: 600;
+  background-color: #f8f9fa;
+  font-weight: 600;
 }
 
 th.sortable {
-    cursor: pointer;
-    user-select: none;
+  cursor: pointer;
+  user-select: none;
 }
 
 th.sortable:hover {
-    background-color: #e9ecef;
+  background-color: #e9ecef;
 }
 
 tr:hover {
-    background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 @media (max-width: 768px) {
-    th,
-    td {
-        padding: 8px;
-    }
+  th,
+  td {
+    padding: 8px;
+  }
 }
 
 .search-container {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .search-input {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    transition: border-color 0.3s ease;
+  margin-left: 2.5%;
+  width: 95%;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  transition: border-color 0.3s ease;
 }
 
 .search-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 5px rgba(19, 39, 82, 0.2);
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 5px rgba(19, 39, 82, 0.2);
 }
 
 .search-input::placeholder {
-    color: #999;
+  color: #999;
 }
 
 .more-button {
-    background: none;
-    border: none;
-    font-size: 16px;
-    color: #666;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .more-button:hover {
-    background-color: #f0f0f0;
-    color: #333;
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 /* Ajustamos el ancho de las columnas específicas */
 table th:nth-child(8), /* Ext. */
 table td:nth-child(8) {
-    width: 80px;
-    min-width: 80px;
+  width: 80px;
+  min-width: 80px;
 }
 
 table th:last-child, /* Más */
 table td:last-child {
-    width: 120px;
-    min-width: 120px;
-    text-align: center;
+  width: 120px;
+  min-width: 120px;
+  text-align: center;
 }
 
 table th:nth-child(9), /* Correo */
 table td:nth-child(9) {
-    min-width: 200px;
+  min-width: 200px;
 }
 
 table th:nth-child(7), /* Equipo Asignado */
 table td:nth-child(7) {
-    min-width: 150px;
+  min-width: 150px;
 }
 
 .header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  padding: 0 2.5%;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .settings-button {
-    background: #6c757d;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  background: #6c757d;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .settings-button:hover {
-    background-color: #5a6268;
-    transform: translateY(-1px);
+  background-color: #5a6268;
+  transform: translateY(-1px);
 }
 
 .settings-icon {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
 .column-settings {
-    position: fixed;
-    top: 0;
-    right: -300px;
-    width: 300px;
-    height: 100vh;
-    background-color: white;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-    transition: right 0.3s ease;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease;
+  z-index: 1000;
 }
 
 .column-settings.show {
-    right: 0;
+  right: 0;
 }
 
 .column-settings-content {
-    padding: 20px;
-    overflow-y: auto;
-    height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .column-settings h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
 }
 
 .column-toggle {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
 }
 
 .column-toggle input {
-    margin-right: 10px;
+  margin-right: 10px;
 }
 
 /* Ajuste para el contenido cuando el panel está abierto */
 .App {
-    transition: margin-right 0.3s ease;
+  transition: margin-right 0.3s ease;
 }
 
 .App.shifted {
-    margin-right: 300px;
+  margin-right: 300px;
 }
 
 .header-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .add-button {
-    background: #28a745;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  background: #28a745;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .add-button:hover {
-    background-color: #218838;
-    transform: translateY(-1px);
+  background-color: #218838;
+  transform: translateY(-1px);
 }
 
 .add-icon {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
 .column-settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
 }
 
 .close-settings-button {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #666;
-    cursor: pointer;
-    padding: 4px 12px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .close-settings-button:hover {
-    background-color: #f0f0f0;
-    color: #333;
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .pagination {
@@ -329,23 +333,23 @@ table td:nth-child(7) {
 }
 
 .equipment-type {
-    background-color: #e3f2fd;
-    color: #1976d2;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: background-color 0.2s ease;
-    display: inline-block;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease;
+  display: inline-block;
 }
 
 .equipment-type:hover {
-    background-color: #bbdefb;
-    cursor: pointer;
+  background-color: #bbdefb;
+  cursor: pointer;
 }
 
 .no-equipment {
-    color: #757575;
-    font-style: italic;
+  color: #757575;
+  font-style: italic;
 }
 
 .estado-badge {
@@ -382,4 +386,8 @@ table td:nth-child(7) {
 
 .no-equipment.clickable:hover {
   background-color: #e3f2fd;
+}
+
+.app-container h1 {
+  margin: 20px 0;
 }
