@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaLaptop, FaDesktop } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
@@ -61,16 +61,26 @@ function EmployeesView() {
       {
         header: 'Equipo Asignado',
         accessorKey: 'equipo_asignado',
-        cell: ({ getValue }) => {
-          const equipo = getValue();
+        cell: ({ row }) => {
+          const equipo = row.original.equipo_asignado;
+          const tipo = row.original.asset_type;
+          const nombreEquipo = row.original.asset_name;
+          
           if (!equipo) return <span className="no-equipment">Sin equipo asignado</span>;
           
           return (
             <span 
               className="equipment-type"
               onClick={() => handleViewEquipment(equipo)}
+              title={nombreEquipo}
             >
-              {equipo}
+              {tipo?.toUpperCase() === 'LAPTOP' ? (
+                <FaLaptop className="equipment-icon" />
+              ) : tipo?.toUpperCase() === 'AIO' || tipo?.toUpperCase() === 'PC' ? (
+                <FaDesktop className="equipment-icon" />
+              ) : null}
+              <span className="equipment-id">{equipo}</span>
+              {nombreEquipo && <span className="equipment-name">({nombreEquipo})</span>}
             </span>
           );
         }

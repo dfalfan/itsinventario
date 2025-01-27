@@ -1,5 +1,5 @@
 .table-container {
-  padding: 46px;
+  padding: 24px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -8,9 +8,9 @@
 .table-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
-  height: 36px;
+  height: 32px;
 }
 
 .search-container {
@@ -24,10 +24,10 @@
 .search-input {
   width: 100%;
   height: 100%;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.2s ease;
 }
 
@@ -66,26 +66,63 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  margin-bottom: 0;
-  table-layout: fixed;
-  font-size: 13px;
-  background: white;
+  table-layout: auto;
+  font-size: 12px;
 }
 
 th, td {
-  padding: 8px 12px;
+  padding: 6px 8px;
   text-align: left;
   border-bottom: 1px solid #eee;
   white-space: nowrap;
+  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Ajustes específicos para columnas */
+th:nth-child(1), /* Sede */
+td:nth-child(1) {
+  width: 80px;
+  min-width: 80px;
+}
+
+th:nth-child(2), /* Nombre */
+td:nth-child(2) {
+  width: 180px;
+  min-width: 180px;
+}
+
+th:nth-child(3), /* Departamento */
+td:nth-child(3) {
+  width: 160px;
+  min-width: 160px;
+}
+
+th:nth-child(4), /* Cargo */
+td:nth-child(4) {
+  width: 160px;
+  min-width: 160px;
+}
+
+th:nth-child(5), /* Equipo Asignado */
+td:nth-child(5) {
+  width: 180px;
+  min-width: 180px;
+}
+
+th:last-child, /* Acciones */
+td:last-child {
+  width: 100px;
+  min-width: 100px;
+  text-align: center;
 }
 
 th {
   background-color: #f8f9fa;
   font-weight: 600;
   position: relative;
-  font-size: 13px;
+  font-size: 12px;
   border-bottom: 2px solid #eee;
 }
 
@@ -111,7 +148,7 @@ th.sortable:hover {
   cursor: move;
   color: #999;
   padding: 0 2px;
-  font-size: 14px;
+  font-size: 12px;
   user-select: none;
   display: flex;
   align-items: center;
@@ -150,18 +187,18 @@ tr:hover {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-top: 16px;
-  font-size: 13px;
+  margin-top: 12px;
+  font-size: 12px;
 }
 
 .pagination button {
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: 1px solid #ddd;
   background: white;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .pagination button:disabled {
@@ -183,7 +220,7 @@ tr:hover {
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
   transition: right 0.3s ease;
   z-index: 1000;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .column-settings.show {
@@ -242,12 +279,12 @@ tr:hover {
 }
 
 .action-button {
-  padding: 4px;
-  font-size: 12px;
+  padding: 3px;
+  font-size: 11px;
 }
 
 /* Ajustar el tamaño de los íconos */
 .action-button svg {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
 } 

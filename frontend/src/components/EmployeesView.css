@@ -77,4 +77,42 @@
 .delete-button:hover {
   border-color: #dc3545;
   background-color: rgba(220, 53, 69, 0.1);
+}
+
+.equipment-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 1em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.equipment-type:hover {
+  background-color: #bbdefb;
+  transform: translateY(-1px);
+}
+
+.equipment-icon {
+  font-size: 1.3em;
+  color: #1565c0;
+  margin-right: 10px;
+}
+
+.equipment-id {
+  font-weight: 500;
+  font-size: 1.1em;
+  padding-top: 2px;
+}
+
+.equipment-name {
+  color: #5c93d6;
+  margin-left: 8px;
+  font-size: 0.95em;
+  font-weight: normal;
 } 

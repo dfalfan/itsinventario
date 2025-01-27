@@ -84,6 +84,10 @@ class Asset(db.Model):
 def get_empleados():
     try:
         empleados = Empleado.query.all()
+        
+        # Obtener todos los assets en un solo query para evitar N+1
+        assets = {str(a.id): {'tipo': a.tipo, 'nombre': a.nombre_equipo} for a in Asset.query.all()}
+        
         return jsonify([{
             'id': e.id,
             'nombre': e.nombre_completo,
@@ -95,7 +99,9 @@ def get_empleados():
             'departamento': e.departamento.nombre if e.departamento else None,
             'area': e.area.nombre if e.area else None,
             'cargo': e.cargo.nombre if e.cargo else None,
-            'equipo_asignado': e.equipo_asignado
+            'equipo_asignado': e.equipo_asignado,
+            'asset_type': assets.get(e.equipo_asignado, {}).get('tipo'),
+            'asset_name': assets.get(e.equipo_asignado, {}).get('nombre')
         } for e in empleados])
     except Exception as e:
         print(f"Error: {str(e)}")
