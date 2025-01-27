@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -34,6 +34,7 @@ const DraggableHeader = ({ header, table }) => {
   const style = {
     transform: transform ? `translateX(${transform.x}px)` : undefined,
     transition,
+    width: header.column.getSize(),
   };
 
   const handleClick = (e) => {
@@ -91,9 +92,46 @@ const TableView = ({
     pageSize: defaultPageSize,
   });
 
-  const [columnOrder, setColumnOrder] = useState(
-    columns.map(column => column.id || column.accessorKey)
+  const [columnOrder, setColumnOrder] = useState(() => 
+    columns
+      .filter(col => col.id || col.accessorKey)
+      .map(column => column.id || column.accessorKey)
   );
+
+  // Calcular el ancho óptimo para cada columna
+  const columnSizing = useMemo(() => {
+    const sizing = {};
+    columns.forEach(column => {
+      const key = column.id || column.accessorKey;
+      if (!key) return;
+
+      try {
+        // Obtener el ancho del encabezado
+        const headerText = typeof column.header === 'string' ? 
+          column.header : 
+          column.header?.toString() || key;
+        // Agregar espacio extra para el ícono de ordenamiento y el drag handle
+        const headerWidth = (headerText.length * 7) + 45; // 7px por carácter + espacio para íconos
+
+        // Obtener el ancho máximo del contenido en la página actual
+        const contentWidth = data.reduce((max, row) => {
+          const value = row[key];
+          if (value == null) return max;
+          const text = value.toString();
+          const width = text.length * 7 + 16; // 7px por carácter + padding reducido
+          return Math.max(max, width);
+        }, 0);
+
+        // Usar el mayor entre el ancho del encabezado y el contenido
+        // El headerWidth se convierte en el mínimo absoluto
+        sizing[key] = Math.max(headerWidth, contentWidth);
+      } catch (error) {
+        console.warn(`Error calculando ancho para columna ${key}:`, error);
+        sizing[key] = 120; // ancho por defecto si hay error
+      }
+    });
+    return sizing;
+  }, [columns, data]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -109,6 +147,7 @@ const TableView = ({
       columnVisibility,
       pagination,
       columnOrder,
+      columnSizing,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
@@ -120,6 +159,11 @@ const TableView = ({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     enableSorting: true,
+    defaultColumn: {
+      minSize: 80,
+      maxSize: 800,
+      size: 120,
+    },
   });
 
   const handleDragEnd = (event) => {

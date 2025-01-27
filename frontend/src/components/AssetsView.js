@@ -166,7 +166,7 @@ function AssetsView() {
   const handleUnassignSuccess = () => {
     fetchData();
     setShowUnassignModal(false);
-    setSelectedAsset(null);
+      setSelectedAsset(null);
   };
 
   const handleDeleteSuccess = () => {
@@ -184,9 +184,9 @@ function AssetsView() {
     <div className="assets-view">
       <div className="header">
         <h2>Activos</h2>
-        <button
-          className="add-button"
-          onClick={() => setShowNewAssetModal(true)}
+          <button 
+            className="add-button"
+            onClick={() => setShowNewAssetModal(true)}
         >
           <FaPlus /> Nuevo Activo
         </button>
@@ -201,7 +201,7 @@ function AssetsView() {
         setColumnVisibility={setColumnVisibility}
         onFetchData={fetchData}
         defaultPageSize={30}
-        defaultSorting={[{ id: 'id', desc: true }]}
+        defaultSorting={[{ id: 'nombre_equipo', desc: false }]}
       />
 
       {showModal && (
@@ -229,7 +229,7 @@ function AssetsView() {
       )}
 
       {showNewAssetModal && (
-        <NewAssetModal
+        <NewAssetModal 
           onClose={() => setShowNewAssetModal(false)}
           onAssetAdded={handleAssetAdded}
         />
