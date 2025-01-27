@@ -255,13 +255,11 @@ th.sortable span {
 }
 
 .table-container {
-  max-width: 100%;
-  margin: 20px auto;
-  height: calc(100vh - 200px); /* Altura dinámica */
-  overflow: auto;
+  margin: 20px 0;
 }
 
 table {
-  min-width: 1200px; /* Ancho mínimo para evitar compresión */
+  min-width: 100%; /* Usar ancho completo del contenedor */
+  width: max-content; /* Ajustar al contenido */
 }
 
