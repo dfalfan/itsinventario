@@ -26,7 +26,9 @@
 }
 
 .table-container {
-  margin-top: 20px;
+  margin: 20px auto;
+  width: 95%;
+  overflow-x: auto;
 }
 
 table {
@@ -38,14 +40,16 @@ table {
 
 th,
 td {
-  padding: 8px 12px;
+  padding: 12px;
   text-align: left;
   border-bottom: 1px solid #ddd;
+  white-space: nowrap;
 }
 
 th {
   background-color: #f8f9fa;
   font-weight: 600;
+  position: relative;
 }
 
 th.sortable {
@@ -390,4 +394,56 @@ table td:nth-child(7) {
 
 .app-container h1 {
   margin: 20px 0;
+}
+
+.sortable {
+  user-select: none;
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.sortable.dragging {
+  background-color: #f0f0f0;
+  opacity: 0.8;
+  cursor: grabbing;
+}
+
+.sortable:hover {
+  background-color: #f5f5f5;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Ajustar anchos mínimos de columnas específicas */
+th[data-column="sede"],
+td[data-column="sede"] {
+  min-width: 100px;
+}
+
+th[data-column="nombre"],
+td[data-column="nombre"] {
+  min-width: 200px;
+}
+
+th[data-column="departamento"],
+td[data-column="departamento"] {
+  min-width: 150px;
+}
+
+th[data-column="cargo"],
+td[data-column="cargo"] {
+  min-width: 150px;
+}
+
+th[data-column="equipo_asignado"],
+td[data-column="equipo_asignado"] {
+  min-width: 150px;
+}
+
+th[data-column="acciones"],
+td[data-column="acciones"] {
+  min-width: 120px;
+  text-align: center;
 }

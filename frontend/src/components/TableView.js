@@ -1,0 +1,227 @@
+import React, { useState } from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  flexRender,
+} from '@tanstack/react-table';
+import { FaCog } from 'react-icons/fa';
+import { 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors 
+} from '@dnd-kit/core';
+import { 
+  arrayMove,
+  SortableContext,
+  horizontalListSortingStrategy 
+} from '@dnd-kit/sortable';
+import { SortableTableHeader } from './SortableTableHeader';
+import './TableView.css';
+
+const TableView = ({
+  data,
+  columns,
+  loading,
+  error,
+  columnVisibility,
+  setColumnVisibility,
+  onFetchData,
+  defaultSorting = [],
+  defaultPageSize = 10
+}) => {
+  const [sorting, setSorting] = useState(defaultSorting);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: defaultPageSize,
+  });
+
+  const [columnOrder, setColumnOrder] = useState(
+    columns.map(column => column.id || column.accessorKey)
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+      columnVisibility,
+      pagination,
+      columnOrder,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
+    onColumnOrderChange: setColumnOrder,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setColumnOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const ColumnVisibilityControls = () => (
+    <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
+      <div className="column-settings-content">
+        <div className="column-settings-header">
+          <h3>Mostrar/Ocultar Columnas</h3>
+          <button 
+            className="close-settings-button"
+            onClick={() => setShowColumnSettings(false)}
+          >
+            ×
+          </button>
+        </div>
+        <div className="column-toggles">
+          {table.getAllLeafColumns().map(column => {
+            return (
+              <div key={column.id} className="column-toggle">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={column.getIsVisible()}
+                    onChange={column.getToggleVisibilityHandler()}
+                  />
+                  {column.id}
+                </label>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="table-container">
+      <div className="table-controls">
+        <div className="search-container">
+          <input
+            type="text"
+            value={globalFilter ?? ''}
+            onChange={e => setGlobalFilter(e.target.value)}
+            placeholder="Buscar..."
+            className="search-input"
+          />
+        </div>
+        <button
+          className="settings-button"
+          onClick={() => setShowColumnSettings(!showColumnSettings)}
+        >
+          <FaCog />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading">Cargando...</div>
+      ) : error ? (
+        <div className="error">{error}</div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    <SortableContext
+                      items={columnOrder}
+                      strategy={horizontalListSortingStrategy}
+                    >
+                      {headerGroup.headers.map(header => (
+                        <SortableTableHeader
+                          key={header.id}
+                          header={header}
+                          table={table}
+                        />
+                      ))}
+                    </SortableContext>
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map(row => (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DndContext>
+      )}
+
+      <div className="pagination">
+        <button
+          onClick={() => table.setPageIndex(0)}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {'<<'}
+        </button>
+        <button
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          {'<'}
+        </button>
+        <span>
+          Página{' '}
+          <strong>
+            {table.getState().pagination.pageIndex + 1} de{' '}
+            {table.getPageCount()}
+          </strong>
+        </span>
+        <button
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>'}
+        </button>
+        <button
+          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+          disabled={!table.getCanNextPage()}
+        >
+          {'>>'}
+        </button>
+      </div>
+
+      <ColumnVisibilityControls />
+    </div>
+  );
+};
+
+export default TableView; 

@@ -2,31 +2,111 @@
     padding: 20px;
 }
 
-.estado-badge {
-    padding: 3px 6px;
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h2 {
+    margin: 0;
+    color: #333;
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
     border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-button:hover {
+    background-color: #0056b3;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-button {
+    padding: 6px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button:hover {
+    background: #f5f5f5;
+}
+
+.view-button {
+    color: #17a2b8;
+}
+
+.assign-button {
+    color: #28a745;
+    font-size: 16px;
+}
+
+.delete-button {
+    color: #dc3545;
+}
+
+.view-button:hover {
+    border-color: #17a2b8;
+    background-color: rgba(23, 162, 184, 0.1);
+}
+
+.assign-button:hover {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.delete-button:hover {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.estado-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
     font-size: 0.85em;
     font-weight: 500;
     text-transform: capitalize;
-    display: inline-block;
-}
-
-.estado-badge.asignado {
-    background-color: #e3f2fd;
-    color: #1976d2;
 }
 
 .estado-badge.disponible {
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    background-color: #d4edda;
+    color: #155724;
 }
 
-.estado-badge.reparacion {
-    background-color: #fff3e0;
-    color: #ef6c00;
+.estado-badge.asignado {
+    background-color: #cce5ff;
+    color: #004085;
 }
 
-/* Resto de los estilos similares a App.css */
+.estado-badge.mantenimiento {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.estado-badge.baja {
+    background-color: #f8d7da;
+    color: #721c24;
+}
 
 .column-settings {
   position: fixed;

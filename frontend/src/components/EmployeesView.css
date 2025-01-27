@@ -1,0 +1,80 @@
+.employees-view {
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.add-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-button:hover {
+  background-color: #0056b3;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 6px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button:hover {
+  background: #f5f5f5;
+}
+
+.view-button {
+  color: #17a2b8;
+}
+
+.edit-button {
+  color: #ffc107;
+}
+
+.delete-button {
+  color: #dc3545;
+}
+
+.view-button:hover {
+  border-color: #17a2b8;
+  background-color: rgba(23, 162, 184, 0.1);
+}
+
+.edit-button:hover {
+  border-color: #ffc107;
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.delete-button:hover {
+  border-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+} 
