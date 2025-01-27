@@ -83,31 +83,23 @@ class Asset(db.Model):
 @app.route('/api/empleados')
 def get_empleados():
     try:
-        empleados = Empleado.query.options(
-            joinedload(Empleado.sede),
-            joinedload(Empleado.gerencia),
-            joinedload(Empleado.departamento),
-            joinedload(Empleado.area),
-            joinedload(Empleado.cargo)
-        ).outerjoin(Asset).all()
-        
+        empleados = Empleado.query.all()
         return jsonify([{
-            'id': emp.id,
-            'ficha': emp.ficha,
-            'nombre': emp.nombre_completo,
-            'sede': emp.sede.nombre if emp.sede else '',
-            'gerencia': emp.gerencia.nombre if emp.gerencia else '',
-            'departamento': emp.departamento.nombre if emp.departamento else '',
-            'area': emp.area.nombre if emp.area else '',
-            'cargo': emp.cargo.nombre if emp.cargo else '',
-            'equipo_asignado': f"{asset.tipo} - {asset.nombre_equipo}" if asset else None,
-            'asset_id': asset.id if asset else None,
-            'extension': emp.extension or '',
-            'correo': emp.correo or ''
-        } for emp, asset in empleados])
+            'id': e.id,
+            'nombre': e.nombre_completo,
+            'ficha': e.ficha,
+            'extension': e.extension,
+            'correo': e.correo,
+            'sede': e.sede.nombre if e.sede else None,
+            'gerencia': e.gerencia.nombre if e.gerencia else None,
+            'departamento': e.departamento.nombre if e.departamento else None,
+            'area': e.area.nombre if e.area else None,
+            'cargo': e.cargo.nombre if e.cargo else None,
+            'equipo_asignado': e.equipo_asignado
+        } for e in empleados])
     except Exception as e:
-        print(f"Error en get_empleados: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sedes')
 def get_sedes():
