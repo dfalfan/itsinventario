@@ -16,16 +16,16 @@ function EmployeesView() {
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
+    ficha: false,
     nombre: true,
+    gerencia: false,
     departamento: true,
+    area: false,
     cargo: true,
-    equipo_asignado: true,
     extension: true,
     correo: true,
-    Acciones: true,
-    ficha: false,
-    gerencia: false,
-    area: false,
+    equipo_asignado: true,
+    acciones: true,
   });
 
   const columns = useMemo(
@@ -86,6 +86,14 @@ function EmployeesView() {
         }
       },
       {
+        header: 'Extensión',
+        accessorKey: 'extension',
+      },
+      {
+        header: 'Correo',
+        accessorKey: 'correo',
+      },
+      {
         header: 'Acciones',
         id: 'acciones',
         cell: ({ row }) => (
@@ -96,13 +104,6 @@ function EmployeesView() {
               title="Ver detalles"
             >
               <FaEllipsisH />
-            </button>
-            <button 
-              onClick={() => handleEdit(row.original)}
-              className="action-button edit-button"
-              title="Editar empleado"
-            >
-              <FaPencilAlt />
             </button>
             <button 
               onClick={() => handleDelete(row.original)}
@@ -197,6 +198,7 @@ function EmployeesView() {
         setColumnVisibility={setColumnVisibility}
         onFetchData={fetchData}
         defaultPageSize={30}
+        defaultSorting={[{ id: 'nombre', desc: false }]}
       />
 
       {selectedEmployee && (

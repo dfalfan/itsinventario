@@ -177,37 +177,49 @@ const TableView = ({
     }
   };
 
-  const ColumnVisibilityControls = () => (
-    <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
-      <div className="column-settings-content">
-        <div className="column-settings-header">
-          <h3>Mostrar/Ocultar Columnas</h3>
-          <button 
-            className="close-settings-button"
-            onClick={() => setShowColumnSettings(false)}
-          >
-            ×
-          </button>
-        </div>
-        <div className="column-toggles">
-          {table.getAllLeafColumns().map(column => {
-            return (
-              <div key={column.id} className="column-toggle">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={column.getIsVisible()}
-                    onChange={column.getToggleVisibilityHandler()}
-                  />
-                  {column.id}
-                </label>
-              </div>
-            );
-          })}
+  const ColumnVisibilityControls = () => {
+    // Función para formatear el título de la columna
+    const formatColumnTitle = (columnId) => {
+      return columnId
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+
+    return (
+      <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
+        <div className="column-settings-content">
+          <div className="column-settings-header">
+            <h3>Mostrar/Ocultar Columnas</h3>
+            <button 
+              className="close-settings-button"
+              onClick={() => setShowColumnSettings(false)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="column-toggles">
+            {table.getAllLeafColumns().map(column => {
+              // No mostrar la columna de acciones en la lista
+              if (column.id === 'acciones') return null;
+              return (
+                <div key={column.id} className="column-toggle">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={column.getIsVisible()}
+                      onChange={column.getToggleVisibilityHandler()}
+                    />
+                    {formatColumnTitle(column.id)}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
       <div className="table-container">

@@ -23,14 +23,15 @@ function AssetsView() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
+    id: true,
     sede: true,
     tipo: true,
-    nombre_equipo: true,
     marca: true,
+    modelo: true,
     estado: true,
     empleado: true,
-    Acciones: true,
-    modelo: false,
+    nombre_equipo: true,
+    acciones: true,
     serial: false,
     ram: false,
     disco: false,
@@ -40,6 +41,10 @@ function AssetsView() {
   const columns = useMemo(
     () => [
       {
+        header: 'ID',
+        accessorKey: 'id',
+      },
+      {
         header: 'Sede',
         accessorKey: 'sede',
       },
@@ -48,32 +53,12 @@ function AssetsView() {
         accessorKey: 'tipo',
       },
       {
-        header: 'Nombre de Equipo',
-        accessorKey: 'nombre_equipo',
-      },
-      {
         header: 'Marca',
         accessorKey: 'marca',
       },
       {
         header: 'Modelo',
         accessorKey: 'modelo',
-      },
-      {
-        header: 'Serial',
-        accessorKey: 'serial',
-      },
-      {
-        header: 'RAM',
-        accessorKey: 'ram',
-      },
-      {
-        header: 'Disco',
-        accessorKey: 'disco',
-      },
-      {
-        header: 'Activo Fijo',
-        accessorKey: 'activo_fijo',
       },
       {
         header: 'Estado',
@@ -99,6 +84,26 @@ function AssetsView() {
             </span>
           );
         }
+      },
+      {
+        header: 'Nombre de Equipo',
+        accessorKey: 'nombre_equipo',
+      },
+      {
+        header: 'Serial',
+        accessorKey: 'serial',
+      },
+      {
+        header: 'RAM',
+        accessorKey: 'ram',
+      },
+      {
+        header: 'Disco',
+        accessorKey: 'disco',
+      },
+      {
+        header: 'Activo Fijo',
+        accessorKey: 'activo_fijo',
       },
       {
         header: 'Acciones',
@@ -128,7 +133,7 @@ function AssetsView() {
             </button>
           </div>
         ),
-      },
+      }
     ],
     []
   );
@@ -237,7 +242,7 @@ function AssetsView() {
         setColumnVisibility={setColumnVisibility}
         onFetchData={fetchData}
         defaultPageSize={30}
-        defaultSorting={[{ id: 'nombre_equipo', desc: false }]}
+        defaultSorting={[{ id: 'id', desc: false }]}
       />
 
       {showModal && (
