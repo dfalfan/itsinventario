@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
@@ -8,6 +8,7 @@ import NewAssetModal from './NewAssetModal';
 import AssetModal from './AssetModal';
 import EmployeeModal from './EmployeeModal';
 import './AssetsView.css';
+import axios from 'axios';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -37,6 +38,10 @@ function AssetsView() {
     disco: false,
     activo_fijo: false,
   });
+  const [sedes, setSedes] = useState([]);
+  const [tipos, setTipos] = useState(['LAPTOP', 'DESKTOP', 'AIO']);
+  const [marcas, setMarcas] = useState([]);
+  const [modelos, setModelos] = useState([]);
 
   const columns = useMemo(
     () => [
@@ -47,18 +52,58 @@ function AssetsView() {
       {
         header: 'Sede',
         accessorKey: 'sede',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.sede}
+            column={column}
+            row={row}
+            table={table}
+            options={sedes}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Tipo',
         accessorKey: 'tipo',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.tipo}
+            column={column}
+            row={row}
+            table={table}
+            options={tipos}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Marca',
         accessorKey: 'marca',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.marca}
+            column={column}
+            row={row}
+            table={table}
+            options={marcas}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Modelo',
         accessorKey: 'modelo',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.modelo}
+            column={column}
+            row={row}
+            table={table}
+            options={modelos}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Estado',
@@ -143,11 +188,14 @@ function AssetsView() {
         ),
       }
     ],
-    []
+    [sedes, tipos, marcas, modelos]
   );
 
   useEffect(() => {
     fetchData();
+    fetchSedes();
+    fetchMarcas();
+    fetchModelos();
   }, []);
 
   const fetchData = async () => {
@@ -168,6 +216,39 @@ function AssetsView() {
       setData([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSedes = async () => {
+    try {
+      const response = await fetch('http://192.168.141.50:5000/api/sedes');
+      if (!response.ok) throw new Error('Error al cargar sedes');
+      const data = await response.json();
+      setSedes(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchMarcas = async () => {
+    try {
+      const response = await fetch('http://192.168.141.50:5000/api/marcas');
+      if (!response.ok) throw new Error('Error al cargar marcas');
+      const data = await response.json();
+      setMarcas(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchModelos = async () => {
+    try {
+      const response = await fetch('http://192.168.141.50:5000/api/modelos');
+      if (!response.ok) throw new Error('Error al cargar modelos');
+      const data = await response.json();
+      setModelos(data);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -227,6 +308,59 @@ function AssetsView() {
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const handleSave = async (id, field, value) => {
+    try {
+      await axios.patch(`http://192.168.141.50:5000/api/activos/${id}`, { [field]: value });
+      // Actualizar el estado local
+      setData(prevData => prevData.map(asset => 
+        asset.id === id ? { ...asset, [field]: value } : asset
+      ));
+    } catch (error) {
+      console.error('Error al actualizar el activo:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const EditableCell = ({ value, column, row, table, options, onSave }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentValue, setCurrentValue] = useState(value);
+
+    const handleDoubleClick = () => {
+      setIsEditing(true);
+    };
+
+    const handleChange = (e) => {
+      const newValue = e.target.value;
+      setCurrentValue(newValue);
+      onSave(row.original.id, column.id, newValue);
+      setIsEditing(false);
+    };
+
+    if (isEditing) {
+      return (
+        <select
+          value={currentValue || ''}
+          onChange={handleChange}
+          onBlur={() => setIsEditing(false)}
+          autoFocus
+        >
+          <option value="">Seleccionar...</option>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    return (
+      <div onDoubleClick={handleDoubleClick} className="editable-cell">
+        {value || 'Sin asignar'}
+      </div>
+    );
   };
 
   return (

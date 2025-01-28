@@ -394,11 +394,17 @@ def update_asset(asset_id):
         data = request.get_json()
         
         # Lista actualizada de campos permitidos para editar
-        allowed_fields = ['nombre_equipo', 'modelo', 'serial', 'activo_fijo', 'tipo', 'marca', 'ram', 'disco']
+        allowed_fields = ['nombre_equipo', 'modelo', 'serial', 'activo_fijo', 'tipo', 'marca', 'ram', 'disco', 'sede', 'estado']
         
         for field in data:
             if field in allowed_fields:
-                setattr(asset, field, data[field])
+                if field == 'sede':
+                    # Buscar la sede por nombre y actualizar sede_id
+                    sede = Sede.query.filter_by(nombre=data[field]).first()
+                    if sede:
+                        asset.sede_id = sede.id
+                else:
+                    setattr(asset, field, data[field])
         
         asset.updated_at = datetime.utcnow()
         db.session.commit()
@@ -410,6 +416,15 @@ def update_asset(asset_id):
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/modelos')
+def get_modelos():
+    try:
+        modelos = db.session.query(Asset.modelo).distinct().all()
+        return jsonify([modelo[0] for modelo in modelos if modelo[0]])
+    except Exception as e:
+        print(f"Error en get_modelos: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/tipos')
@@ -615,6 +630,50 @@ def get_empleado(empleado_id):
         
     except Exception as e:
         print(f"Error en get_empleado: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empleados/actualizar-correos', methods=['POST'])
+def actualizar_correos():
+    try:
+        # Crear función para generar correo
+        db.session.execute("""
+            CREATE OR REPLACE FUNCTION generar_correo(nombre_completo TEXT)
+            RETURNS TEXT AS $$
+            DECLARE
+                nombres TEXT;
+                apellidos TEXT;
+                primer_apellido TEXT;
+                primer_nombre TEXT;
+            BEGIN
+                -- Dividir el nombre completo en partes
+                apellidos := split_part(nombre_completo, ' ', 1);
+                nombres := substring(nombre_completo FROM position(' ' IN nombre_completo) + 1);
+                
+                -- Obtener primer nombre
+                primer_nombre := split_part(nombres, ' ', 1);
+                
+                -- Generar correo en minúsculas
+                RETURN lower(primer_nombre || '.' || apellidos || '@sura.com.ve');
+            END;
+            $$ LANGUAGE plpgsql;
+        """)
+        
+        # Actualizar todos los correos
+        db.session.execute("""
+            UPDATE empleados 
+            SET correo = generar_correo(nombre_completo)
+            WHERE correo IS NULL OR correo = '';
+        """)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Correos actualizados exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando correos: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

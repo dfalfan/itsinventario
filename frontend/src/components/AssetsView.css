@@ -168,133 +168,50 @@
 }
 
 .editable-cell {
-  flex: 1;
-  padding: 4px;
-}
-
-.editable-cell-input {
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid #1976d2;
-  border-radius: 4px;
-  font-size: inherit;
-  font-family: inherit;
-  background-color: white;
-}
-
-.editable-cell-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
-}
-
-.editable-cell-select {
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid #1976d2;
-  border-radius: 4px;
-  font-size: inherit;
-  font-family: inherit;
-  background-color: white;
+  position: relative;
   cursor: pointer;
 }
 
-.editable-cell-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
-}
-
-.editable-cell-select option {
-  padding: 4px;
-}
-
-.editable-cell-container {
-  position: relative;
-  width: 100%;
-}
-
-.editable-cell-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.editable-cell-wrapper:hover {
-  background-color: #f5f5f5;
-}
-
-.edit-indicator {
-  margin-left: 8px;
+.editable-cell:hover::after {
+  content: '✎';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 12px;
   color: #999;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  opacity: 0.5;
 }
 
-.editable-cell-wrapper:hover .edit-indicator {
-  opacity: 1;
+.editable-cell select {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  font-size: inherit;
+  font-family: inherit;
+  background-color: white;
+  cursor: pointer;
 }
 
-.editable-cell-select {
-  animation: slideDown 0.2s ease;
+.editable-cell select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
-.editable-cell-loading {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+.editable-cell div {
+  padding: 4px;
+  min-height: 24px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-.loading-spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.editable-cell div:hover {
+  background-color: rgba(25, 118, 210, 0.05);
 }
 
-.editable-cell-error {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #d32f2f;
-  cursor: help;
-}
-
-.editable-cell-select.loading {
-  padding-right: 28px;
-  background-color: #f5f5f5;
-}
-
-.editable-cell-select.error {
-  border-color: #d32f2f;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Tooltip personalizado */
-.editable-cell-wrapper::before {
+/* Tooltip para edición */
+.editable-cell div::before {
   content: "Doble clic para editar";
   position: absolute;
   bottom: 100%;
@@ -309,29 +226,12 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
+  z-index: 1;
 }
 
-.editable-cell-wrapper:hover::before {
+.editable-cell div:hover::before {
   opacity: 1;
   visibility: visible;
-}
-
-/* Si había estilos específicos para el lápiz de edición en la columna "Acciones", elimínalos */
-.acciones-cell {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
-}
-
-.acciones-cell svg {
-  cursor: pointer;
-  color: #666;
-  transition: color 0.2s ease;
-}
-
-.acciones-cell svg:hover {
-  color: #333;
 }
 
 /* Estilos para las columnas ordenables */
