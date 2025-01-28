@@ -58,7 +58,7 @@ function AssetsView() {
             column={column}
             row={row}
             table={table}
-            options={sedes}
+            options={sedes.map(sede => ({ id: sede.id, nombre: sede.nombre }))}
             onSave={handleSave}
           />
         )
@@ -328,38 +328,71 @@ function AssetsView() {
     const [currentValue, setCurrentValue] = useState(value);
 
     const handleDoubleClick = () => {
-      setIsEditing(true);
+        setIsEditing(true);
     };
 
     const handleChange = (e) => {
-      const newValue = e.target.value;
-      setCurrentValue(newValue);
-      onSave(row.original.id, column.id, newValue);
-      setIsEditing(false);
+        const newValue = e.target.value;
+        setCurrentValue(newValue);
+        onSave(row.original.id, column.id, newValue);
+        setIsEditing(false);
     };
 
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            const newValue = e.target.value;
+            setCurrentValue(newValue);
+            onSave(row.original.id, column.id, newValue);
+            setIsEditing(false);
+        }
+        if (e.key === 'Escape') {
+            setIsEditing(false);
+            setCurrentValue(value);
+        }
+    };
+
+    // Determinar si el campo debe ser un input de texto o un select
+    const isTextField = column.id === 'modelo';
+
     if (isEditing) {
-      return (
-        <select
-          value={currentValue || ''}
-          onChange={handleChange}
-          onBlur={() => setIsEditing(false)}
-          autoFocus
-        >
-          <option value="">Seleccionar...</option>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      );
+        if (isTextField) {
+            return (
+                <input
+                    type="text"
+                    value={currentValue || ''}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    onBlur={handleChange}
+                    onKeyDown={handleKeyPress}
+                    autoFocus
+                    className="editable-cell-input"
+                />
+            );
+        }
+
+        return (
+            <select
+                value={currentValue || ''}
+                onChange={handleChange}
+                onBlur={() => setIsEditing(false)}
+                autoFocus
+            >
+                <option value="">Seleccionar...</option>
+                {Array.isArray(options) ? 
+                    options.map((option) => (
+                        <option key={option.id || option} value={option.nombre || option}>
+                            {option.nombre || option}
+                        </option>
+                    ))
+                    : null
+                }
+            </select>
+        );
     }
 
     return (
-      <div onDoubleClick={handleDoubleClick} className="editable-cell">
-        {value || 'Sin asignar'}
-      </div>
+        <div onDoubleClick={handleDoubleClick} className="editable-cell">
+            {value || 'Sin asignar'}
+        </div>
     );
   };
 
