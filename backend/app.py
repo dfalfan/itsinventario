@@ -62,6 +62,7 @@ class Empleado(db.Model):
     equipo_asignado = db.Column(db.String(200), nullable=True)
     extension = db.Column(db.String(10), nullable=True)
     correo = db.Column(db.String(200), nullable=True)
+    cedula = db.Column(db.String(10))
 
     sede = db.relationship('Sede', lazy='joined')
     gerencia = db.relationship('Gerencia', lazy='joined')
@@ -696,59 +697,88 @@ def generar_constancia(asset_id):
         if not empleado:
             return jsonify({'error': 'Empleado no encontrado'}), 404
 
+        # Registrar la fuente Montserrat
+        pdfmetrics.registerFont(TTFont('Montserrat', 'static/Montserrat-Regular.ttf'))
+        pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'static/Montserrat-Bold.ttf'))
+
         # Crear un buffer para el PDF
         buffer = io.BytesIO()
         
         # Crear el PDF
         p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
         
         # Añadir logo
-        p.drawImage('static/logo_sura.png', 50, 700, width=100, height=50)
+        p.drawImage('static/logo_sura.png', 50, height - 100, width=100, height=50)
         
         # Fecha actual
         fecha_actual = datetime.now().strftime("%d/%m/%Y")
-        p.drawString(400, 700, f"Valencia, {fecha_actual}")
+        p.setFont("Montserrat", 12)
+        p.drawString(width - 200, height - 100, f"Valencia, {fecha_actual}")
         
         # Título
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(200, 650, "Constancia de Entrega")
+        p.setFont("Montserrat-Bold", 16)
+        titulo = "Constancia de Entrega"
+        titulo_width = p.stringWidth(titulo, "Montserrat-Bold", 16)
+        p.drawString((width - titulo_width) / 2, height - 150, titulo)
         
         # Contenido
-        p.setFont("Helvetica", 12)
-        texto = f"""
-        Yo, {empleado.nombre_completo}, titular de la C.I. {empleado.ficha}, actualmente
-        desempeñándome en el cargo de {empleado.cargo.nombre if empleado.cargo else ''}, he
-        recibido por parte del Departamento de I.T.S. de la Empresa SURA DE VENEZUELA, C.A.
-        una portátil Marca {asset.marca} Modelo {asset.modelo} cuyo Serial es {asset.serial}, junto con su cable
-        de alimentación, con el objetivo de ser utilizado para fines estrictamente laborales, con
-        suma precaución.
+        p.setFont("Montserrat", 12)
+        texto = f"""Yo, {empleado.nombre_completo}, titular de la C.I. {empleado.cedula}, actualmente desempeñándome en el cargo de {empleado.cargo.nombre if empleado.cargo else ''}, he recibido por parte del Departamento de I.T.S. de la Empresa SURA DE VENEZUELA, C.A. una portátil Marca {asset.marca} Modelo {asset.modelo} cuyo Serial es {asset.serial}, junto con su cable de alimentación, con el objetivo de ser utilizado para fines estrictamente laborales, con suma precaución.
+
+Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis labores en la empresa SURA DE VENEZUELA, C.A."""
         
-        Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados
-        y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis
-        labores en la empresa SURA DE VENEZUELA, C.A.
-        """
+        # Función para justificar texto
+        def justify_text(text, width, font_name, font_size):
+            words = text.split()
+            lines = []
+            current_line = []
+            current_width = 0
+            
+            for word in words:
+                word_width = p.stringWidth(word, font_name, font_size)
+                space_width = p.stringWidth(' ', font_name, font_size)
+                
+                if current_width + word_width <= width:
+                    current_line.append(word)
+                    current_width += word_width + space_width
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = [word]
+                    current_width = word_width + space_width
+            
+            if current_line:
+                lines.append(current_line)
+            
+            return lines
+
+        # Escribir texto justificado
+        margin = 72  # 1 inch margins
+        text_width = width - 2 * margin
+        y = height - 200
         
-        # Escribir el texto con formato
-        y = 600
-        for linea in texto.split('\n'):
-            if linea.strip():
-                # Envolver el texto si es muy largo
-                palabras = linea.split()
-                linea_actual = ''
-                for palabra in palabras:
-                    if len(linea_actual + ' ' + palabra) < 80:
-                        linea_actual += ' ' + palabra
-                    else:
-                        p.drawString(50, y, linea_actual.strip())
-                        y -= 20
-                        linea_actual = palabra
-                if linea_actual:
-                    p.drawString(50, y, linea_actual.strip())
-                y -= 30
+        lines = justify_text(texto, text_width, "Montserrat", 12)
+        
+        for line in lines:
+            if len(line) > 1:
+                total_width = sum(p.stringWidth(word, "Montserrat", 12) for word in line)
+                space_width = (text_width - total_width) / (len(line) - 1)
+                x = margin
+                
+                for word in line[:-1]:
+                    p.drawString(x, y, word)
+                    x += p.stringWidth(word, "Montserrat", 12) + space_width
+                p.drawString(x, y, line[-1])
+            else:
+                p.drawString(margin, y, line[0])
+            y -= 20
         
         # Espacio para firma
-        p.line(100, 200, 300, 200)
-        p.drawString(180, 180, "Firma")
+        p.setFont("Montserrat", 12)
+        firma_y = 200
+        p.line((width - 200) / 2, firma_y, (width + 200) / 2, firma_y)
+        p.drawString((width - p.stringWidth("Firma", "Montserrat", 12)) / 2, firma_y - 20, "Firma")
         
         # Finalizar el PDF
         p.showPage()
