@@ -80,32 +80,55 @@
     background-color: rgba(220, 53, 69, 0.1);
 }
 
+/* Estilo base para pastillas */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Estilos específicos para estados */
 .estado-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.85em;
-    font-weight: 500;
-    text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  white-space: nowrap;
 }
 
 .estado-badge.disponible {
-    background-color: #d4edda;
-    color: #155724;
+  background-color: #d4edda;
+  color: #155724;
 }
 
 .estado-badge.asignado {
-    background-color: #cce5ff;
-    color: #004085;
+  background-color: #e3f2fd;
+  color: #1976d2;
 }
 
-.estado-badge.mantenimiento {
-    background-color: #fff3cd;
-    color: #856404;
+.estado-badge.reparacion {
+  background-color: #fff3cd;
+  color: #856404;
 }
 
 .estado-badge.baja {
-    background-color: #f8d7da;
-    color: #721c24;
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.estado-badge.desincorporado {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.estado-badge.mantenimiento {
+  background-color: #fff3cd;
+  color: #856404;
 }
 
 .column-settings {

@@ -63,6 +63,14 @@ function AssetsView() {
       {
         header: 'Estado',
         accessorKey: 'estado',
+        cell: ({ row }) => {
+          const estado = row.original.estado?.toLowerCase() || '';
+          return (
+            <span className={`estado-badge ${estado}`}>
+              {row.original.estado}
+            </span>
+          );
+        }
       },
       {
         header: 'Empleado',
@@ -88,22 +96,6 @@ function AssetsView() {
       {
         header: 'Nombre de Equipo',
         accessorKey: 'nombre_equipo',
-      },
-      {
-        header: 'Serial',
-        accessorKey: 'serial',
-      },
-      {
-        header: 'RAM',
-        accessorKey: 'ram',
-      },
-      {
-        header: 'Disco',
-        accessorKey: 'disco',
-      },
-      {
-        header: 'Activo Fijo',
-        accessorKey: 'activo_fijo',
       },
       {
         header: 'Acciones',

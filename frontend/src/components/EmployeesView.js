@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaLaptop, FaDesktop } from 'react-icons/fa';
+import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
