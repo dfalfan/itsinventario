@@ -1,8 +1,15 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
 from sqlalchemy.orm import joinedload
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
+import os
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -316,7 +323,8 @@ def asignar_activo(asset_id):
         asset.estado = 'Asignado'
         asset.updated_at = datetime.utcnow()
         
-        empleado.equipo_asignado = f"{asset.tipo} - {asset.nombre_equipo}"
+        # Guardar solo el ID del activo
+        empleado.equipo_asignado = str(asset_id)
         
         db.session.commit()
         
@@ -674,6 +682,90 @@ def actualizar_correos():
     except Exception as e:
         db.session.rollback()
         print(f"Error actualizando correos: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activos/<int:asset_id>/constancia', methods=['GET'])
+def generar_constancia(asset_id):
+    try:
+        # Obtener la información del activo y empleado
+        asset = Asset.query.get(asset_id)
+        if not asset or not asset.empleado_id:
+            return jsonify({'error': 'Activo no encontrado o no está asignado'}), 404
+            
+        empleado = Empleado.query.get(asset.empleado_id)
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+
+        # Crear un buffer para el PDF
+        buffer = io.BytesIO()
+        
+        # Crear el PDF
+        p = canvas.Canvas(buffer, pagesize=letter)
+        
+        # Añadir logo
+        p.drawImage('static/logo_sura.png', 50, 700, width=100, height=50)
+        
+        # Fecha actual
+        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+        p.drawString(400, 700, f"Valencia, {fecha_actual}")
+        
+        # Título
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(200, 650, "Constancia de Entrega")
+        
+        # Contenido
+        p.setFont("Helvetica", 12)
+        texto = f"""
+        Yo, {empleado.nombre_completo}, titular de la C.I. {empleado.ficha}, actualmente
+        desempeñándome en el cargo de {empleado.cargo.nombre if empleado.cargo else ''}, he
+        recibido por parte del Departamento de I.T.S. de la Empresa SURA DE VENEZUELA, C.A.
+        una portátil Marca {asset.marca} Modelo {asset.modelo} cuyo Serial es {asset.serial}, junto con su cable
+        de alimentación, con el objetivo de ser utilizado para fines estrictamente laborales, con
+        suma precaución.
+        
+        Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados
+        y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis
+        labores en la empresa SURA DE VENEZUELA, C.A.
+        """
+        
+        # Escribir el texto con formato
+        y = 600
+        for linea in texto.split('\n'):
+            if linea.strip():
+                # Envolver el texto si es muy largo
+                palabras = linea.split()
+                linea_actual = ''
+                for palabra in palabras:
+                    if len(linea_actual + ' ' + palabra) < 80:
+                        linea_actual += ' ' + palabra
+                    else:
+                        p.drawString(50, y, linea_actual.strip())
+                        y -= 20
+                        linea_actual = palabra
+                if linea_actual:
+                    p.drawString(50, y, linea_actual.strip())
+                y -= 30
+        
+        # Espacio para firma
+        p.line(100, 200, 300, 200)
+        p.drawString(180, 180, "Firma")
+        
+        # Finalizar el PDF
+        p.showPage()
+        p.save()
+        
+        # Mover el cursor al inicio del buffer
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f'constancia_entrega_{empleado.nombre_completo}_{fecha_actual}.pdf',
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"Error generando constancia: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

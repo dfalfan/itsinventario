@@ -1,10 +1,14 @@
-FROM python:3.9-slim
+FROM python:3.9
 
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+RUN pip install reportlab
 COPY . .
 
-# Cambiar el comando para usar modo debug
-ENV FLASK_DEBUG=1
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+# Crear directorio static y copiar el logo
+RUN mkdir -p static
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]

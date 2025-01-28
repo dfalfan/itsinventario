@@ -104,6 +104,23 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
         const errorData = await assignResponse.json();
         throw new Error(errorData.error || 'Error al asignar equipo');
       }
+
+      // Generar y descargar la constancia
+      const constanciaResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/constancia`);
+      
+      if (!constanciaResponse.ok) {
+        throw new Error('Error al generar la constancia');
+      }
+
+      const blob = await constanciaResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `constancia_entrega_${selectedEmployee.nombre}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
       
       onAssign(selectedEmployee);
       onClose();

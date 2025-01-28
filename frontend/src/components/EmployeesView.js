@@ -79,8 +79,8 @@ function EmployeesView() {
               ) : tipo?.toUpperCase() === 'AIO' || tipo?.toUpperCase() === 'PC' ? (
                 <FaDesktop className="equipment-icon" />
               ) : null}
-              <span className="equipment-id">{equipo}</span>
-              {nombreEquipo && <span className="equipment-name">({nombreEquipo})</span>}
+              <span className="equipment-id"> {equipo}</span>
+              {nombreEquipo && <span className="equipment-name"> ({nombreEquipo})</span>}
             </span>
           );
         }
