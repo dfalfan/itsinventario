@@ -42,6 +42,8 @@ function AssetsView() {
   const [tipos, setTipos] = useState(['LAPTOP', 'DESKTOP', 'AIO']);
   const [marcas, setMarcas] = useState([]);
   const [modelos, setModelos] = useState([]);
+  const [rams, setRams] = useState([]);
+  const [discos, setDiscos] = useState([]);
 
   const columns = useMemo(
     () => [
@@ -141,22 +143,72 @@ function AssetsView() {
       {
         header: 'Nombre de Equipo',
         accessorKey: 'nombre_equipo',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.nombre_equipo}
+            column={column}
+            row={row}
+            table={table}
+            options={[]}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Serial',
         accessorKey: 'serial',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.serial}
+            column={column}
+            row={row}
+            table={table}
+            options={[]}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'RAM',
         accessorKey: 'ram',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.ram}
+            column={column}
+            row={row}
+            table={table}
+            options={rams}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Disco',
         accessorKey: 'disco',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.disco}
+            column={column}
+            row={row}
+            table={table}
+            options={discos}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Activo Fijo',
         accessorKey: 'activo_fijo',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.activo_fijo}
+            column={column}
+            row={row}
+            table={table}
+            options={[]}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Acciones',
@@ -188,7 +240,7 @@ function AssetsView() {
         ),
       }
     ],
-    [sedes, tipos, marcas, modelos]
+    [sedes, tipos, marcas, modelos, rams, discos]
   );
 
   useEffect(() => {
@@ -196,6 +248,8 @@ function AssetsView() {
     fetchSedes();
     fetchMarcas();
     fetchModelos();
+    fetchRams();
+    fetchDiscos();
   }, []);
 
   const fetchData = async () => {
@@ -247,6 +301,28 @@ function AssetsView() {
       if (!response.ok) throw new Error('Error al cargar modelos');
       const data = await response.json();
       setModelos(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchRams = async () => {
+    try {
+      const response = await fetch('http://192.168.141.50:5000/api/rams');
+      if (!response.ok) throw new Error('Error al cargar tipos de RAM');
+      const data = await response.json();
+      setRams(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchDiscos = async () => {
+    try {
+      const response = await fetch('http://192.168.141.50:5000/api/discos');
+      if (!response.ok) throw new Error('Error al cargar tipos de disco');
+      const data = await response.json();
+      setDiscos(data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -352,9 +428,12 @@ function AssetsView() {
     };
 
     // Determinar si el campo debe ser un input de texto o un select
-    const isTextField = column.id === 'modelo';
+    const textFields = ['modelo', 'nombre_equipo', 'serial', 'activo_fijo'];
+    const selectFields = ['sede', 'tipo', 'marca', 'ram', 'disco'];
+    const isTextField = textFields.includes(column.id);
+    const isSelectField = selectFields.includes(column.id);
 
-    if (isEditing) {
+    if (isEditing && (isTextField || isSelectField)) {
         if (isTextField) {
             return (
                 <input
@@ -369,24 +448,26 @@ function AssetsView() {
             );
         }
 
-        return (
-            <select
-                value={currentValue || ''}
-                onChange={handleChange}
-                onBlur={() => setIsEditing(false)}
-                autoFocus
-            >
-                <option value="">Seleccionar...</option>
-                {Array.isArray(options) ? 
-                    options.map((option) => (
-                        <option key={option.id || option} value={option.nombre || option}>
-                            {option.nombre || option}
-                        </option>
-                    ))
-                    : null
-                }
-            </select>
-        );
+        if (isSelectField) {
+            return (
+                <select
+                    value={currentValue || ''}
+                    onChange={handleChange}
+                    onBlur={() => setIsEditing(false)}
+                    autoFocus
+                >
+                    <option value="">Seleccionar...</option>
+                    {Array.isArray(options) ? 
+                        options.map((option) => (
+                            <option key={option.id || option} value={option.nombre || option}>
+                                {option.nombre || option}
+                            </option>
+                        ))
+                        : null
+                    }
+                </select>
+            );
+        }
     }
 
     return (

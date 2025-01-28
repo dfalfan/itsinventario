@@ -39,8 +39,60 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
       return;
     }
     
+    // Generar el nombre del equipo
+    const getTipoPrefix = (tipo) => {
+      switch(tipo.toUpperCase()) {
+        case 'AIO': return 'A';
+        case 'LAPTOP': return 'L';
+        case 'DESKTOP': return 'D';
+        default: return 'X';
+      }
+    };
+
+    const getSedePrefix = (sede) => {
+      switch(sede.toUpperCase()) {
+        case 'CDN': return 'G';
+        case 'CA1': return 'V';
+        case 'MERCADEO': return 'C';
+        case 'COMERCIAL': return 'F';
+        default: return 'X';
+      }
+    };
+
+    const generateEmployeeCode = (nombreCompleto) => {
+      // El formato es "Apellido Nombre"
+      const partes = nombreCompleto.trim().split(' ');
+      if (partes.length >= 2) {
+        // El apellido es la primera parte y el nombre es la última
+        const apellido = partes[0];
+        const inicial = partes[partes.length - 1].charAt(0);
+        // Ponemos la inicial del nombre ANTES del apellido
+        return `${inicial}${apellido}`.toUpperCase();
+      }
+      return nombreCompleto.substring(0, 8).toUpperCase();
+    };
+
+    const tipoPrefix = getTipoPrefix(asset.tipo);
+    const sedePrefix = getSedePrefix(selectedEmployee.sede);
+    const employeeCode = generateEmployeeCode(selectedEmployee.nombre);
+    const newNombreEquipo = `${tipoPrefix}${sedePrefix}-${employeeCode}`;
+    
     try {
-      const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/asignar`, {
+      // Primero actualizamos el nombre del equipo
+      const updateResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre_equipo: newNombreEquipo }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error('Error al actualizar el nombre del equipo');
+      }
+
+      // Luego realizamos la asignación
+      const assignResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/asignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,8 +100,8 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
         body: JSON.stringify({ empleado_id: selectedEmployee.id }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!assignResponse.ok) {
+        const errorData = await assignResponse.json();
         throw new Error(errorData.error || 'Error al asignar equipo');
       }
       

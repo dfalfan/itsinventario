@@ -235,13 +235,18 @@ const TableView = ({
               placeholder="Buscar..."
               className="search-input"
             />
+            {globalFilter && (
+              <div className="search-results">
+                {table.getFilteredRowModel().rows.length} resultados
+              </div>
+            )}
           </div>
-        <button
-          className="settings-button"
-          onClick={() => setShowColumnSettings(!showColumnSettings)}
-        >
-          <FaCog />
-        </button>
+          <button
+            className="settings-button"
+            onClick={() => setShowColumnSettings(!showColumnSettings)}
+          >
+            <FaCog />
+          </button>
         </div>
 
         {loading ? (
