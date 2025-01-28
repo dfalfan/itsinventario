@@ -708,8 +708,8 @@ def generar_constancia(asset_id):
         p = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
         
-        # Añadir logo
-        p.drawImage('static/logo_sura.png', 50, height - 100, width=100, height=50)
+        # Añadir logo (más ancho)
+        p.drawImage('static/logo_sura.png', 50, height - 100, width=120, height=50)
         
         # Fecha actual
         fecha_actual = datetime.now().strftime("%d/%m/%Y")
@@ -722,57 +722,103 @@ def generar_constancia(asset_id):
         titulo_width = p.stringWidth(titulo, "Montserrat-Bold", 16)
         p.drawString((width - titulo_width) / 2, height - 150, titulo)
         
-        # Contenido
-        p.setFont("Montserrat", 12)
-        texto = f"""Yo, {empleado.nombre_completo}, titular de la C.I. {empleado.cedula}, actualmente desempeñándome en el cargo de {empleado.cargo.nombre if empleado.cargo else ''}, he recibido por parte del Departamento de I.T.S. de la Empresa SURA DE VENEZUELA, C.A. una portátil Marca {asset.marca} Modelo {asset.modelo} cuyo Serial es {asset.serial}, junto con su cable de alimentación, con el objetivo de ser utilizado para fines estrictamente laborales, con suma precaución.
-
-Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis labores en la empresa SURA DE VENEZUELA, C.A."""
-        
-        # Función para justificar texto
-        def justify_text(text, width, font_name, font_size):
-            words = text.split()
+        # Función para justificar texto con formato mixto
+        def justify_mixed_text(text_parts, width, start_y, line_height=25):
+            words = []
+            current_font = None
+            
+            # Convertir el texto mixto en palabras con su formato
+            for font, content in text_parts:
+                for word in content.split():
+                    words.append((font, word))
+            
             lines = []
             current_line = []
             current_width = 0
+            space_width = p.stringWidth(' ', 'Montserrat', 12)
             
-            for word in words:
-                word_width = p.stringWidth(word, font_name, font_size)
-                space_width = p.stringWidth(' ', font_name, font_size)
+            for word_tuple in words:
+                font, word = word_tuple
+                p.setFont(font, 12)
+                word_width = p.stringWidth(word, font, 12)
                 
                 if current_width + word_width <= width:
-                    current_line.append(word)
+                    current_line.append(word_tuple)
                     current_width += word_width + space_width
                 else:
                     if current_line:
                         lines.append(current_line)
-                    current_line = [word]
+                    current_line = [word_tuple]
                     current_width = word_width + space_width
             
             if current_line:
                 lines.append(current_line)
             
-            return lines
-
-        # Escribir texto justificado
-        margin = 72  # 1 inch margins
-        text_width = width - 2 * margin
-        y = height - 200
-        
-        lines = justify_text(texto, text_width, "Montserrat", 12)
-        
-        for line in lines:
-            if len(line) > 1:
-                total_width = sum(p.stringWidth(word, "Montserrat", 12) for word in line)
-                space_width = (text_width - total_width) / (len(line) - 1)
-                x = margin
-                
-                for word in line[:-1]:
+            # Dibujar las líneas justificadas
+            y = start_y
+            margin = 72
+            
+            for line in lines:
+                if len(line) > 1:
+                    x = margin
+                    total_width = sum(p.stringWidth(word, font, 12) for font, word in line)
+                    space_width = (width - total_width) / (len(line) - 1)
+                    
+                    for font, word in line[:-1]:
+                        p.setFont(font, 12)
+                        p.drawString(x, y, word)
+                        x += p.stringWidth(word, font, 12) + space_width
+                    
+                    # Última palabra de la línea
+                    font, word = line[-1]
+                    p.setFont(font, 12)
                     p.drawString(x, y, word)
-                    x += p.stringWidth(word, "Montserrat", 12) + space_width
-                p.drawString(x, y, line[-1])
-            else:
-                p.drawString(margin, y, line[0])
-            y -= 20
+                else:
+                    # Si solo hay una palabra en la línea
+                    font, word = line[0]
+                    p.setFont(font, 12)
+                    p.drawString(margin, y, word)
+                
+                y -= line_height
+            
+            return y
+
+        # Escribir el primer párrafo con formato mixto y justificado
+        margin = 72
+        y = height - 200
+        text_width = width - 2 * margin
+        
+        # Primer párrafo con formato mixto
+        text_parts = [
+            ("Montserrat", "Yo, "),
+            ("Montserrat-Bold", empleado.nombre_completo),
+            ("Montserrat", ", titular de la C.I. "),
+            ("Montserrat-Bold", empleado.cedula),
+            ("Montserrat", ", actualmente desempeñándome en el cargo de "),
+            ("Montserrat-Bold", empleado.cargo.nombre if empleado.cargo else ''),
+            ("Montserrat", ", he recibido por parte del Departamento de I.T.S. de la Empresa "),
+            ("Montserrat-Bold", "SURA DE VENEZUELA, C.A."),
+            ("Montserrat", " una portátil Marca "),
+            ("Montserrat-Bold", asset.marca),
+            ("Montserrat", " Modelo "),
+            ("Montserrat-Bold", asset.modelo),
+            ("Montserrat", " cuyo Serial es "),
+            ("Montserrat-Bold", asset.serial),
+            ("Montserrat", ", junto con su cable de alimentación, con el objetivo de ser utilizado para fines estrictamente laborales, con suma precaución.")
+        ]
+        
+        y = justify_mixed_text(text_parts, text_width, y)
+        
+        # Espacio entre párrafos
+        y -= 15
+        
+        # Segundo párrafo
+        segundo_parrafo = [
+            ("Montserrat", "Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis labores en la empresa "),
+            ("Montserrat-Bold", "SURA DE VENEZUELA, C.A.")
+        ]
+        
+        y = justify_mixed_text(segundo_parrafo, text_width, y)
         
         # Espacio para firma
         p.setFont("Montserrat", 12)
