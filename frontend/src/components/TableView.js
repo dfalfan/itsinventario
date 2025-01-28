@@ -94,7 +94,7 @@ const TableView = ({
 
   const [columnOrder, setColumnOrder] = useState(() => 
     columns
-      .filter(col => col.id || col.accessorKey)
+      .filter(col => (col.id || col.accessorKey) && col.id !== 'acciones')
       .map(column => column.id || column.accessorKey)
   );
 
@@ -106,28 +106,23 @@ const TableView = ({
       if (!key) return;
 
       try {
-        // Obtener el ancho del encabezado
         const headerText = typeof column.header === 'string' ? 
           column.header : 
           column.header?.toString() || key;
-        // Agregar espacio extra para el ícono de ordenamiento y el drag handle
-        const headerWidth = (headerText.length * 7) + 45; // 7px por carácter + espacio para íconos
+        const headerWidth = (headerText.length * 7) + 45;
 
-        // Obtener el ancho máximo del contenido en la página actual
         const contentWidth = data.reduce((max, row) => {
           const value = row[key];
           if (value == null) return max;
           const text = value.toString();
-          const width = text.length * 7 + 16; // 7px por carácter + padding reducido
+          const width = text.length * 7 + 16;
           return Math.max(max, width);
         }, 0);
 
-        // Usar el mayor entre el ancho del encabezado y el contenido
-        // El headerWidth se convierte en el mínimo absoluto
         sizing[key] = Math.max(headerWidth, contentWidth);
       } catch (error) {
         console.warn(`Error calculando ancho para columna ${key}:`, error);
-        sizing[key] = 120; // ancho por defecto si hay error
+        sizing[key] = 120;
       }
     });
     return sizing;
@@ -177,14 +172,26 @@ const TableView = ({
     }
   };
 
+  const getVisibleColumns = () => {
+    // Obtener todas las columnas excepto acciones
+    const regularColumns = table.getAllLeafColumns().filter(col => col.id !== 'acciones');
+    // Obtener la columna de acciones
+    const accionesColumn = table.getAllLeafColumns().find(col => col.id === 'acciones');
+    
+    // Retornar las columnas regulares seguidas de acciones
+    return [...regularColumns, accionesColumn].filter(Boolean);
+  };
+
   const ColumnVisibilityControls = () => {
-    // Función para formatear el título de la columna
     const formatColumnTitle = (columnId) => {
       return columnId
         .split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
     };
+
+    // Obtener columnas ordenadas, excluyendo acciones
+    const orderedColumns = getVisibleColumns().filter(col => col.id !== 'acciones');
 
     return (
       <div className={`column-settings ${showColumnSettings ? 'show' : ''}`}>
@@ -199,22 +206,18 @@ const TableView = ({
             </button>
           </div>
           <div className="column-toggles">
-            {table.getAllLeafColumns().map(column => {
-              // No mostrar la columna de acciones en la lista
-              if (column.id === 'acciones') return null;
-              return (
-                <div key={column.id} className="column-toggle">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={column.getIsVisible()}
-                      onChange={column.getToggleVisibilityHandler()}
-                    />
-                    {formatColumnTitle(column.id)}
-                  </label>
-                </div>
-              );
-            })}
+            {orderedColumns.map(column => (
+              <div key={column.id} className="column-toggle">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={column.getIsVisible()}
+                    onChange={column.getToggleVisibilityHandler()}
+                  />
+                  {formatColumnTitle(column.id)}
+                </label>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -260,13 +263,29 @@ const TableView = ({
                         items={columnOrder}
                         strategy={horizontalListSortingStrategy}
                       >
-                        {headerGroup.headers.map(header => (
-                          <DraggableHeader
-                            key={header.id}
-                            header={header}
-                            table={table}
-                          />
-                        ))}
+                        {headerGroup.headers.map(header => {
+                          if (header.column.id === 'acciones') {
+                            // Renderizar header normal para acciones
+                            return (
+                              <th key={header.id} style={{ width: header.column.getSize() }}>
+                                <div className="header-content">
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                                </div>
+                              </th>
+                            );
+                          }
+                          // Renderizar header draggeable para el resto
+                          return (
+                            <DraggableHeader
+                              key={header.id}
+                              header={header}
+                              table={table}
+                            />
+                          );
+                        })}
                       </SortableContext>
                     </tr>
                   ))}

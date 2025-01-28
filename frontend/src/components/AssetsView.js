@@ -98,6 +98,22 @@ function AssetsView() {
         accessorKey: 'nombre_equipo',
       },
       {
+        header: 'Serial',
+        accessorKey: 'serial',
+      },
+      {
+        header: 'RAM',
+        accessorKey: 'ram',
+      },
+      {
+        header: 'Disco',
+        accessorKey: 'disco',
+      },
+      {
+        header: 'Activo Fijo',
+        accessorKey: 'activo_fijo',
+      },
+      {
         header: 'Acciones',
         id: 'acciones',
         cell: ({ row }) => (
