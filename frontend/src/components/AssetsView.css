@@ -328,22 +328,21 @@ table {
   color: #28a745;
 }
 
-.nombre-equipo.verde .editable-cell div {
-  color: #28a745;
-  font-weight: 500;
-}
-
 .nombre-equipo.rojo {
   color: #dc3545;
 }
 
-.nombre-equipo.rojo .editable-cell div {
-  color: #dc3545;
-  font-weight: 500;
+.ad-status {
+  font-size: 12px;
+  line-height: 1;
 }
 
-.ad-status {
-  display: none;
+.nombre-equipo.verde .ad-status {
+  color: #28a745;
+}
+
+.nombre-equipo.rojo .ad-status {
+  color: #dc3545;
 }
 
 .refresh-button {
