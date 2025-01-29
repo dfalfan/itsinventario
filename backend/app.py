@@ -345,26 +345,25 @@ def desasignar_activo(asset_id):
     try:
         asset = Asset.query.get(asset_id)
         if not asset:
-            return jsonify({"error": "Activo no encontrado"}), 404
-            
+            return jsonify({'error': 'Activo no encontrado'}), 404
+        
+        # Obtener empleado asociado
         empleado = Empleado.query.get(asset.empleado_id)
-        if empleado:
-            empleado.equipo_asignado = None
-            
+        
+        # Resetear campos del activo
         asset.empleado_id = None
-        asset.estado = 'Disponible'
-        asset.updated_at = datetime.utcnow()
+        asset.nombre_equipo = None
+        asset.estado = 'DISPONIBLE'
+        
+        # Actualizar empleado si existe
+        if empleado:
+            empleado.equipo_asignado = None  # Actualizar campo del empleado
+            db.session.add(empleado)
         
         db.session.commit()
-        
-        return jsonify({
-            "message": "Activo desasignado exitosamente",
-            "activo": asset.nombre_equipo
-        })
-        
+        return jsonify({'message': 'Activo desasignado correctamente'}), 200
     except Exception as e:
         db.session.rollback()
-        print("Error en desasignar_activo:", str(e))
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activos/disponibles', methods=['GET'])

@@ -19,6 +19,11 @@ function UnassignAssetModal({ asset, onClose, onUnassign }) {
       
       onUnassign();
       onClose();
+      
+      // Forzar recarga de datos
+      if (typeof window.refreshEmployeeData === 'function') {
+        window.refreshEmployeeData();
+      }
     } catch (error) {
       console.error('Error:', error);
     }
