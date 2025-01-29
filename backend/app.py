@@ -10,6 +10,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import os
 import io
+from ldap3 import Server, Connection, ALL
 
 app = Flask(__name__)
 CORS(app)
@@ -841,6 +842,33 @@ def generar_constancia(asset_id):
         
     except Exception as e:
         print(f"Error generando constancia: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verificar_equipos')
+def verificar_equipos():
+    try:
+        # Configurar el servidor y la conexión usando IP en lugar de nombre DNS
+        server = Server('192.168.141.39', get_info=ALL)
+        conn = Connection(server, user='sura\\dfalfan', password='Dief490606', auto_bind=True)
+
+        # Realizar la búsqueda en el AD
+        conn.search('dc=sura,dc=corp', '(objectClass=computer)', attributes=['cn'])
+
+        # Obtener los nombres de los equipos
+        equipos_ad = [entry.cn.value for entry in conn.entries]
+
+        # Obtener los equipos de la base de datos
+        equipos_db = Asset.query.with_entities(Asset.nombre_equipo).all()
+        equipos_db = [equipo.nombre_equipo for equipo in equipos_db]
+
+        # Comparar y marcar los equipos
+        resultado = {}
+        for equipo in equipos_db:
+            resultado[equipo] = 'verde' if equipo in equipos_ad else 'rojo'
+
+        return jsonify(resultado)
+    except Exception as e:
+        print(f"Error en verificar_equipos: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

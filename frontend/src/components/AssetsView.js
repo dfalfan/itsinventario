@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaSync } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
@@ -44,6 +44,7 @@ function AssetsView() {
   const [modelos, setModelos] = useState([]);
   const [rams, setRams] = useState([]);
   const [discos, setDiscos] = useState([]);
+  const [equiposVerificados, setEquiposVerificados] = useState({});
 
   const columns = useMemo(
     () => [
@@ -144,14 +145,16 @@ function AssetsView() {
         header: 'Nombre de Equipo',
         accessorKey: 'nombre_equipo',
         cell: ({ row, column, table }) => (
-          <EditableCell
-            value={row.original.nombre_equipo}
-            column={column}
-            row={row}
-            table={table}
-            options={[]}
-            onSave={handleSave}
-          />
+          <div className={`nombre-equipo ${equiposVerificados[row.original.nombre_equipo] || ''}`}>
+            <EditableCell
+              value={row.original.nombre_equipo}
+              column={column}
+              row={row}
+              table={table}
+              options={[]}
+              onSave={handleSave}
+            />
+          </div>
         )
       },
       {
@@ -240,7 +243,7 @@ function AssetsView() {
         ),
       }
     ],
-    [sedes, tipos, marcas, modelos, rams, discos]
+    [sedes, tipos, marcas, modelos, rams, discos, equiposVerificados]
   );
 
   useEffect(() => {
@@ -250,6 +253,7 @@ function AssetsView() {
     fetchModelos();
     fetchRams();
     fetchDiscos();
+    verificarEquipos();
   }, []);
 
   const fetchData = async () => {
@@ -325,6 +329,15 @@ function AssetsView() {
       setDiscos(data);
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const verificarEquipos = async () => {
+    try {
+      const response = await axios.get('http://192.168.141.50:5000/api/verificar_equipos');
+      setEquiposVerificados(response.data);
+    } catch (error) {
+      console.error('Error al verificar equipos:', error);
     }
   };
 
@@ -481,12 +494,15 @@ function AssetsView() {
     <div className="assets-view">
       <div className="header">
         <h2>Activos</h2>
-          <button 
-            className="add-button"
-            onClick={() => setShowNewAssetModal(true)}
-        >
-          <FaPlus /> Nuevo Activo
-        </button>
+        <div className="header-buttons">
+          <button onClick={verificarEquipos} className="refresh-button" title="Verificar nombres en AD">
+            <FaSync />
+          </button>
+          <button onClick={() => setShowNewAssetModal(true)} className="add-button">
+            <FaPlus className="add-icon" />
+            Agregar Activo
+          </button>
+        </div>
       </div>
 
       <TableView

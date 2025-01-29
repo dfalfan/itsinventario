@@ -318,3 +318,62 @@ table {
     box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
+.nombre-equipo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nombre-equipo.verde {
+  color: #28a745;
+}
+
+.nombre-equipo.verde .editable-cell div {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.nombre-equipo.rojo {
+  color: #dc3545;
+}
+
+.nombre-equipo.rojo .editable-cell div {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.ad-status {
+  display: none;
+}
+
+.refresh-button {
+  background: #6c757d;
+  border: none;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.refresh-button:hover {
+  background-color: #5a6268;
+  transform: rotate(180deg);
+}
+
+.refresh-button svg {
+  transition: transform 0.3s ease;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
