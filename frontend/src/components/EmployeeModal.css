@@ -7,8 +7,10 @@
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 2rem 0;
     z-index: 1000;
+    overflow-y: auto;
     animation: fadeIn 0.3s ease;
 }
 
@@ -19,7 +21,7 @@
     position: relative;
     width: 90%;
     max-width: 500px;
-    max-height: 90vh;
+    margin: auto;
     overflow-y: auto;
     animation: slideIn 0.3s ease;
 }
