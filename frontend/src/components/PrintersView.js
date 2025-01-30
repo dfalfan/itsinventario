@@ -12,6 +12,7 @@ function PrintersView() {
     id: true,
     sede: true,
     impresora: true,
+    serial: true,
     proveedor: true,
     acciones: true,
   });
@@ -127,6 +128,19 @@ function PrintersView() {
         cell: ({ row, column, table }) => (
           <EditableCell
             value={row.original.impresora}
+            column={column}
+            row={row}
+            table={table}
+            onSave={handleSave}
+          />
+        )
+      },
+      {
+        header: 'Serial',
+        accessorKey: 'serial',
+        cell: ({ row, column, table }) => (
+          <EditableCell
+            value={row.original.serial}
             column={column}
             row={row}
             table={table}

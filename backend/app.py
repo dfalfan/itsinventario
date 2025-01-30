@@ -64,12 +64,17 @@ class Empleado(db.Model):
     extension = db.Column(db.String(10), nullable=True)
     correo = db.Column(db.String(200), nullable=True)
     cedula = db.Column(db.String(10))
+    sp_asignado = db.Column(db.Integer, db.ForeignKey('smartphones.id'), nullable=True)
 
     sede = db.relationship('Sede', lazy='joined')
     gerencia = db.relationship('Gerencia', lazy='joined')
     departamento = db.relationship('Departamento', lazy='joined')
     area = db.relationship('Area', lazy='joined')
     cargo = db.relationship('Cargo', lazy='joined')
+    smartphone = db.relationship('Smartphone', 
+                               foreign_keys=[sp_asignado],
+                               backref=db.backref('empleado_asignado', uselist=False),
+                               lazy='joined')
 
 class Asset(db.Model):
     __tablename__ = 'assets'
@@ -104,13 +109,17 @@ class Smartphone(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    empleado = db.relationship('Empleado', lazy='joined')
+    empleado = db.relationship('Empleado', 
+                             foreign_keys=[empleado_id],
+                             backref=db.backref('smartphone_asignado', uselist=False),
+                             lazy='joined')
 
 class Impresora(db.Model):
     __tablename__ = 'impresoras'
     id = db.Column(db.Integer, primary_key=True)
     sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'))
     impresora = db.Column(db.String(100))
+    serial = db.Column(db.String(100))
     proveedor = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -138,7 +147,13 @@ def get_empleados():
             'cargo': e.cargo.nombre if e.cargo else None,
             'equipo_asignado': e.equipo_asignado,
             'asset_type': assets.get(e.equipo_asignado, {}).get('tipo'),
-            'asset_name': assets.get(e.equipo_asignado, {}).get('nombre')
+            'asset_name': assets.get(e.equipo_asignado, {}).get('nombre'),
+            'sp_asignado': {
+                'id': e.smartphone.id,
+                'marca': e.smartphone.marca,
+                'modelo': e.smartphone.modelo,
+                'linea': e.smartphone.linea
+            } if e.smartphone else None
         } for e in empleados])
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -969,11 +984,18 @@ def asignar_smartphone(smartphone_id):
         empleado = Empleado.query.get(empleado_id)
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
+
+        # Verificar si el empleado ya tiene un smartphone asignado
+        if empleado.sp_asignado:
+            return jsonify({"error": "El empleado ya tiene un smartphone asignado"}), 400
             
         smartphone.empleado_id = empleado_id
         smartphone.estado = 'Asignado'
         smartphone.fecha_asignacion = datetime.utcnow()
         smartphone.updated_at = datetime.utcnow()
+        
+        # Actualizar el empleado
+        empleado.sp_asignado = smartphone_id
         
         db.session.commit()
         
@@ -992,6 +1014,11 @@ def desasignar_smartphone(smartphone_id):
         smartphone = Smartphone.query.get(smartphone_id)
         if not smartphone:
             return jsonify({'error': 'Smartphone no encontrado'}), 404
+        
+        # Obtener el empleado antes de desasignar
+        empleado = Empleado.query.filter_by(sp_asignado=smartphone_id).first()
+        if empleado:
+            empleado.sp_asignado = None
         
         smartphone.empleado_id = None
         smartphone.estado = 'Disponible'
@@ -1018,6 +1045,7 @@ def get_impresoras():
             'sede': sede.nombre if sede else None,
             'sede_id': imp.sede_id,
             'impresora': imp.impresora,
+            'serial': imp.serial,
             'proveedor': imp.proveedor
         } for imp, sede in impresoras])
     except Exception as e:
@@ -1034,7 +1062,7 @@ def update_impresora(impresora_id):
         data = request.get_json()
         
         # Lista de campos permitidos para editar
-        allowed_fields = ['impresora', 'proveedor']
+        allowed_fields = ['impresora', 'serial', 'proveedor']
         
         for field in data:
             if field in allowed_fields:
@@ -1055,6 +1083,24 @@ def update_impresora(impresora_id):
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/empleados/sin-smartphone')
+def get_empleados_sin_smartphone():
+    try:
+        empleados = Empleado.query.filter_by(sp_asignado=None).order_by(Empleado.nombre_completo).all()
+        
+        return jsonify([{
+            'id': e.id,
+            'nombre': e.nombre_completo,
+            'ficha': e.ficha,
+            'sede': e.sede.nombre if e.sede else None,
+            'departamento': e.departamento.nombre if e.departamento else None,
+            'cargo': e.cargo.nombre if e.cargo else None
+        } for e in empleados])
+        
+    except Exception as e:
+        print("Error en get_empleados_sin_smartphone:", str(e))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

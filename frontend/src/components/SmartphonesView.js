@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
 import TableView from './TableView';
+import AssignSmartphoneModal from './AssignSmartphoneModal';
 import axios from 'axios';
 import './AssetsView.css';
 
@@ -8,6 +9,8 @@ function SmartphonesView() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedSmartphone, setSelectedSmartphone] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     marca: true,
@@ -59,19 +62,21 @@ function SmartphonesView() {
     }
   };
 
-  const handleAssign = async (id) => {
-    try {
-      await axios.post(`http://192.168.141.50:5000/api/smartphones/${id}/asignar`);
-      fetchData(); // Recargar datos
-    } catch (error) {
-      console.error('Error al asignar el smartphone:', error);
-    }
+  const handleAssignClick = (smartphone) => {
+    setSelectedSmartphone(smartphone);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignSuccess = () => {
+    setShowAssignModal(false);
+    setSelectedSmartphone(null);
+    fetchData();
   };
 
   const handleUnassign = async (id) => {
     try {
       await axios.post(`http://192.168.141.50:5000/api/smartphones/${id}/desasignar`);
-      fetchData(); // Recargar datos
+      fetchData();
     } catch (error) {
       console.error('Error al desasignar el smartphone:', error);
     }
@@ -258,7 +263,7 @@ function SmartphonesView() {
               <FaEllipsisH />
             </button>
             <button 
-              onClick={() => row.original.empleado ? handleUnassign(row.original.id) : handleAssign(row.original.id)}
+              onClick={() => row.original.empleado ? handleUnassign(row.original.id) : handleAssignClick(row.original)}
               className="action-button assign-button"
               title={row.original.empleado ? 'Desasignar' : 'Asignar'}
             >
@@ -299,6 +304,17 @@ function SmartphonesView() {
         defaultPageSize={30}
         defaultSorting={[{ id: 'id', desc: false }]}
       />
+
+      {showAssignModal && selectedSmartphone && (
+        <AssignSmartphoneModal
+          smartphone={selectedSmartphone}
+          onClose={() => {
+            setShowAssignModal(false);
+            setSelectedSmartphone(null);
+          }}
+          onAssign={handleAssignSuccess}
+        />
+      )}
     </div>
   );
 }
