@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { FaPhoneSquare, FaHistory } from 'react-icons/fa';
 import TableView from './TableView';
+import TimelineView from './TimelineView';
 import axios from 'axios';
 import './AssetsView.css';
 
@@ -7,12 +9,14 @@ function ExtensionsView() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
+    id: true,
+    nombre_completo: true,
+    extension: true,
     sede: true,
-    nombre: true,
     departamento: true,
     cargo: true,
-    extension: true,
   });
 
   useEffect(() => {
@@ -156,6 +160,12 @@ function ExtensionsView() {
     <div className="assets-view">
       <div className="header">
         <h2>Extensiones</h2>
+        <div className="header-buttons">
+          <button className="history-button" onClick={() => setShowTimeline(true)}>
+            <FaHistory className="history-icon" />
+            Historial
+          </button>
+        </div>
       </div>
 
       <TableView
@@ -166,8 +176,15 @@ function ExtensionsView() {
         columnVisibility={columnVisibility}
         setColumnVisibility={setColumnVisibility}
         defaultPageSize={30}
-        defaultSorting={[{ id: 'extension', desc: false }]}
+        defaultSorting={[{ id: 'id', desc: false }]}
       />
+
+      {showTimeline && (
+        <TimelineView
+          categoria="extensiones"
+          onClose={() => setShowTimeline(false)}
+        />
+      )}
     </div>
   );
 }

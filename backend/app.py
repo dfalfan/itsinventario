@@ -121,6 +121,15 @@ class Impresora(db.Model):
 
     sede = db.relationship('Sede', lazy='joined')
 
+class Log(db.Model):
+    __tablename__ = 'logs'
+    id = db.Column(db.Integer, primary_key=True)
+    categoria = db.Column(db.String(50))  # 'smartphones', 'assets', 'impresoras'
+    accion = db.Column(db.String(100))    # 'asignación', 'desasignación', 'modificación', etc.
+    descripcion = db.Column(db.Text)      # Descripción detallada de la acción
+    item_id = db.Column(db.Integer)       # ID del elemento afectado
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 @app.route('/api/empleados')
 def get_empleados():
     try:
@@ -342,62 +351,61 @@ def get_empleados_sin_equipo():
         print("Error en get_empleados_sin_equipo:", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activos/<int:asset_id>/asignar', methods=['POST'])
-def asignar_activo(asset_id):
+@app.route('/api/activos/<int:activo_id>/asignar', methods=['POST'])
+def asignar_activo(activo_id):
     try:
         data = request.get_json()
         empleado_id = data.get('empleado_id')
+        nombre_equipo = data.get('nombre_equipo')
         
-        if not empleado_id:
-            return jsonify({"error": "empleado_id es requerido"}), 400
+        if not empleado_id or not nombre_equipo:
+            return jsonify({"error": "empleado_id y nombre_equipo son requeridos"}), 400
             
-        asset = Asset.query.get(asset_id)
-        if not asset:
+        activo = Asset.query.get(activo_id)
+        if not activo:
             return jsonify({"error": "Activo no encontrado"}), 404
             
         empleado = Empleado.query.get(empleado_id)
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
-            
-        asset.empleado_id = empleado_id
-        asset.estado = 'Asignado'
-        asset.updated_at = datetime.utcnow()
+
+        activo.empleado_id = empleado_id
+        activo.nombre_equipo = nombre_equipo
+        activo.estado = 'Asignado'
+        activo.updated_at = datetime.utcnow()
         
-        # Guardar solo el ID del activo
-        empleado.equipo_asignado = str(asset_id)
+        # Registrar el log
+        descripcion = f"Se asignó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) al empleado {empleado.nombre_completo}"
+        registrar_log('assets', 'asignación', descripcion, activo_id)
         
         db.session.commit()
         
         return jsonify({
             "message": "Activo asignado exitosamente",
-            "empleado": empleado.nombre_completo,
-            "activo": asset.nombre_equipo
+            "empleado": empleado.nombre_completo
         })
         
     except Exception as e:
         db.session.rollback()
-        print("Error en asignar_activo:", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activos/<int:asset_id>/desasignar', methods=['POST'])
-def desasignar_activo(asset_id):
+@app.route('/api/activos/<int:activo_id>/desasignar', methods=['POST'])
+def desasignar_activo(activo_id):
     try:
-        asset = Asset.query.get(asset_id)
-        if not asset:
+        activo = Asset.query.get(activo_id)
+        if not activo:
             return jsonify({'error': 'Activo no encontrado'}), 404
+            
+        empleado = Empleado.query.get(activo.empleado_id)
+        empleado_nombre = empleado.nombre_completo if empleado else "desconocido"
+            
+        activo.empleado_id = None
+        activo.estado = 'Disponible'
+        activo.updated_at = datetime.utcnow()
         
-        # Obtener empleado asociado
-        empleado = Empleado.query.get(asset.empleado_id)
-        
-        # Resetear campos del activo
-        asset.empleado_id = None
-        asset.nombre_equipo = None
-        asset.estado = 'DISPONIBLE'
-        
-        # Actualizar empleado si existe
-        if empleado:
-            empleado.equipo_asignado = None  # Actualizar campo del empleado
-            db.session.add(empleado)
+        # Registrar el log
+        descripcion = f"Se desasignó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) del empleado {empleado_nombre}"
+        registrar_log('assets', 'desasignación', descripcion, activo_id)
         
         db.session.commit()
         return jsonify({'message': 'Activo desasignado correctamente'}), 200
@@ -653,30 +661,35 @@ def buscar_activo():
         print(f"Error en buscar_activo: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/empleados/<int:empleado_id>')
-def get_empleado(empleado_id):
+@app.route('/api/empleados/<int:empleado_id>', methods=['PATCH'])
+def update_empleado(empleado_id):
     try:
         empleado = Empleado.query.get(empleado_id)
-        
         if not empleado:
             return jsonify({'error': 'Empleado no encontrado'}), 404
+
+        data = request.get_json()
+        
+        # Si se está actualizando la extensión
+        if 'extension' in data:
+            old_extension = empleado.extension
+            new_extension = data['extension']
+            empleado.extension = new_extension
             
+            # Registrar el log
+            if old_extension != new_extension:
+                descripcion = f"Se actualizó la extensión del empleado {empleado.nombre_completo} de {old_extension or 'sin extensión'} a {new_extension or 'sin extensión'}"
+                registrar_log('extensiones', 'modificación', descripcion, empleado_id)
+        
+        db.session.commit()
+        
         return jsonify({
-            'id': empleado.id,
-            'nombre': empleado.nombre_completo,
-            'ficha': empleado.ficha,
-            'extension': empleado.extension,
-            'correo': empleado.correo,
-            'sede': empleado.sede.nombre if empleado.sede else None,
-            'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
-            'departamento': empleado.departamento.nombre if empleado.departamento else None,
-            'area': empleado.area.nombre if empleado.area else None,
-            'cargo': empleado.cargo.nombre if empleado.cargo else None,
-            'equipo_asignado': empleado.equipo_asignado
+            'message': 'Empleado actualizado exitosamente',
+            'updated_fields': list(data.keys())
         })
         
     except Exception as e:
-        print(f"Error en get_empleado: {str(e)}")
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/empleados/actualizar-correos', methods=['POST'])
@@ -980,7 +993,6 @@ def asignar_smartphone(smartphone_id):
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
 
-        # Verificar si el empleado ya tiene un smartphone asignado
         if Smartphone.query.filter_by(empleado_id=empleado_id).first():
             return jsonify({"error": "El empleado ya tiene un smartphone asignado"}), 400
             
@@ -988,6 +1000,10 @@ def asignar_smartphone(smartphone_id):
         smartphone.estado = 'Asignado'
         smartphone.fecha_asignacion = datetime.utcnow()
         smartphone.updated_at = datetime.utcnow()
+        
+        # Registrar el log
+        descripcion = f"Se asignó el smartphone {smartphone.marca} {smartphone.modelo} (ID: {smartphone.id}) al empleado {empleado.nombre_completo}"
+        registrar_log('smartphones', 'asignación', descripcion, smartphone_id)
         
         db.session.commit()
         
@@ -1007,10 +1023,17 @@ def desasignar_smartphone(smartphone_id):
         if not smartphone:
             return jsonify({'error': 'Smartphone no encontrado'}), 404
             
+        empleado = Empleado.query.get(smartphone.empleado_id)
+        empleado_nombre = empleado.nombre_completo if empleado else "desconocido"
+            
         smartphone.empleado_id = None
         smartphone.estado = 'Disponible'
         smartphone.fecha_asignacion = None
         smartphone.updated_at = datetime.utcnow()
+        
+        # Registrar el log
+        descripcion = f"Se desasignó el smartphone {smartphone.marca} {smartphone.modelo} (ID: {smartphone.id}) del empleado {empleado_nombre}"
+        registrar_log('smartphones', 'desasignación', descripcion, smartphone_id)
         
         db.session.commit()
         return jsonify({'message': 'Smartphone desasignado correctamente'}), 200
@@ -1301,6 +1324,38 @@ def create_smartphone():
         db.session.rollback()
         print("Error en create_smartphone:", str(e))
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logs/<categoria>')
+def get_logs(categoria):
+    try:
+        logs = Log.query.filter_by(categoria=categoria)\
+            .order_by(Log.created_at.desc())\
+            .all()
+        
+        return jsonify([{
+            'id': log.id,
+            'accion': log.accion,
+            'descripcion': log.descripcion,
+            'item_id': log.item_id,
+            'fecha': log.created_at.isoformat()
+        } for log in logs])
+    except Exception as e:
+        print(f"Error obteniendo logs: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Modificar la función de registrar logs
+def registrar_log(categoria, accion, descripcion, item_id):
+    try:
+        log = Log(
+            categoria=categoria,
+            accion=accion,
+            descripcion=descripcion,
+            item_id=item_id
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        print(f"Error registrando log: {str(e)}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

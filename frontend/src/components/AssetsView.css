@@ -413,3 +413,25 @@ table {
   background-color: #e8f4fd;
 }
 
+.history-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.history-button:hover {
+  background-color: #5a6268;
+}
+
+.history-icon {
+  font-size: 16px;
+}
+

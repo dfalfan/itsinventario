@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
@@ -7,6 +7,7 @@ import DeleteAssetModal from './DeleteAssetModal';
 import NewAssetModal from './NewAssetModal';
 import AssetModal from './AssetModal';
 import EmployeeModal from './EmployeeModal';
+import TimelineView from './TimelineView';
 import './AssetsView.css';
 import axios from 'axios';
 
@@ -23,6 +24,7 @@ function AssetsView() {
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     sede: true,
@@ -494,7 +496,11 @@ function AssetsView() {
       <div className="header">
         <h2>Activos</h2>
         <div className="header-buttons">
-          <button onClick={() => setShowNewAssetModal(true)} className="add-button">
+          <button className="history-button" onClick={() => setShowTimeline(true)}>
+            <FaHistory className="history-icon" />
+            Historial
+          </button>
+          <button className="add-button" onClick={() => setShowNewAssetModal(true)}>
             <FaPlus className="add-icon" />
             Agregar Activo
           </button>
@@ -562,6 +568,13 @@ function AssetsView() {
             setShowEmployeeModal(false);
             setSelectedEmployee(null);
           }}
+        />
+      )}
+
+      {showTimeline && (
+        <TimelineView
+          categoria="assets"
+          onClose={() => setShowTimeline(false)}
         />
       )}
     </div>

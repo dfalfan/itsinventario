@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory } from 'react-icons/fa';
 import TableView from './TableView';
 import AssignSmartphoneModal from './AssignSmartphoneModal';
 import EmployeeModal from './EmployeeModal';
+import TimelineView from './TimelineView';
 import axios from 'axios';
 import './AssetsView.css';
 import AddSmartphoneModal from './AddSmartphoneModal';
@@ -30,6 +31,7 @@ function SmartphonesView() {
     acciones: true,
   });
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -338,6 +340,10 @@ function SmartphonesView() {
       <div className="header">
         <h2>Smartphones</h2>
         <div className="header-buttons">
+          <button className="history-button" onClick={() => setShowTimeline(true)}>
+            <FaHistory className="history-icon" />
+            Historial
+          </button>
           <button className="add-button" onClick={() => setShowAddModal(true)}>
             <FaPlus className="add-icon" />
             Agregar Smartphone
@@ -414,6 +420,13 @@ function SmartphonesView() {
         <AddSmartphoneModal
           onClose={() => setShowAddModal(false)}
           onAdd={handleAddSmartphone}
+        />
+      )}
+
+      {showTimeline && (
+        <TimelineView
+          categoria="smartphones"
+          onClose={() => setShowTimeline(false)}
         />
       )}
     </div>
