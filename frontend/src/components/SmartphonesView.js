@@ -14,7 +14,7 @@ function SmartphonesView() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedSmartphone, setSelectedSmartphone] = useState(null);
-  const [selectedEmpleadoId, setSelectedEmpleadoId] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     marca: true,
@@ -104,9 +104,21 @@ function SmartphonesView() {
     }
   };
 
-  const handleEmployeeClick = (empleadoId) => {
-    setSelectedEmpleadoId(empleadoId);
-    setShowEmployeeModal(true);
+  const handleEmployeeClick = async (empleadoId) => {
+    try {
+      const response = await axios.get(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
+      // Transformar los datos al formato esperado por EmployeeModal
+      const empleadoData = {
+        ...response.data,
+        nombre_completo: response.data.nombre,
+        asset_type: response.data.equipo_asignado ? 'PC' : null,
+        asset_name: response.data.equipo_asignado
+      };
+      setSelectedEmployee(empleadoData);
+      setShowEmployeeModal(true);
+    } catch (error) {
+      console.error('Error al obtener datos del empleado:', error);
+    }
   };
 
   const EditableCell = ({ value, column, row, table, onSave }) => {
@@ -251,14 +263,14 @@ function SmartphonesView() {
           if (!empleado) return <span className="no-employee">Sin asignar</span>;
           
           return (
-            <span 
+            <div 
               className="employee-type clickable"
               onClick={() => handleEmployeeClick(empleadoId)}
-              title="Ver detalles del empleado"
+              style={{ cursor: 'pointer' }}
             >
               <FaUser className="employee-icon" />
               <span className="employee-name">{empleado}</span>
-            </span>
+            </div>
           );
         }
       },
@@ -382,12 +394,12 @@ function SmartphonesView() {
         </div>
       )}
 
-      {showEmployeeModal && selectedEmpleadoId && (
+      {showEmployeeModal && selectedEmployee && (
         <EmployeeModal
-          empleadoId={selectedEmpleadoId}
+          employee={selectedEmployee}
           onClose={() => {
             setShowEmployeeModal(false);
-            setSelectedEmpleadoId(null);
+            setSelectedEmployee(null);
           }}
         />
       )}
