@@ -11,6 +11,7 @@ from reportlab.lib.units import inch
 import os
 import io
 from ldap3 import Server, Connection, ALL
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -1091,6 +1092,168 @@ def get_empleados_sin_smartphone():
         
     except Exception as e:
         print("Error en get_empleados_sin_smartphone:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones/<int:smartphone_id>/constancia', methods=['GET'])
+def generar_constancia_smartphone(smartphone_id):
+    try:
+        # Obtener la información del smartphone y empleado
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone or not smartphone.empleado_id:
+            return jsonify({'error': 'Smartphone no encontrado o no está asignado'}), 404
+            
+        empleado = Empleado.query.get(smartphone.empleado_id)
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+
+        # Registrar la fuente Montserrat
+        pdfmetrics.registerFont(TTFont('Montserrat', 'static/Montserrat-Regular.ttf'))
+        pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'static/Montserrat-Bold.ttf'))
+
+        # Crear un buffer para el PDF
+        buffer = io.BytesIO()
+        
+        # Crear el PDF
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Añadir logo (más ancho)
+        p.drawImage('static/logo_sura.png', 50, height - 100, width=120, height=50)
+        
+        # Fecha actual
+        fecha_actual = datetime.now().strftime("%d/%m/%Y")
+        p.setFont("Montserrat", 12)
+        p.drawString(width - 200, height - 100, f"Valencia, {fecha_actual}")
+        
+        # Título
+        p.setFont("Montserrat-Bold", 16)
+        titulo = "Constancia de Entrega"
+        titulo_width = p.stringWidth(titulo, "Montserrat-Bold", 16)
+        p.drawString((width - titulo_width) / 2, height - 150, titulo)
+
+        # Función para justificar texto con formato mixto
+        def justify_mixed_text(text_parts, width, start_y, line_height=25):
+            words = []
+            current_font = None
+            
+            # Convertir el texto mixto en palabras con su formato
+            for font, content in text_parts:
+                for word in content.split():
+                    words.append((font, word))
+            
+            lines = []
+            current_line = []
+            current_width = 0
+            space_width = p.stringWidth(' ', 'Montserrat', 12)
+            
+            for word_tuple in words:
+                font, word = word_tuple
+                p.setFont(font, 12)
+                word_width = p.stringWidth(word, font, 12)
+                
+                if current_width + word_width <= width:
+                    current_line.append(word_tuple)
+                    current_width += word_width + space_width
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = [word_tuple]
+                    current_width = word_width + space_width
+            
+            if current_line:
+                lines.append(current_line)
+            
+            # Dibujar las líneas justificadas
+            y = start_y
+            margin = 72
+            
+            for line in lines:
+                if len(line) > 1:
+                    x = margin
+                    total_width = sum(p.stringWidth(word, font, 12) for font, word in line)
+                    space_width = (width - total_width) / (len(line) - 1)
+                    
+                    for font, word in line[:-1]:
+                        p.setFont(font, 12)
+                        p.drawString(x, y, word)
+                        x += p.stringWidth(word, font, 12) + space_width
+                    
+                    # Última palabra de la línea
+                    font, word = line[-1]
+                    p.setFont(font, 12)
+                    p.drawString(x, y, word)
+                else:
+                    # Si solo hay una palabra en la línea
+                    font, word = line[0]
+                    p.setFont(font, 12)
+                    p.drawString(margin, y, word)
+                
+                y -= line_height
+            return y
+
+        # Escribir el primer párrafo con formato mixto y justificado
+        margin = 72
+        y = height - 200
+        text_width = width - 2 * margin
+        
+        # Primer párrafo con formato mixto
+        text_parts = [
+            ("Montserrat", "Yo, "),
+            ("Montserrat-Bold", empleado.nombre_completo),
+            ("Montserrat", ", titular de la C.I. "),
+            ("Montserrat-Bold", empleado.cedula),
+            ("Montserrat", ", actualmente desempeñándome en el cargo de "),
+            ("Montserrat-Bold", empleado.cargo.nombre if empleado.cargo else ''),
+            ("Montserrat", ", he recibido por parte del Departamento de I.T.S. de la Empresa "),
+            ("Montserrat-Bold", "SURA DE VENEZUELA, C.A."),
+            ("Montserrat", " un telefono celular marca "),
+            ("Montserrat-Bold", smartphone.marca),
+            ("Montserrat", " Modelo "),
+            ("Montserrat-Bold", smartphone.modelo),
+            ("Montserrat", " cuyo Serial es "),
+            ("Montserrat-Bold", smartphone.serial),
+            ("Montserrat", " IMEI1"),
+            ("Montserrat-Bold", smartphone.imei),
+            ("Montserrat", " IMEI2"),
+            ("Montserrat-Bold", smartphone.imei2),
+            ("Montserrat", ", junto con su cargador y forro protector, con el objetivo de ser utilizado para fines estrictamente laborales, con suma precaución.")
+        ]
+        
+        y = justify_mixed_text(text_parts, text_width, y)
+        
+        # Espacio entre párrafos
+        y -= 15
+        
+        # Segundo párrafo
+        segundo_parrafo = [
+            ("Montserrat", "Hago constar que entiendo plenamente lo relacionado a los aspectos antes señalados y me comprometo a cumplir con las indicaciones a cabalidad en el ejercicio de mis labores en la empresa "),
+            ("Montserrat-Bold", "SURA DE VENEZUELA, C.A.")
+        ]
+        
+        y = justify_mixed_text(segundo_parrafo, text_width, y)
+        
+        # Espacio para firma
+        p.setFont("Montserrat", 12)
+        firma_y = 200
+        p.line((width - 200) / 2, firma_y, (width + 200) / 2, firma_y)
+        p.drawString((width - p.stringWidth("Firma", "Montserrat", 12)) / 2, firma_y - 20, "Firma")
+        
+        # Finalizar el PDF
+        p.showPage()
+        p.save()
+        
+        # Mover el cursor al inicio del buffer
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f'constancia_entrega_{empleado.nombre_completo}_{fecha_actual}.pdf',
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"Error generando constancia: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

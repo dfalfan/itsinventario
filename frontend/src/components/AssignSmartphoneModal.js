@@ -7,6 +7,7 @@ function AssignSmartphoneModal({ smartphone, onClose, onAssign }) {
   const [selectedEmpleado, setSelectedEmpleado] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     fetchEmpleados();
@@ -29,17 +30,70 @@ function AssignSmartphoneModal({ smartphone, onClose, onAssign }) {
       setError('Por favor seleccione un empleado');
       return;
     }
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmAssign = async (generatePDF) => {
     try {
       await axios.post(`http://192.168.141.50:5000/api/smartphones/${smartphone.id}/asignar`, {
         empleado_id: selectedEmpleado
       });
+
+      if (generatePDF) {
+        try {
+          const response = await axios.get(
+            `http://192.168.141.50:5000/api/smartphones/${smartphone.id}/constancia`,
+            { responseType: 'blob' }
+          );
+          
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          const empleado = empleados.find(e => e.id === parseInt(selectedEmpleado));
+          link.setAttribute('download', `constancia_smartphone_${empleado.nombre}.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Error al generar el PDF:', error);
+        }
+      }
+
       onAssign();
     } catch (error) {
       console.error('Error al asignar smartphone:', error);
       setError('Error al asignar el smartphone');
+      setShowConfirmModal(false);
     }
   };
+
+  if (showConfirmModal) {
+    const empleado = empleados.find(e => e.id === parseInt(selectedEmpleado));
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>Confirmar Asignación</h2>
+          <div className="modal-body">
+            <p>¿Desea generar la constancia de entrega?</p>
+            <div className="asset-info">
+              <p><strong>Marca:</strong> {smartphone.marca}</p>
+              <p><strong>Modelo:</strong> {smartphone.modelo}</p>
+              <p><strong>Empleado:</strong> {empleado?.nombre}</p>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button onClick={() => handleConfirmAssign(false)} className="button secondary">
+              No Generar
+            </button>
+            <button onClick={() => handleConfirmAssign(true)} className="button primary">
+              Generar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay">
@@ -47,7 +101,7 @@ function AssignSmartphoneModal({ smartphone, onClose, onAssign }) {
         <h2>Asignar Smartphone</h2>
         
         <div className="modal-body">
-          <div className="smartphone-info">
+          <div className="asset-info">
             <p><strong>Marca:</strong> {smartphone.marca}</p>
             <p><strong>Modelo:</strong> {smartphone.modelo}</p>
             <p><strong>Serial:</strong> {smartphone.serial}</p>
@@ -83,7 +137,7 @@ function AssignSmartphoneModal({ smartphone, onClose, onAssign }) {
             Cancelar
           </button>
           <button 
-            onClick={handleAssign} 
+            onClick={handleAssign}
             className="button primary"
             disabled={loading || !selectedEmpleado}
           >
