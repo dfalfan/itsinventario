@@ -89,6 +89,34 @@ class Asset(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
 
+class Smartphone(db.Model):
+    __tablename__ = 'smartphones'
+    id = db.Column(db.Integer, primary_key=True)
+    marca = db.Column(db.String(100))
+    modelo = db.Column(db.String(100))
+    serial = db.Column(db.String(100))
+    imei = db.Column(db.String(50))
+    imei2 = db.Column(db.String(50))
+    linea = db.Column(db.String(50))
+    estado = db.Column(db.String(20))
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
+    fecha_asignacion = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    empleado = db.relationship('Empleado', lazy='joined')
+
+class Impresora(db.Model):
+    __tablename__ = 'impresoras'
+    id = db.Column(db.Integer, primary_key=True)
+    sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'))
+    impresora = db.Column(db.String(100))
+    proveedor = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sede = db.relationship('Sede', lazy='joined')
+
 @app.route('/api/empleados')
 def get_empleados():
     try:
@@ -869,6 +897,164 @@ def verificar_equipos():
         return jsonify(resultado)
     except Exception as e:
         print(f"Error en verificar_equipos: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones')
+def get_smartphones():
+    try:
+        smartphones = db.session.query(
+            Smartphone, Empleado
+        ).outerjoin(
+            Empleado, Smartphone.empleado_id == Empleado.id
+        ).all()
+        
+        return jsonify([{
+            'id': phone.id,
+            'marca': phone.marca,
+            'modelo': phone.modelo,
+            'serial': phone.serial,
+            'imei': phone.imei,
+            'imei2': phone.imei2,
+            'linea': phone.linea,
+            'estado': phone.estado,
+            'empleado': empleado.nombre_completo if empleado else None,
+            'empleado_id': empleado.id if empleado else None,
+            'fecha_asignacion': phone.fecha_asignacion.isoformat() if phone.fecha_asignacion else None
+        } for phone, empleado in smartphones])
+    except Exception as e:
+        print(f"Error en get_smartphones: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones/<int:smartphone_id>', methods=['PATCH'])
+def update_smartphone(smartphone_id):
+    try:
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({'error': 'Smartphone no encontrado'}), 404
+
+        data = request.get_json()
+        
+        # Lista de campos permitidos para editar
+        allowed_fields = ['marca', 'modelo', 'serial', 'imei', 'imei2', 'linea', 'estado']
+        
+        for field in data:
+            if field in allowed_fields:
+                setattr(smartphone, field, data[field])
+        
+        smartphone.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Smartphone actualizado exitosamente',
+            'updated_fields': list(data.keys())
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones/<int:smartphone_id>/asignar', methods=['POST'])
+def asignar_smartphone(smartphone_id):
+    try:
+        data = request.get_json()
+        empleado_id = data.get('empleado_id')
+        
+        if not empleado_id:
+            return jsonify({"error": "empleado_id es requerido"}), 400
+            
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({"error": "Smartphone no encontrado"}), 404
+            
+        empleado = Empleado.query.get(empleado_id)
+        if not empleado:
+            return jsonify({"error": "Empleado no encontrado"}), 404
+            
+        smartphone.empleado_id = empleado_id
+        smartphone.estado = 'Asignado'
+        smartphone.fecha_asignacion = datetime.utcnow()
+        smartphone.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Smartphone asignado exitosamente",
+            "empleado": empleado.nombre_completo
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones/<int:smartphone_id>/desasignar', methods=['POST'])
+def desasignar_smartphone(smartphone_id):
+    try:
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({'error': 'Smartphone no encontrado'}), 404
+        
+        smartphone.empleado_id = None
+        smartphone.estado = 'Disponible'
+        smartphone.fecha_asignacion = None
+        smartphone.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        return jsonify({'message': 'Smartphone desasignado correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/impresoras')
+def get_impresoras():
+    try:
+        impresoras = db.session.query(
+            Impresora, Sede
+        ).outerjoin(
+            Sede, Impresora.sede_id == Sede.id
+        ).all()
+        
+        return jsonify([{
+            'id': imp.id,
+            'sede': sede.nombre if sede else None,
+            'sede_id': imp.sede_id,
+            'impresora': imp.impresora,
+            'proveedor': imp.proveedor
+        } for imp, sede in impresoras])
+    except Exception as e:
+        print(f"Error en get_impresoras: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/impresoras/<int:impresora_id>', methods=['PATCH'])
+def update_impresora(impresora_id):
+    try:
+        impresora = Impresora.query.get(impresora_id)
+        if not impresora:
+            return jsonify({'error': 'Impresora no encontrada'}), 404
+
+        data = request.get_json()
+        
+        # Lista de campos permitidos para editar
+        allowed_fields = ['impresora', 'proveedor']
+        
+        for field in data:
+            if field in allowed_fields:
+                setattr(impresora, field, data[field])
+            elif field == 'sede':
+                # Buscar la sede por nombre y actualizar sede_id
+                sede = Sede.query.filter_by(nombre=data[field]).first()
+                if sede:
+                    impresora.sede_id = sede.id
+        
+        impresora.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Impresora actualizada exitosamente',
+            'updated_fields': list(data.keys())
+        })
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
