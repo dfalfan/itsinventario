@@ -5,6 +5,7 @@ import AssignSmartphoneModal from './AssignSmartphoneModal';
 import EmployeeModal from './EmployeeModal';
 import axios from 'axios';
 import './AssetsView.css';
+import AddSmartphoneModal from './AddSmartphoneModal';
 
 function SmartphonesView() {
   const [data, setData] = useState([]);
@@ -28,6 +29,7 @@ function SmartphonesView() {
     fecha_asignacion: false,
     acciones: true,
   });
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -119,6 +121,10 @@ function SmartphonesView() {
     } catch (error) {
       console.error('Error al obtener datos del empleado:', error);
     }
+  };
+
+  const handleAddSmartphone = (newSmartphone) => {
+    setData(prevData => [...prevData, newSmartphone]);
   };
 
   const EditableCell = ({ value, column, row, table, onSave }) => {
@@ -332,7 +338,7 @@ function SmartphonesView() {
       <div className="header">
         <h2>Smartphones</h2>
         <div className="header-buttons">
-          <button className="add-button">
+          <button className="add-button" onClick={() => setShowAddModal(true)}>
             <FaPlus className="add-icon" />
             Agregar Smartphone
           </button>
@@ -401,6 +407,13 @@ function SmartphonesView() {
             setShowEmployeeModal(false);
             setSelectedEmployee(null);
           }}
+        />
+      )}
+
+      {showAddModal && (
+        <AddSmartphoneModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddSmartphone}
         />
       )}
     </div>

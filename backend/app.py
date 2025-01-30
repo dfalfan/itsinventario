@@ -1256,5 +1256,51 @@ def generar_constancia_smartphone(smartphone_id):
         print(f"Error generando constancia: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/smartphones', methods=['POST'])
+def create_smartphone():
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        required_fields = ['marca', 'modelo', 'serial', 'imei']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'El campo {field} es requerido'}), 400
+
+        new_smartphone = Smartphone(
+            marca=data['marca'],
+            modelo=data['modelo'],
+            serial=data['serial'],
+            imei=data['imei'],
+            imei2=data.get('imei2', ''),
+            linea=data.get('linea', ''),
+            estado='Disponible'  # Estado inicial
+        )
+
+        db.session.add(new_smartphone)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Smartphone creado exitosamente',
+            'smartphone': {
+                'id': new_smartphone.id,
+                'marca': new_smartphone.marca,
+                'modelo': new_smartphone.modelo,
+                'serial': new_smartphone.serial,
+                'imei': new_smartphone.imei,
+                'imei2': new_smartphone.imei2,
+                'linea': new_smartphone.linea,
+                'estado': new_smartphone.estado,
+                'empleado': None,
+                'empleado_id': None,
+                'fecha_asignacion': None
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error en create_smartphone:", str(e))
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
