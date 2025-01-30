@@ -14,7 +14,7 @@ function SmartphonesView() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedSmartphone, setSelectedSmartphone] = useState(null);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const [selectedEmpleadoId, setSelectedEmpleadoId] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     marca: true,
@@ -104,20 +104,9 @@ function SmartphonesView() {
     }
   };
 
-  const handleEmployeeClick = async (empleadoId) => {
-    try {
-      const response = await fetch(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener detalles del empleado');
-      }
-      
-      const empleado = await response.json();
-      setSelectedEmployeeId(empleado);
-      setShowEmployeeModal(true);
-    } catch (error) {
-      console.error('Error:', error);
-    }
+  const handleEmployeeClick = (empleadoId) => {
+    setSelectedEmpleadoId(empleadoId);
+    setShowEmployeeModal(true);
   };
 
   const EditableCell = ({ value, column, row, table, onSave }) => {
@@ -265,6 +254,7 @@ function SmartphonesView() {
             <span 
               className="employee-type clickable"
               onClick={() => handleEmployeeClick(empleadoId)}
+              title="Ver detalles del empleado"
             >
               <FaUser className="employee-icon" />
               <span className="employee-name">{empleado}</span>
@@ -392,12 +382,12 @@ function SmartphonesView() {
         </div>
       )}
 
-      {showEmployeeModal && selectedEmployeeId && (
+      {showEmployeeModal && selectedEmpleadoId && (
         <EmployeeModal
-          employee={selectedEmployeeId}
+          empleadoId={selectedEmpleadoId}
           onClose={() => {
             setShowEmployeeModal(false);
-            setSelectedEmployeeId(null);
+            setSelectedEmpleadoId(null);
           }}
         />
       )}

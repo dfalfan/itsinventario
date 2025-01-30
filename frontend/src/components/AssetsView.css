@@ -404,3 +404,12 @@ table {
   text-align: center;
 }
 
+.employee-type.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.employee-type.clickable:hover {
+  background-color: #e8f4fd;
+}
+

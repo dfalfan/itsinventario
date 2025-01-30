@@ -308,33 +308,34 @@ def get_dashboard_stats():
         print(f"Error en get_dashboard_stats: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/empleados/sin-equipo')
+@app.route('/api/empleados/sin-equipo', methods=['GET'])
 def get_empleados_sin_equipo():
     try:
-        # Subconsulta para obtener los IDs de empleados que ya tienen equipo o smartphone
-        empleados_con_equipo = db.session.query(Asset.empleado_id).filter(
-            Asset.empleado_id.isnot(None)
-        ).union(
-            db.session.query(Smartphone.empleado_id).filter(
-                Smartphone.empleado_id.isnot(None)
-            )
-        ).subquery()
-        
-        # Consulta principal: empleados que no están en la subconsulta
-        empleados = Empleado.query.filter(
-            ~Empleado.id.in_(empleados_con_equipo)
-        ).order_by(
-            Empleado.nombre_completo
-        ).all()
+        empleados = db.session.query(
+            Empleado.id,
+            Empleado.ficha,
+            Empleado.nombre_completo,
+            Sede.nombre.label('sede_nombre'),
+            Departamento.nombre.label('departamento_nombre'),
+            Cargo.nombre.label('cargo_nombre')
+        ).outerjoin(
+            Sede, Empleado.sede_id == Sede.id
+        ).outerjoin(
+            Departamento, Empleado.departamento_id == Departamento.id
+        ).outerjoin(
+            Cargo, Empleado.cargo_id == Cargo.id
+        ).filter(
+            Empleado.equipo_asignado.is_(None)
+        ).order_by(Empleado.nombre_completo).all()
         
         return jsonify([{
-            'id': e.id,
-            'nombre': e.nombre_completo,
-            'ficha': e.ficha,
-            'sede': e.sede.nombre if e.sede else None,
-            'departamento': e.departamento.nombre if e.departamento else None,
-            'cargo': e.cargo.nombre if e.cargo else None
-        } for e in empleados])
+            'id': id,
+            'ficha': ficha,
+            'sede': sede_nombre,
+            'nombre': nombre_completo,
+            'departamento': departamento_nombre,
+            'cargo': cargo_nombre
+        } for id, ficha, nombre_completo, sede_nombre, departamento_nombre, cargo_nombre in empleados])
         
     except Exception as e:
         print("Error en get_empleados_sin_equipo:", str(e))
