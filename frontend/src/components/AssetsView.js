@@ -7,6 +7,7 @@ import DeleteAssetModal from './DeleteAssetModal';
 import NewAssetModal from './NewAssetModal';
 import AssetModal from './AssetModal';
 import EmployeeModal from './EmployeeModal';
+import AssignAssetModal from './AssignAssetModal';
 import './AssetsView.css';
 import axios from 'axios';
 
@@ -23,6 +24,8 @@ function AssetsView() {
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     sede: true,
@@ -347,11 +350,7 @@ function AssetsView() {
 
   const handleAssignClick = (asset) => {
     setSelectedAsset(asset);
-    if (asset.estado?.toLowerCase() === 'asignado') {
-      setShowUnassignModal(true);
-    } else {
-      setShowModal(true);
-    }
+    setShowAssignModal(true);
   };
 
   const handleDelete = (asset) => {
@@ -360,9 +359,9 @@ function AssetsView() {
   };
 
   const handleAssignSuccess = () => {
-    fetchData();
-    setShowModal(false);
+    setShowAssignModal(false);
     setSelectedAsset(null);
+    fetchData();
   };
 
   const handleUnassignSuccess = () => {
@@ -408,6 +407,27 @@ function AssetsView() {
     } catch (error) {
       console.error('Error al actualizar el activo:', error);
       // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const handleUnassign = async () => {
+    try {
+      await axios.post(`http://192.168.141.50:5000/api/assets/${selectedAsset.id}/desasignar`);
+      setData(prevData => prevData.map(item => 
+        item.id === selectedAsset.id 
+          ? {
+              ...item,
+              empleado: null,
+              empleado_id: null,
+              estado: 'Disponible',
+              fecha_asignacion: null
+            }
+          : item
+      ));
+      setShowConfirmModal(false);
+      setSelectedAsset(null);
+    } catch (error) {
+      console.error('Error al desasignar el equipo:', error);
     }
   };
 
@@ -563,6 +583,50 @@ function AssetsView() {
             setSelectedEmployee(null);
           }}
         />
+      )}
+
+      {showAssignModal && selectedAsset && (
+        <AssignAssetModal
+          asset={selectedAsset}
+          onClose={() => {
+            setShowAssignModal(false);
+            setSelectedAsset(null);
+          }}
+          onAssign={handleAssignSuccess}
+        />
+      )}
+
+      {showConfirmModal && selectedAsset && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Confirmar Desasignación</h2>
+            <div className="modal-body">
+              <p>¿Está seguro que desea desasignar el siguiente equipo?</p>
+              <div className="asset-info">
+                <p><strong>Tipo:</strong> {selectedAsset.tipo}</p>
+                <p><strong>Nombre:</strong> {selectedAsset.nombre_equipo}</p>
+                <p><strong>Empleado:</strong> {selectedAsset.empleado}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedAsset(null);
+                }} 
+                className="button secondary"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleUnassign}
+                className="button primary"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

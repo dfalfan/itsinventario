@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser } from 'react-icons/fa';
 import TableView from './TableView';
 import AssignSmartphoneModal from './AssignSmartphoneModal';
+import EmployeeModal from './EmployeeModal';
 import axios from 'axios';
 import './AssetsView.css';
 
@@ -11,7 +12,9 @@ function SmartphonesView() {
   const [error, setError] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedSmartphone, setSelectedSmartphone] = useState(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     marca: true,
@@ -98,6 +101,22 @@ function SmartphonesView() {
       setSelectedSmartphone(null);
     } catch (error) {
       console.error('Error al desasignar el smartphone:', error);
+    }
+  };
+
+  const handleEmployeeClick = async (empleadoId) => {
+    try {
+      const response = await fetch(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener detalles del empleado');
+      }
+      
+      const empleado = await response.json();
+      setSelectedEmployeeId(empleado);
+      setShowEmployeeModal(true);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -238,10 +257,15 @@ function SmartphonesView() {
         accessorKey: 'empleado',
         cell: ({ row }) => {
           const empleado = row.original.empleado;
+          const empleadoId = row.original.empleado_id;
+          
           if (!empleado) return <span className="no-employee">Sin asignar</span>;
           
           return (
-            <span className="employee-type">
+            <span 
+              className="employee-type clickable"
+              onClick={() => handleEmployeeClick(empleadoId)}
+            >
               <FaUser className="employee-icon" />
               <span className="employee-name">{empleado}</span>
             </span>
@@ -366,6 +390,16 @@ function SmartphonesView() {
             </div>
           </div>
         </div>
+      )}
+
+      {showEmployeeModal && selectedEmployeeId && (
+        <EmployeeModal
+          employee={selectedEmployeeId}
+          onClose={() => {
+            setShowEmployeeModal(false);
+            setSelectedEmployeeId(null);
+          }}
+        />
       )}
     </div>
   );
