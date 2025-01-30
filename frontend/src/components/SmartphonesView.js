@@ -10,6 +10,7 @@ function SmartphonesView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedSmartphone, setSelectedSmartphone] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
@@ -73,10 +74,28 @@ function SmartphonesView() {
     fetchData();
   };
 
-  const handleUnassign = async (id) => {
+  const handleUnassignClick = (smartphone) => {
+    setSelectedSmartphone(smartphone);
+    setShowConfirmModal(true);
+  };
+
+  const handleUnassign = async () => {
     try {
-      await axios.post(`http://192.168.141.50:5000/api/smartphones/${id}/desasignar`);
-      fetchData();
+      await axios.post(`http://192.168.141.50:5000/api/smartphones/${selectedSmartphone.id}/desasignar`);
+      // Actualizar el estado local inmediatamente
+      setData(prevData => prevData.map(item => 
+        item.id === selectedSmartphone.id 
+          ? {
+              ...item,
+              empleado: null,
+              empleado_id: null,
+              estado: 'Disponible',
+              fecha_asignacion: null
+            }
+          : item
+      ));
+      setShowConfirmModal(false);
+      setSelectedSmartphone(null);
     } catch (error) {
       console.error('Error al desasignar el smartphone:', error);
     }
@@ -263,7 +282,7 @@ function SmartphonesView() {
               <FaEllipsisH />
             </button>
             <button 
-              onClick={() => row.original.empleado ? handleUnassign(row.original.id) : handleAssignClick(row.original)}
+              onClick={() => row.original.empleado ? handleUnassignClick(row.original) : handleAssignClick(row.original)}
               className="action-button assign-button"
               title={row.original.empleado ? 'Desasignar' : 'Asignar'}
             >
@@ -314,6 +333,39 @@ function SmartphonesView() {
           }}
           onAssign={handleAssignSuccess}
         />
+      )}
+
+      {showConfirmModal && selectedSmartphone && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Confirmar Desasignación</h2>
+            <div className="modal-body">
+              <p>¿Está seguro que desea desasignar el siguiente smartphone?</p>
+              <div className="smartphone-info">
+                <p><strong>Marca:</strong> {selectedSmartphone.marca}</p>
+                <p><strong>Modelo:</strong> {selectedSmartphone.modelo}</p>
+                <p><strong>Empleado:</strong> {selectedSmartphone.empleado}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedSmartphone(null);
+                }} 
+                className="button secondary"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleUnassign}
+                className="button primary"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

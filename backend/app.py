@@ -64,17 +64,12 @@ class Empleado(db.Model):
     extension = db.Column(db.String(10), nullable=True)
     correo = db.Column(db.String(200), nullable=True)
     cedula = db.Column(db.String(10))
-    sp_asignado = db.Column(db.Integer, db.ForeignKey('smartphones.id'), nullable=True)
 
     sede = db.relationship('Sede', lazy='joined')
     gerencia = db.relationship('Gerencia', lazy='joined')
     departamento = db.relationship('Departamento', lazy='joined')
     area = db.relationship('Area', lazy='joined')
     cargo = db.relationship('Cargo', lazy='joined')
-    smartphone = db.relationship('Smartphone', 
-                               foreign_keys=[sp_asignado],
-                               backref=db.backref('empleado_asignado', uselist=False),
-                               lazy='joined')
 
 class Asset(db.Model):
     __tablename__ = 'assets'
@@ -104,14 +99,13 @@ class Smartphone(db.Model):
     imei2 = db.Column(db.String(50))
     linea = db.Column(db.String(50))
     estado = db.Column(db.String(20))
-    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=True)
     fecha_asignacion = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     empleado = db.relationship('Empleado', 
-                             foreign_keys=[empleado_id],
-                             backref=db.backref('smartphone_asignado', uselist=False),
+                             backref=db.backref('smartphone', uselist=False),
                              lazy='joined')
 
 class Impresora(db.Model):
@@ -986,16 +980,13 @@ def asignar_smartphone(smartphone_id):
             return jsonify({"error": "Empleado no encontrado"}), 404
 
         # Verificar si el empleado ya tiene un smartphone asignado
-        if empleado.sp_asignado:
+        if Smartphone.query.filter_by(empleado_id=empleado_id).first():
             return jsonify({"error": "El empleado ya tiene un smartphone asignado"}), 400
             
         smartphone.empleado_id = empleado_id
         smartphone.estado = 'Asignado'
         smartphone.fecha_asignacion = datetime.utcnow()
         smartphone.updated_at = datetime.utcnow()
-        
-        # Actualizar el empleado
-        empleado.sp_asignado = smartphone_id
         
         db.session.commit()
         
@@ -1014,12 +1005,7 @@ def desasignar_smartphone(smartphone_id):
         smartphone = Smartphone.query.get(smartphone_id)
         if not smartphone:
             return jsonify({'error': 'Smartphone no encontrado'}), 404
-        
-        # Obtener el empleado antes de desasignar
-        empleado = Empleado.query.filter_by(sp_asignado=smartphone_id).first()
-        if empleado:
-            empleado.sp_asignado = None
-        
+            
         smartphone.empleado_id = None
         smartphone.estado = 'Disponible'
         smartphone.fecha_asignacion = None
@@ -1088,7 +1074,11 @@ def update_impresora(impresora_id):
 @app.route('/api/empleados/sin-smartphone')
 def get_empleados_sin_smartphone():
     try:
-        empleados = Empleado.query.filter_by(sp_asignado=None).order_by(Empleado.nombre_completo).all()
+        # Subconsulta para obtener los IDs de empleados que ya tienen smartphone
+        empleados_con_smartphone = db.session.query(Smartphone.empleado_id).filter(Smartphone.empleado_id.isnot(None))
+        
+        # Consulta principal: empleados que no están en la subconsulta
+        empleados = Empleado.query.filter(~Empleado.id.in_(empleados_con_smartphone)).order_by(Empleado.nombre_completo).all()
         
         return jsonify([{
             'id': e.id,
