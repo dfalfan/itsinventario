@@ -37,6 +37,7 @@ function AssetsView() {
     ram: false,
     disco: false,
     activo_fijo: false,
+    fecha_asignacion: false,
   });
   const [sedes, setSedes] = useState([]);
   const [tipos, setTipos] = useState(['LAPTOP', 'DESKTOP', 'AIO']);
@@ -211,6 +212,15 @@ function AssetsView() {
             onSave={handleSave}
           />
         )
+      },
+      {
+        header: 'Fecha de Asignación',
+        accessorKey: 'fecha_asignacion',
+        cell: ({ row }) => {
+          const fecha = row.original.fecha_asignacion;
+          if (!fecha) return <span className="no-employee">Sin asignar</span>;
+          return new Date(fecha).toLocaleDateString('es-ES');
+        }
       },
       {
         header: 'Acciones',

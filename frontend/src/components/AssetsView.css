@@ -376,3 +376,31 @@ table {
   align-items: center;
 }
 
+.extension-number {
+  font-family: monospace;
+  font-size: 1.1em;
+  font-weight: 500;
+  color: #1976d2;
+  background-color: #e3f2fd;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.extension-number.large {
+  font-size: 1.4em;
+  padding: 4px 12px;
+}
+
+.extension-input {
+  font-family: monospace;
+  font-size: 1.4em;
+  font-weight: 500;
+  color: #1976d2;
+  background-color: #e3f2fd;
+  padding: 4px 12px;
+  border: 2px solid #1976d2;
+  border-radius: 4px;
+  width: 100px;
+  text-align: center;
+}
+
