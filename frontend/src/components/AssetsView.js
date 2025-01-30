@@ -514,12 +514,11 @@ function AssetsView() {
         error={error}
         columnVisibility={columnVisibility}
         setColumnVisibility={setColumnVisibility}
-        onFetchData={fetchData}
         defaultPageSize={30}
         defaultSorting={[{ id: 'id', desc: false }]}
       />
 
-      {showModal && (
+      {showModal && selectedAsset && (
         <EmployeesWithoutEquipmentModal
           onClose={() => setShowModal(false)}
           onAssign={handleAssignSuccess}
