@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './EmployeesWithoutEquipmentModal.css';
+import './Modal.css';
 import PropTypes from 'prop-types';
 
 function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
@@ -36,7 +36,7 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
 
   const handleAssign = async () => {
     if (!selectedEmployee || !asset.id) {
-      setError('Información incompleta para asignar');
+      setError('Por favor seleccione un empleado');
       return;
     }
     
@@ -61,13 +61,10 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
     };
 
     const generateEmployeeCode = (nombreCompleto) => {
-      // El formato es "Apellido Nombre"
       const partes = nombreCompleto.trim().split(' ');
       if (partes.length >= 2) {
-        // El apellido es la primera parte y el nombre es la última
         const apellido = partes[0];
         const inicial = partes[partes.length - 1].charAt(0);
-        // Ponemos la inicial del nombre ANTES del apellido
         return `${inicial}${apellido}`.toUpperCase();
       }
       return nombreCompleto.substring(0, 8).toUpperCase();
@@ -106,7 +103,7 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
         throw new Error(errorData.error || 'Error al asignar equipo');
       }
 
-      // Mostrar modal de confirmación personalizado
+      // Mostrar modal de confirmación para el PDF
       setShowConstanciaModal(true);
       
     } catch (error) {
@@ -144,82 +141,86 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
     onClose();
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="employees-modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Asignar {asset.tipo} - {asset.nombre_equipo}</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
-        
-        {loading && <div className="loading">Cargando...</div>}
-        {error && <div className="error">{error}</div>}
-        
-        {!loading && !error && (
-          <>
-            <div className="employees-list">
-              {employees.length === 0 ? (
-                <p>No hay empleados sin equipo asignado</p>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sede</th>
-                      <th>Nombre</th>
-                      <th>Departamento</th>
-                      <th>Cargo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map((employee) => (
-                      <tr 
-                        key={employee.ficha}
-                        onClick={() => setSelectedEmployee(employee)}
-                        className={selectedEmployee?.ficha === employee.ficha ? 'selected' : ''}
-                      >
-                        <td>{employee.sede}</td>
-                        <td>{employee.nombre}</td>
-                        <td>{employee.departamento}</td>
-                        <td>{employee.cargo}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="assign-button"
-                disabled={!selectedEmployee}
-                onClick={handleAssign}
-              >
-                Asignar Equipo
-              </button>
-            </div>
-          </>
-        )}
-        
-        {showConstanciaModal && (
-          <div className="confirmation-modal">
-            <div className="modal-content">
-              <h3>¿Generar constancia de entrega?</h3>
-              <div className="modal-buttons">
-                <button 
-                  className="confirm-button"
-                  onClick={() => handleConstanciaDecision(true)}
-                >
-                  Sí
-                </button>
-                <button 
-                  className="cancel-button"
-                  onClick={() => handleConstanciaDecision(false)}
-                >
-                  No
-                </button>
-              </div>
+  if (showConstanciaModal) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>Confirmar Asignación</h2>
+          <div className="modal-body">
+            <p>¿Desea generar la constancia de entrega?</p>
+            <div className="asset-info">
+              <p><strong>Equipo:</strong> {asset.nombre_equipo}</p>
+              <p><strong>Serial:</strong> {asset.serial}</p>
+              <p><strong>Empleado:</strong> {selectedEmployee.nombre}</p>
             </div>
           </div>
-        )}
+          <div className="modal-footer">
+            <button onClick={() => handleConstanciaDecision(false)} className="button secondary">
+              No Generar
+            </button>
+            <button onClick={() => handleConstanciaDecision(true)} className="button primary">
+              Generar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Asignar {asset.tipo} - {asset.nombre_equipo}</h2>
+        
+        <div className="modal-body">
+          <div className="asset-info">
+            <p><strong>Tipo:</strong> {asset.tipo}</p>
+            <p><strong>Equipo:</strong> {asset.nombre_equipo}</p>
+            <p><strong>Modelo:</strong> {asset.modelo}</p>
+            <p><strong>Serial:</strong> {asset.serial}</p>
+            <p><strong>RAM:</strong> {asset.ram}</p>
+            <p><strong>Disco:</strong> {asset.disco}</p>
+          </div>
+
+          {loading ? (
+            <p>Cargando empleados...</p>
+          ) : error ? (
+            <p className="error-message">{error}</p>
+          ) : (
+            <div className="form-group">
+              <label htmlFor="empleado">Seleccionar Empleado:</label>
+              <select
+                id="empleado"
+                value={selectedEmployee?.id || ''}
+                onChange={(e) => {
+                  const employee = employees.find(emp => emp.id === parseInt(e.target.value));
+                  setSelectedEmployee(employee);
+                }}
+                className="form-control"
+              >
+                <option value="">Seleccione un empleado</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.nombre} - {employee.departamento}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={onClose} className="button secondary">
+            Cancelar
+          </button>
+          <button 
+            onClick={handleAssign}
+            className="button primary"
+            disabled={loading || !selectedEmployee}
+          >
+            Asignar
+          </button>
+        </div>
       </div>
     </div>
   );
