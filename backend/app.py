@@ -351,62 +351,61 @@ def get_empleados_sin_equipo():
         print("Error en get_empleados_sin_equipo:", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activos/<int:asset_id>/asignar', methods=['POST'])
-def asignar_activo(asset_id):
+@app.route('/api/activos/<int:activo_id>/asignar', methods=['POST'])
+def asignar_activo(activo_id):
     try:
         data = request.get_json()
         empleado_id = data.get('empleado_id')
+        nombre_equipo = data.get('nombre_equipo')
         
-        if not empleado_id:
-            return jsonify({"error": "empleado_id es requerido"}), 400
+        if not empleado_id or not nombre_equipo:
+            return jsonify({"error": "empleado_id y nombre_equipo son requeridos"}), 400
             
-        asset = Asset.query.get(asset_id)
-        if not asset:
+        activo = Asset.query.get(activo_id)
+        if not activo:
             return jsonify({"error": "Activo no encontrado"}), 404
             
         empleado = Empleado.query.get(empleado_id)
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
 
-        asset.empleado_id = empleado_id
-        asset.estado = 'Asignado'
-        asset.updated_at = datetime.utcnow()
+        activo.empleado_id = empleado_id
+        activo.nombre_equipo = nombre_equipo
+        activo.estado = 'Asignado'
+        activo.updated_at = datetime.utcnow()
         
-        # Guardar solo el ID del activo
-        empleado.equipo_asignado = str(asset_id)
+        # Registrar el log
+        descripcion = f"Se asignó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) al empleado {empleado.nombre_completo}"
+        registrar_log('assets', 'asignación', descripcion, activo_id)
         
         db.session.commit()
         
         return jsonify({
             "message": "Activo asignado exitosamente",
-            "empleado": empleado.nombre_completo,
-            "activo": asset.nombre_equipo
+            "empleado": empleado.nombre_completo
         })
         
     except Exception as e:
         db.session.rollback()
-        print("Error en asignar_activo:", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activos/<int:asset_id>/desasignar', methods=['POST'])
-def desasignar_activo(asset_id):
+@app.route('/api/activos/<int:activo_id>/desasignar', methods=['POST'])
+def desasignar_activo(activo_id):
     try:
-        asset = Asset.query.get(asset_id)
-        if not asset:
+        activo = Asset.query.get(activo_id)
+        if not activo:
             return jsonify({'error': 'Activo no encontrado'}), 404
             
-        # Obtener empleado asociado
-        empleado = Empleado.query.get(asset.empleado_id)
+        empleado = Empleado.query.get(activo.empleado_id)
+        empleado_nombre = empleado.nombre_completo if empleado else "desconocido"
             
-        # Resetear campos del activo
-        asset.empleado_id = None
-        asset.nombre_equipo = None
-        asset.estado = 'DISPONIBLE'
+        activo.empleado_id = None
+        activo.estado = 'Disponible'
+        activo.updated_at = datetime.utcnow()
         
-        # Actualizar empleado si existe
-        if empleado:
-            empleado.equipo_asignado = None  # Actualizar campo del empleado
-            db.session.add(empleado)
+        # Registrar el log
+        descripcion = f"Se desasignó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) del empleado {empleado_nombre}"
+        registrar_log('assets', 'desasignación', descripcion, activo_id)
         
         db.session.commit()
         return jsonify({'message': 'Activo desasignado correctamente'}), 200

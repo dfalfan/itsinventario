@@ -76,26 +76,16 @@ function EmployeesWithoutEquipmentModal({ onClose, onAssign, asset }) {
     const newNombreEquipo = `${tipoPrefix}${sedePrefix}-${employeeCode}`;
     
     try {
-      // Primero actualizamos el nombre del equipo
-      const updateResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nombre_equipo: newNombreEquipo }),
-      });
-
-      if (!updateResponse.ok) {
-        throw new Error('Error al actualizar el nombre del equipo');
-      }
-
-      // Luego realizamos la asignación
+      // Realizar la asignación incluyendo el nombre del equipo
       const assignResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/asignar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ empleado_id: selectedEmployee.id }),
+        body: JSON.stringify({ 
+          empleado_id: selectedEmployee.id,
+          nombre_equipo: newNombreEquipo
+        }),
       });
 
       if (!assignResponse.ok) {
