@@ -538,7 +538,7 @@ function AssetsView() {
         <DeleteAssetModal
           asset={selectedAsset}
           onClose={() => setShowDeleteModal(false)}
-          onDelete={handleDeleteSuccess}
+          onSuccess={handleDeleteSuccess}
         />
       )}
 

@@ -1,4 +1,4 @@
-.delete-asset-modal-overlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -11,59 +11,167 @@
   z-index: 1000;
 }
 
-.delete-asset-modal-content {
+.delete-asset-modal {
   background: white;
-  padding: 20px;
   border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
+  width: 95%;
+  max-width: 500px;
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 20px 0;
-}
-
-.radio-group label {
+.delete-asset-modal h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.75rem;
+}
+
+.warning-icon {
+  color: #f59e0b;
+  font-size: 1.5rem;
+}
+
+.modal-description {
+  margin-bottom: 1.5rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.radio-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-option:hover {
+  background-color: #f9fafb;
+}
+
+.radio-option input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
   cursor: pointer;
 }
 
-.modal-buttons {
+.option-icon {
+  font-size: 1.25rem;
+}
+
+.radio-option:has(input[value="REPARACION"]) .option-icon {
+  color: #f59e0b;
+}
+
+.radio-option:has(input[value="DESINCORPORADO"]) .option-icon {
+  color: #ef4444;
+}
+
+.radio-option span {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #fff3f3;
+  border: 1px solid #ffa7a7;
+  color: #d63031;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
-.delete-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
+.cancel-button,
+.confirm-button {
+  padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.delete-button:disabled {
-  background-color: #dc354580;
-  cursor: not-allowed;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .cancel-button {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #666;
 }
 
-.delete-button:hover:not(:disabled),
-.cancel-button:hover {
-  opacity: 0.9;
+.cancel-button:hover:not(:disabled) {
+  background-color: #f5f5f5;
+}
+
+.confirm-button {
+  border: none;
+  color: white;
+}
+
+.confirm-button.warning {
+  background-color: #f59e0b;
+}
+
+.confirm-button.danger {
+  background-color: #ef4444;
+}
+
+.confirm-button.warning:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.confirm-button.danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.cancel-button:disabled,
+.confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .delete-asset-modal {
+    width: 100%;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-button,
+  .confirm-button {
+    width: 100%;
+    padding: 0.75rem;
+  }
 } 

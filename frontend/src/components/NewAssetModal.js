@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import './NewAssetModal.css';
-import { FaTimes, FaLaptop, FaBuilding, FaBarcode, FaMemory, FaHdd } from 'react-icons/fa';
+import { 
+  FaTimes, 
+  FaLaptop, 
+  FaDesktop, 
+  FaBuilding, 
+  FaBarcode, 
+  FaMemory, 
+  FaHdd,
+  FaExclamationTriangle,
+  FaServer,
+  FaTag,
+  FaStickyNote,
+  FaQrcode
+} from 'react-icons/fa';
 import PropTypes from 'prop-types';
 
 function NewAssetModal({ onClose, onAssetAdded }) {
   const [formData, setFormData] = useState({
     tipo: '',
-    nombre_equipo: '',
     sede_id: '',
     marca: '',
     modelo: '',
@@ -22,31 +34,37 @@ function NewAssetModal({ onClose, onAssetAdded }) {
   const [rams, setRams] = useState([]);
   const [discos, setDiscos] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Cargar sedes
-    fetch('http://192.168.141.50:5000/api/sedes')
-      .then(res => res.json())
-      .then(data => setSedes(data))
-      .catch(err => setError('Error al cargar sedes'));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const responses = await Promise.all([
+          fetch('http://192.168.141.50:5000/api/sedes'),
+          fetch('http://192.168.141.50:5000/api/marcas'),
+          fetch('http://192.168.141.50:5000/api/rams'),
+          fetch('http://192.168.141.50:5000/api/discos')
+        ]);
 
-    // Cargar marcas
-    fetch('http://192.168.141.50:5000/api/marcas')
-      .then(res => res.json())
-      .then(data => setMarcas(data))
-      .catch(err => setError('Error al cargar marcas'));
+        const [sedesData, marcasData, ramsData, discosData] = await Promise.all(
+          responses.map(r => r.json())
+        );
 
-    // Cargar tipos de RAM
-    fetch('http://192.168.141.50:5000/api/rams')
-      .then(res => res.json())
-      .then(data => setRams(data))
-      .catch(err => setError('Error al cargar tipos de RAM'));
+        setSedes(sedesData);
+        setMarcas(marcasData);
+        setRams(ramsData);
+        setDiscos(discosData);
+        setError(null);
+      } catch (err) {
+        setError('Error al cargar los datos necesarios');
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Cargar tipos de disco
-    fetch('http://192.168.141.50:5000/api/discos')
-      .then(res => res.json())
-      .then(data => setDiscos(data))
-      .catch(err => setError('Error al cargar tipos de disco'));
+    fetchData();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -67,7 +85,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
 
       const data = await response.json();
       onAssetAdded(data.asset);
-      setError(null);
+      onClose();
     } catch (error) {
       console.error('Error:', error);
       setError(error.message);
@@ -82,6 +100,29 @@ function NewAssetModal({ onClose, onAssetAdded }) {
     }));
   };
 
+  const getDeviceIcon = (tipo) => {
+    switch(tipo?.toLowerCase()) {
+      case 'laptop':
+        return <FaLaptop className="device-icon laptop" />;
+      case 'desktop':
+        return <FaDesktop className="device-icon desktop" />;
+      case 'aio':
+        return <FaServer className="device-icon aio" />;
+      default:
+        return <FaLaptop className="device-icon" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="modal-overlay">
+        <div className="new-asset-modal">
+          <div className="loading-spinner">Cargando...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content new-asset-modal" onClick={e => e.stopPropagation()}>
@@ -95,7 +136,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="tipo">
-                <FaLaptop className="input-icon" /> Tipo
+                <FaLaptop className="input-icon" /> Tipo de Equipo
               </label>
               <select
                 id="tipo"
@@ -105,7 +146,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
                 required
               >
                 <option value="">Seleccione un tipo</option>
-                <option value="AIO">AIO</option>
+                <option value="AIO">All-in-One</option>
                 <option value="LAPTOP">Laptop</option>
                 <option value="DESKTOP">Desktop</option>
               </select>
@@ -133,7 +174,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
 
             <div className="form-group">
               <label htmlFor="marca">
-                <FaBarcode className="input-icon" /> Marca
+                <FaTag className="input-icon" /> Marca
               </label>
               <select
                 id="marca"
@@ -153,7 +194,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
 
             <div className="form-group">
               <label htmlFor="modelo">
-                <FaBarcode className="input-icon" /> Modelo
+                <FaTag className="input-icon" /> Modelo
               </label>
               <input
                 type="text"
@@ -162,6 +203,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
                 value={formData.modelo}
                 onChange={handleChange}
                 required
+                placeholder="Ej: Latitude 5420"
               />
             </div>
 
@@ -176,12 +218,13 @@ function NewAssetModal({ onClose, onAssetAdded }) {
                 value={formData.serial}
                 onChange={handleChange}
                 required
+                placeholder="Número de serie del equipo"
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="activo_fijo">
-                <FaBarcode className="input-icon" /> Activo Fijo
+                <FaQrcode className="input-icon" /> Activo Fijo
               </label>
               <input
                 type="text"
@@ -190,12 +233,13 @@ function NewAssetModal({ onClose, onAssetAdded }) {
                 value={formData.activo_fijo}
                 onChange={handleChange}
                 required
+                placeholder="Número de activo fijo"
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="ram">
-                <FaMemory className="input-icon" /> RAM
+                <FaMemory className="input-icon" /> Memoria RAM
               </label>
               <select
                 id="ram"
@@ -215,7 +259,7 @@ function NewAssetModal({ onClose, onAssetAdded }) {
 
             <div className="form-group">
               <label htmlFor="disco">
-                <FaHdd className="input-icon" /> Disco
+                <FaHdd className="input-icon" /> Disco Duro
               </label>
               <select
                 id="disco"
@@ -233,16 +277,17 @@ function NewAssetModal({ onClose, onAssetAdded }) {
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="nombre_equipo">
-                <FaLaptop className="input-icon" /> Nombre Equipo
+            <div className="form-group span-full">
+              <label htmlFor="notas">
+                <FaStickyNote className="input-icon" /> Notas
               </label>
-              <input
-                type="text"
-                id="nombre_equipo"
-                name="nombre_equipo"
-                value={formData.nombre_equipo}
+              <textarea
+                id="notas"
+                name="notas"
+                value={formData.notas}
                 onChange={handleChange}
+                placeholder="Notas adicionales sobre el equipo"
+                rows="3"
               />
             </div>
           </div>
@@ -252,12 +297,17 @@ function NewAssetModal({ onClose, onAssetAdded }) {
               Cancelar
             </button>
             <button type="submit" className="save-button">
-              Guardar
+              Guardar Activo
             </button>
           </div>
         </form>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            <FaExclamationTriangle />
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

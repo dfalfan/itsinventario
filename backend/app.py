@@ -1338,6 +1338,75 @@ def get_logs(categoria):
         print(f"Error obteniendo logs: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/activos/<int:activo_id>/cambiar-estado', methods=['POST'])
+def cambiar_estado_activo(activo_id):
+    try:
+        data = request.get_json()
+        estado = data.get('estado')
+        
+        if not estado:
+            return jsonify({"error": "El estado es requerido"}), 400
+            
+        activo = Asset.query.get(activo_id)
+        if not activo:
+            return jsonify({"error": "Activo no encontrado"}), 404
+
+        # Si el activo está asignado, desasignarlo primero
+        if activo.empleado_id:
+            empleado = Empleado.query.get(activo.empleado_id)
+            if empleado:
+                empleado.equipo_asignado = None
+            activo.empleado_id = None
+
+        activo.estado = estado
+        activo.updated_at = datetime.utcnow()
+        
+        # Registrar el log
+        descripcion = f"Se cambió el estado del activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) a {estado}"
+        registrar_log('assets', 'cambio_estado', descripcion, activo_id)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Estado del activo actualizado exitosamente",
+            "nuevo_estado": estado
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activos/<int:activo_id>/desincorporar', methods=['POST'])
+def desincorporar_activo(activo_id):
+    try:
+        activo = Asset.query.get(activo_id)
+        if not activo:
+            return jsonify({"error": "Activo no encontrado"}), 404
+
+        # Si el activo está asignado, desasignarlo primero
+        if activo.empleado_id:
+            empleado = Empleado.query.get(activo.empleado_id)
+            if empleado:
+                empleado.equipo_asignado = None
+
+        # Guardar información para el log antes de eliminar
+        descripcion = f"Se desincorporó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id})"
+        
+        # Registrar el log antes de eliminar el activo
+        registrar_log('assets', 'desincorporación', descripcion, activo_id)
+        
+        # Eliminar el activo
+        db.session.delete(activo)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Activo desincorporado exitosamente"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # Modificar la función de registrar logs
 def registrar_log(categoria, accion, descripcion, item_id):
     try:
