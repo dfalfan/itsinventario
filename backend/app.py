@@ -56,6 +56,7 @@ class Empleado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_completo = db.Column(db.String(100))
     ficha = db.Column(db.String(10))
+    cedula = db.Column(db.String(10))
     extension = db.Column(db.String(10))
     correo = db.Column(db.String(100))
     equipo_asignado = db.Column(db.String(100))
@@ -367,10 +368,14 @@ def asignar_activo(activo_id):
         if not empleado:
             return jsonify({"error": "Empleado no encontrado"}), 404
 
+        # Actualizar el activo
         activo.empleado_id = empleado_id
         activo.nombre_equipo = nombre_equipo
         activo.estado = 'Asignado'
         activo.updated_at = datetime.utcnow()
+        
+        # Actualizar el empleado
+        empleado.equipo_asignado = str(activo_id)
         
         # Registrar el log
         descripcion = f"Se asignó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) al empleado {empleado.nombre_completo}"
@@ -396,6 +401,9 @@ def desasignar_activo(activo_id):
             
         empleado = Empleado.query.get(activo.empleado_id)
         empleado_nombre = empleado.nombre_completo if empleado else "desconocido"
+        
+        if empleado:
+            empleado.equipo_asignado = None
             
         activo.empleado_id = None
         activo.estado = 'Disponible'
@@ -1223,16 +1231,16 @@ def generar_constancia_smartphone(smartphone_id):
             ("Montserrat-Bold", empleado.cargo.nombre if empleado.cargo else ''),
             ("Montserrat", ", he recibido por parte del Departamento de I.T.S. de la Empresa "),
             ("Montserrat-Bold", "SURA DE VENEZUELA, C.A."),
-            ("Montserrat", " un telefono celular marca "),
+            ("Montserrat", " un teléfono celular marca "),
             ("Montserrat-Bold", smartphone.marca),
             ("Montserrat", " Modelo "),
             ("Montserrat-Bold", smartphone.modelo),
             ("Montserrat", " cuyo Serial es "),
             ("Montserrat-Bold", smartphone.serial),
-            ("Montserrat", " IMEI1"),
+            ("Montserrat", " IMEI1: "),
             ("Montserrat-Bold", smartphone.imei),
-            ("Montserrat", " IMEI2"),
-            ("Montserrat-Bold", smartphone.imei2),
+            ("Montserrat", " IMEI2: "),
+            ("Montserrat-Bold", smartphone.imei2 if smartphone.imei2 else 'N/A'),
             ("Montserrat", ", junto con su cargador y forro protector, con el objetivo de ser utilizado para fines estrictamente laborales, con suma precaución.")
         ]
         
