@@ -54,23 +54,23 @@ class Cargo(db.Model):
 class Empleado(db.Model):
     __tablename__ = 'empleados'
     id = db.Column(db.Integer, primary_key=True)
+    nombre_completo = db.Column(db.String(100))
     ficha = db.Column(db.String(10))
-    nombre_completo = db.Column(db.String(200))
+    extension = db.Column(db.String(10))
+    correo = db.Column(db.String(100))
+    equipo_asignado = db.Column(db.String(100))
     sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'))
     gerencia_id = db.Column(db.Integer, db.ForeignKey('gerencias.id'))
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'))
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'))
     cargo_id = db.Column(db.Integer, db.ForeignKey('cargos.id'))
-    equipo_asignado = db.Column(db.String(200), nullable=True)
-    extension = db.Column(db.String(10), nullable=True)
-    correo = db.Column(db.String(200), nullable=True)
-    cedula = db.Column(db.String(10))
-
+    
     sede = db.relationship('Sede', lazy='joined')
     gerencia = db.relationship('Gerencia', lazy='joined')
     departamento = db.relationship('Departamento', lazy='joined')
     area = db.relationship('Area', lazy='joined')
     cargo = db.relationship('Cargo', lazy='joined')
+    smartphone = db.relationship('Smartphone', uselist=False, back_populates='empleado')
 
 class Asset(db.Model):
     __tablename__ = 'assets'
@@ -96,18 +96,16 @@ class Smartphone(db.Model):
     marca = db.Column(db.String(100))
     modelo = db.Column(db.String(100))
     serial = db.Column(db.String(100))
-    imei = db.Column(db.String(50))
-    imei2 = db.Column(db.String(50))
-    linea = db.Column(db.String(50))
-    estado = db.Column(db.String(20))
-    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=True)
+    imei = db.Column(db.String(100))
+    imei2 = db.Column(db.String(100))
+    linea = db.Column(db.String(100))
+    estado = db.Column(db.String(50))
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
     fecha_asignacion = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    empleado = db.relationship('Empleado', 
-                             backref=db.backref('smartphone', uselist=False),
-                             lazy='joined')
+    
+    empleado = db.relationship('Empleado', back_populates='smartphone')
 
 class Impresora(db.Model):
     __tablename__ = 'impresoras'
@@ -680,7 +678,8 @@ def get_empleado(empleado_id):
             'departamento': empleado.departamento.nombre if empleado.departamento else None,
             'area': empleado.area.nombre if empleado.area else None,
             'cargo': empleado.cargo.nombre if empleado.cargo else None,
-            'equipo_asignado': empleado.equipo_asignado
+            'equipo_asignado': empleado.equipo_asignado,
+            'smartphone_asignado': empleado.smartphone.id if empleado.smartphone else None
         })
         
     except Exception as e:

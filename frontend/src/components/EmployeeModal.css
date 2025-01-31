@@ -8,7 +8,7 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
     z-index: 1000;
     overflow-y: auto;
     animation: fadeIn 0.3s ease;
@@ -16,7 +16,7 @@
 
 .modal-content {
     background: white;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 8px;
     position: relative;
     width: 90%;
@@ -24,25 +24,32 @@
     margin: auto;
     overflow-y: auto;
     animation: slideIn 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .modal-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     cursor: pointer;
     color: #666;
-    padding: 0.5rem;
+    padding: 0.25rem;
     border-radius: 50%;
     transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-close:hover {
     background-color: #f0f0f0;
     color: #333;
+    transform: rotate(90deg);
 }
 
 .employee-card {
@@ -50,47 +57,69 @@
 }
 
 .employee-avatar {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     background-color: #e6f3ff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 1rem;
+    transition: transform 0.3s ease;
+}
+
+.employee-avatar:hover {
+    transform: scale(1.05);
 }
 
 .avatar-icon {
-    font-size: 3rem;
-    color: var(--primary);
+    font-size: 2.5rem;
+    color: #1976d2;
 }
 
 .employee-name {
     margin: 0;
-    color: #333;
+    color: #132752;
     font-size: 1.5rem;
+    font-weight: 600;
 }
 
 .employee-title {
     color: #666;
-    margin: 0.5rem 0 1.5rem;
+    margin: 0.25rem 0 1rem;
+    font-size: 1rem;
 }
 
 .employee-details {
     text-align: left;
-    margin: 2rem 0;
+    margin: 1.5rem 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
 }
 
 .detail-item {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detail-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.detail-item.organization {
+    grid-column: span 2;
 }
 
 .detail-icon {
-    color: var(--primary);
-    font-size: 1.2rem;
+    color: #1976d2;
+    font-size: 1rem;
     margin-top: 0.2rem;
 }
 
@@ -100,29 +129,77 @@
 
 .detail-text strong {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     color: #333;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .detail-text p {
     margin: 0.2rem 0;
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.organization-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.organization-tree p {
+    margin: 0;
+    padding: 0.15rem 0;
+}
+
+.organization-tree .gerencia {
+    font-weight: 500;
+    color: #1976d2;
+}
+
+.organization-tree .departamento {
+    padding-left: 1rem;
+    color: #444;
+}
+
+.organization-tree .area {
+    padding-left: 2rem;
     color: #666;
 }
 
-.employee-equipment {
-    text-align: left;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+.extension-number {
+    font-family: monospace;
+    font-size: 1.1rem !important;
+    font-weight: 500;
+    color: #1976d2 !important;
+    background-color: #e3f2fd;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.equipment-status {
+    font-weight: 500;
+}
+
+.equipment-status.assigned {
+    color: #2e7d32 !important;
+}
+
+.phone-line {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem !important;
+    padding: 0.15rem 0.5rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    display: inline-block;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes slideIn {
@@ -130,9 +207,22 @@
         transform: translateY(-20px);
         opacity: 0;
     }
-
     to {
         transform: translateY(0);
         opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .employee-details {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-item.organization {
+        grid-column: span 1;
+    }
+
+    .modal-content {
+        padding: 1rem;
     }
 }

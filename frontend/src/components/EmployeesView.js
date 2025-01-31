@@ -99,7 +99,7 @@ function EmployeesView() {
         cell: ({ row }) => (
           <div className="action-buttons">
             <button 
-              onClick={() => setSelectedEmployee(row.original)}
+              onClick={() => handleViewEmployee(row.original)}
               className="action-button view-button"
               title="Ver detalles"
             >
@@ -174,6 +174,19 @@ function EmployeesView() {
       setShowAssetModal(true);
     } catch (error) {
       console.error('Error completo:', error);
+    }
+  };
+
+  const handleViewEmployee = async (empleado) => {
+    try {
+      const response = await fetch(`http://192.168.141.50:5000/api/empleados/${empleado.id}`);
+      if (!response.ok) {
+        throw new Error('Error al obtener datos del empleado');
+      }
+      const empleadoData = await response.json();
+      setSelectedEmployee(empleadoData);
+    } catch (error) {
+      console.error('Error al obtener datos del empleado:', error);
     }
   };
 

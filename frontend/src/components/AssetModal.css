@@ -147,6 +147,35 @@
     color: #ef6c00;
 }
 
+.detail-item.notes {
+    grid-column: span 2;
+}
+
+.detail-item.notes .notes-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #444;
+    resize: vertical;
+    background-color: white;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 0.25rem;
+}
+
+.detail-item.notes .notes-textarea:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.detail-item.notes .notes-textarea::placeholder {
+    color: #999;
+}
+
 @keyframes slideIn {
     from {
         transform: translateY(-20px);

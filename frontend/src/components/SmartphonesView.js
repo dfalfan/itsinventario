@@ -7,6 +7,7 @@ import TimelineView from './TimelineView';
 import axios from 'axios';
 import './AssetsView.css';
 import AddSmartphoneModal from './AddSmartphoneModal';
+import SmartphoneModal from './SmartphoneModal';
 
 function SmartphonesView() {
   const [data, setData] = useState([]);
@@ -32,6 +33,8 @@ function SmartphonesView() {
   });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
+  const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
+  const [selectedSmartphoneForView, setSelectedSmartphoneForView] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -110,15 +113,8 @@ function SmartphonesView() {
 
   const handleEmployeeClick = async (empleadoId) => {
     try {
-      const response = await axios.get(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
-      // Transformar los datos al formato esperado por EmployeeModal
-      const empleadoData = {
-        ...response.data,
-        nombre_completo: response.data.nombre,
-        asset_type: response.data.equipo_asignado ? 'PC' : null,
-        asset_name: response.data.equipo_asignado
-      };
-      setSelectedEmployee(empleadoData);
+      const empleadoResponse = await axios.get(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
+      setSelectedEmployee(empleadoResponse.data);
       setShowEmployeeModal(true);
     } catch (error) {
       console.error('Error al obtener datos del empleado:', error);
@@ -127,6 +123,17 @@ function SmartphonesView() {
 
   const handleAddSmartphone = (newSmartphone) => {
     setData(prevData => [...prevData, newSmartphone]);
+  };
+
+  const handleView = (smartphone) => {
+    setSelectedSmartphoneForView(smartphone);
+    setShowSmartphoneModal(true);
+  };
+
+  const handleSmartphoneUpdate = (updatedSmartphone) => {
+    setData(prevData => prevData.map(item => 
+      item.id === updatedSmartphone.id ? updatedSmartphone : item
+    ));
   };
 
   const EditableCell = ({ value, column, row, table, onSave }) => {
@@ -312,6 +319,7 @@ function SmartphonesView() {
             <button 
               className="action-button view-button"
               title="Ver detalles"
+              onClick={() => handleView(row.original)}
             >
               <FaEllipsisH />
             </button>
@@ -427,6 +435,17 @@ function SmartphonesView() {
         <TimelineView
           categoria="smartphones"
           onClose={() => setShowTimeline(false)}
+        />
+      )}
+
+      {showSmartphoneModal && selectedSmartphoneForView && (
+        <SmartphoneModal
+          smartphone={selectedSmartphoneForView}
+          onClose={() => {
+            setShowSmartphoneModal(false);
+            setSelectedSmartphoneForView(null);
+          }}
+          onUpdate={handleSmartphoneUpdate}
         />
       )}
     </div>

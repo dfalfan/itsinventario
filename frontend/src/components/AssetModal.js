@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FaTimes, 
   FaLaptop, 
@@ -9,11 +9,19 @@ import {
   FaHdd, 
   FaUser,
   FaHashtag,
-  FaTrademark
+  FaTrademark,
+  FaSave,
+  FaEdit,
+  FaStickyNote
 } from 'react-icons/fa';
+import axios from 'axios';
 import './AssetModal.css';
 
-function AssetModal({ asset, onClose }) {
+function AssetModal({ asset, onClose, onUpdate }) {
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notes, setNotes] = useState(asset?.notas || '');
+  const [saving, setSaving] = useState(false);
+
   if (!asset) return null;
 
   const getDeviceIcon = (tipo) => {
@@ -26,6 +34,25 @@ function AssetModal({ asset, onClose }) {
         return <FaDesktop className="device-icon aio" />;
       default:
         return <FaLaptop className="device-icon" />;
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    try {
+      setSaving(true);
+      await axios.patch(`http://192.168.141.50:5000/api/activos/${asset.id}`, {
+        notas: notes
+      });
+      
+      if (onUpdate) {
+        onUpdate({ ...asset, notas: notes });
+      }
+      
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error('Error al guardar las notas:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -103,14 +130,22 @@ function AssetModal({ asset, onClose }) {
                 <p>{asset.disco || 'N/A'}</p>
               </div>
             </div>
-          </div>
 
-          {asset.notas && (
-            <div className="asset-notes">
-              <strong>Notas</strong>
-              <p>{asset.notas}</p>
+            <div className="detail-item notes">
+              <FaStickyNote className="detail-icon" />
+              <div className="detail-text">
+                <strong>Notas</strong>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={handleSaveNotes}
+                  className="notes-textarea"
+                  placeholder="Agregar notas sobre el equipo..."
+                  rows="3"
+                />
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
