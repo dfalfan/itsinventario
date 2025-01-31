@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaLaptop, FaIdCard, FaUser, FaBuilding, FaSitemap, FaPhone, FaEnvelope, FaBriefcase, FaUsers, FaLayerGroup } from 'react-icons/fa';
 import AssignEquipmentModal from './AssignEquipmentModal';
 import './NewEmployeeModal.css';
+import axios from 'axios';
 
 // Agregar esta función de utilidad al inicio del componente
 const removeDuplicates = (array, key) => {
@@ -18,158 +19,205 @@ const removeDuplicates = (array, key) => {
 
 function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   const [formData, setFormData] = useState({
-    ficha: '',
     nombres: '',
     apellidos: '',
+    cedula: '',
+    ficha: '',
+    correo: '',
     sede_id: '',
     gerencia_id: '',
     departamento_id: '',
     area_id: '',
     cargo_id: '',
-    extension: '',
-    correo: ''
+    nacionalidad: 'V'
   });
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [savedEmployee, setSavedEmployee] = useState(null);
+
+  const [incluirCorreo, setIncluirCorreo] = useState(true);
+
+  const [sedes, setSedes] = useState([]);
+  const [gerencias, setGerencias] = useState([]);
+  const [departamentos, setDepartamentos] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [cargos, setCargos] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [options, setOptions] = useState({
-    sedes: [],
-    gerencias: [],
-    departamentos: [],
-    areas: [],
-    cargos: []
-  });
+  const fetchSedes = async () => {
+    try {
+      const response = await axios.get('http://192.168.141.50:5000/api/sedes');
+      setSedes(response.data);
+    } catch (error) {
+      console.error('Error al cargar sedes:', error);
+      setError('Error al cargar sedes');
+    }
+  };
 
-  // Cargar sedes y gerencias al montar el componente
+  const fetchGerencias = async () => {
+    try {
+      const response = await axios.get('http://192.168.141.50:5000/api/gerencias');
+      setGerencias(response.data);
+    } catch (error) {
+      console.error('Error al cargar gerencias:', error);
+      setError('Error al cargar gerencias');
+    }
+  };
+
+  const fetchDepartamentos = async (gerenciaId) => {
+    try {
+      const response = await axios.get(`http://192.168.141.50:5000/api/departamentos/${gerenciaId}`);
+      const uniqueDepartamentos = removeDuplicates(response.data, 'nombre');
+      setDepartamentos(uniqueDepartamentos);
+    } catch (error) {
+      console.error('Error al cargar departamentos:', error);
+      setError('Error al cargar departamentos');
+    }
+  };
+
+  const fetchAreas = async (departamentoId) => {
+    try {
+      const response = await axios.get(`http://192.168.141.50:5000/api/areas/${departamentoId}`);
+      const uniqueAreas = removeDuplicates(response.data, 'nombre');
+      setAreas(uniqueAreas);
+    } catch (error) {
+      console.error('Error al cargar áreas:', error);
+      setError('Error al cargar áreas');
+    }
+  };
+
+  const fetchCargos = async (areaId) => {
+    try {
+      const response = await axios.get(`http://192.168.141.50:5000/api/cargos/${areaId}`);
+      const uniqueCargos = removeDuplicates(response.data, 'nombre');
+      setCargos(uniqueCargos);
+    } catch (error) {
+      console.error('Error al cargar cargos:', error);
+      setError('Error al cargar cargos');
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      fetch('http://192.168.141.50:5000/api/sedes').then(res => res.json()),
-      fetch('http://192.168.141.50:5000/api/gerencias').then(res => res.json())
-    ])
-      .then(([sedesData, gerenciasData]) => {
-        setOptions(prev => ({
-          ...prev,
-          sedes: sedesData,
-          gerencias: gerenciasData
-        }));
-      })
-      .catch(error => console.error('Error cargando datos iniciales:', error));
+    fetchSedes();
+    fetchGerencias();
   }, []);
 
-  // Cargar departamentos cuando cambia la gerencia
-  useEffect(() => {
-    if (formData.gerencia_id) {
-      fetch(`http://192.168.141.50:5000/api/departamentos/${formData.gerencia_id}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error('Error al cargar departamentos');
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (!Array.isArray(data)) {
-            console.error('Datos de departamentos no válidos:', data);
-            setOptions(prev => ({ ...prev, departamentos: [] }));
-            return;
-          }
-          const uniqueDepartamentos = removeDuplicates(data, 'nombre');
-          setOptions(prev => ({ ...prev, departamentos: uniqueDepartamentos }));
-          setFormData(prev => ({
-            ...prev,
-            departamento_id: '',
-            area_id: '',
-            cargo_id: ''
-          }));
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          setOptions(prev => ({ ...prev, departamentos: [] }));
-        });
-    }
-  }, [formData.gerencia_id]);
-
-  // Cargar áreas cuando cambia el departamento
-  useEffect(() => {
-    if (formData.departamento_id) {
-      fetch(`http://192.168.141.50:5000/api/areas/${formData.departamento_id}`)
-        .then(res => res.json())
-        .then(data => {
-          const uniqueAreas = removeDuplicates(data, 'nombre');
-          setOptions(prev => ({ ...prev, areas: uniqueAreas }));
-          setFormData(prev => ({
-            ...prev,
-            area_id: '',
-            cargo_id: ''
-          }));
-        })
-        .catch(error => console.error('Error cargando áreas:', error));
-    }
-  }, [formData.departamento_id]);
-
-  // Cargar cargos cuando cambia el área
-  useEffect(() => {
-    if (formData.area_id) {
-      fetch(`http://192.168.141.50:5000/api/cargos/${formData.area_id}`)
-        .then(res => res.json())
-        .then(data => {
-          const uniqueCargos = removeDuplicates(data, 'nombre');
-          setOptions(prev => ({ ...prev, cargos: uniqueCargos }));
-          setFormData(prev => ({
-            ...prev,
-            cargo_id: ''
-          }));
-        })
-        .catch(error => console.error('Error cargando cargos:', error));
-    }
-  }, [formData.area_id]);
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'cedula') {
+      // Solo permitir números y formatear con puntos
+      const numbersOnly = value.replace(/\D/g, '');
+      const formattedValue = numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      setFormData(prev => ({
+        ...prev,
+        cedula: formattedValue
+      }));
+    } else if (name === 'nombres' || name === 'apellidos') {
+      // Capitalizar cada palabra
+      const formattedValue = value
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [name]: formattedValue
+        };
+        
+        // Generar correo automáticamente si ambos campos están llenos
+        if (newData.nombres && newData.apellidos) {
+          const primerNombre = newData.nombres.split(' ')[0].toLowerCase();
+          const primerApellido = newData.apellidos.split(' ')[0].toLowerCase();
+          newData.correo = `${primerNombre}.${primerApellido}`;
+        }
+        
+        return newData;
+      });
+    } else if (name === 'ficha') {
+      // Solo permitir números
+      const numbersOnly = value.replace(/\D/g, '');
+      setFormData(prev => ({
+        ...prev,
+        ficha: numbersOnly
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+
+      // Limpiar campos dependientes cuando cambia una selección
+      if (name === 'gerencia_id') {
+        setFormData(prev => ({
+          ...prev,
+          departamento_id: '',
+          area_id: '',
+          cargo_id: ''
+        }));
+        if (value) fetchDepartamentos(value);
+      }
+      if (name === 'departamento_id') {
+        setFormData(prev => ({
+          ...prev,
+          area_id: '',
+          cargo_id: ''
+        }));
+        if (value) fetchAreas(value);
+      }
+      if (name === 'area_id') {
+        setFormData(prev => ({
+          ...prev,
+          cargo_id: ''
+        }));
+        if (value) fetchCargos(value);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/empleados', {
-        method: 'POST',
+      // Construir el nombre completo
+      const nombre_completo = `${formData.apellidos} ${formData.nombres}`;
+      
+      // Preparar los datos para enviar
+      const empleadoData = {
+        nombre_completo,
+        ficha: formData.ficha,
+        cedula: formData.cedula,  // Mantenemos los puntos en la cédula
+        nacionalidad: formData.nacionalidad,
+        correo: incluirCorreo ? `${formData.correo}@sura.com.ve` : null,
+        sede_id: parseInt(formData.sede_id),
+        gerencia_id: parseInt(formData.gerencia_id),
+        departamento_id: parseInt(formData.departamento_id),
+        area_id: parseInt(formData.area_id),
+        cargo_id: parseInt(formData.cargo_id),
+        extension: null,
+        equipo_asignado: null
+      };
+
+      console.log('Datos a enviar:', empleadoData); // Para debug
+
+      const response = await axios.post('http://192.168.141.50:5000/api/empleados', empleadoData, {
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          nombre_completo: `${formData.nombres} ${formData.apellidos}`.trim()
-        }),
+          'Accept': 'application/json'
+        }
       });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar empleado');
+      
+      if (response.data) {
+        onEmployeeAdded(response.data);
+        onClose();
       }
-
-      const savedData = await response.json();
-      setSavedEmployee(savedData);
-      setShowAssignModal(true);
-      if (onEmployeeAdded) onEmployeeAdded(savedData);
     } catch (error) {
-      console.error('Error:', error);
-      setError(error.message);
-    }
-  };
-
-  const handleAssignSuccess = () => {
-    setShowAssignModal(false);
-    onClose();
-  };
-
-  const handleAssignEquipment = () => {
-    if (savedEmployee) {
-      setShowAssignModal(true);
-    } else {
-      setError("Por favor, guarde el empleado antes de asignar un equipo.");
+      console.error('Error completo:', error);
+      setError(error.response?.data?.error || 'Error al crear el empleado');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -182,33 +230,22 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
         <h2>Nuevo Empleado</h2>
         
+        {error && <div className="error-message">{error}</div>}
+        
         <form onSubmit={handleSubmit} className="new-employee-form">
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="ficha">
-                <FaIdCard className="input-icon" /> Ficha
-              </label>
-              <input
-                type="text"
-                id="ficha"
-                name="ficha"
-                value={formData.ficha}
-                onChange={handleChange}
-                placeholder="####"
-              />
-            </div>
-
-            <div className="form-group">
               <label htmlFor="apellidos">
-                 <FaUser className="input-icon" />Apellidos
+                <FaUser className="input-icon" /> Apellidos
               </label>
               <input
                 type="text"
                 id="apellidos"
                 name="apellidos"
                 value={formData.apellidos}
-                onChange={handleChange}
+                onChange={handleInputChange}
                 placeholder="Apellidos"
+                required
               />
             </div>
 
@@ -221,9 +258,82 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="nombres"
                 name="nombres"
                 value={formData.nombres}
-                onChange={handleChange}
+                onChange={handleInputChange}
                 placeholder="Nombres"
+                required
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="cedula">
+                <FaIdCard className="input-icon" /> Cédula
+              </label>
+              <div className="cedula-input-container">
+                <select
+                  id="nacionalidad"
+                  name="nacionalidad"
+                  value={formData.nacionalidad}
+                  onChange={handleInputChange}
+                  required
+                  className="nacionalidad-select"
+                >
+                  <option value="V">V</option>
+                  <option value="E">E</option>
+                </select>
+                <input
+                  type="text"
+                  id="cedula"
+                  name="cedula"
+                  value={formData.cedula}
+                  onChange={handleInputChange}
+                  placeholder="Cédula"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="ficha">
+                <FaIdCard className="input-icon" /> Ficha
+              </label>
+              <input
+                type="text"
+                id="ficha"
+                name="ficha"
+                value={formData.ficha}
+                onChange={handleInputChange}
+                placeholder="Número de ficha"
+                required
+                maxLength="4"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="correo">
+                <FaEnvelope className="input-icon" /> Correo
+              </label>
+              <div className="email-container">
+                <div className="email-input-container">
+                  <input
+                    type="text"
+                    id="correo"
+                    name="correo"
+                    value={formData.correo}
+                    readOnly
+                    disabled={!incluirCorreo}
+                    placeholder="usuario"
+                  />
+                  <span className="email-domain">@sura.com.ve</span>
+                </div>
+                <div className="email-checkbox">
+                  <input
+                    type="checkbox"
+                    id="incluirCorreo"
+                    checked={incluirCorreo}
+                    onChange={(e) => setIncluirCorreo(e.target.checked)}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
@@ -234,10 +344,11 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="sede_id"
                 name="sede_id"
                 value={formData.sede_id}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                required
               >
                 <option value="">Seleccione una sede</option>
-                {options.sedes.map(sede => (
+                {sedes.map(sede => (
                   <option key={sede.id} value={sede.id}>
                     {sede.nombre}
                   </option>
@@ -253,10 +364,11 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="gerencia_id"
                 name="gerencia_id"
                 value={formData.gerencia_id}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                required
               >
                 <option value="">Seleccione una gerencia</option>
-                {options.gerencias.map(gerencia => (
+                {gerencias.map(gerencia => (
                   <option key={gerencia.id} value={gerencia.id}>
                     {gerencia.nombre}
                   </option>
@@ -272,11 +384,12 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="departamento_id"
                 name="departamento_id"
                 value={formData.departamento_id}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                required
                 disabled={!formData.gerencia_id}
               >
                 <option value="">Seleccione un departamento</option>
-                {options.departamentos.map(departamento => (
+                {departamentos.map(departamento => (
                   <option key={departamento.id} value={departamento.id}>
                     {departamento.nombre}
                   </option>
@@ -292,11 +405,12 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="area_id"
                 name="area_id"
                 value={formData.area_id}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                required
                 disabled={!formData.departamento_id}
               >
                 <option value="">Seleccione un área</option>
-                {options.areas.map(area => (
+                {areas.map(area => (
                   <option key={area.id} value={area.id}>
                     {area.nombre}
                   </option>
@@ -312,54 +426,17 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 id="cargo_id"
                 name="cargo_id"
                 value={formData.cargo_id}
-                onChange={handleChange}
+                onChange={handleInputChange}
+                required
                 disabled={!formData.area_id}
               >
                 <option value="">Seleccione un cargo</option>
-                {options.cargos.map(cargo => (
+                {cargos.map(cargo => (
                   <option key={cargo.id} value={cargo.id}>
                     {cargo.nombre}
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="extension">
-                <FaPhone className="input-icon" /> Extensión
-              </label>
-              <input
-                type="text"
-                id="extension"
-                name="extension"
-                value={formData.extension}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setFormData(prev => ({ ...prev, extension: value }));
-                }}
-                placeholder="####"
-                maxLength="4"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="correo">
-                <FaEnvelope className="input-icon" /> Correo
-              </label>
-              <div className="email-input-container">
-                <input
-                  type="text"
-                  id="correo"
-                  name="correo"
-                  value={formData.correo}
-                  onChange={(e) => {
-                    const value = e.target.value.toLowerCase().replace(/[^a-z0-9.]/g, '');
-                    setFormData(prev => ({ ...prev, correo: value }));
-                  }}
-                  placeholder="usuario"
-                />
-                <span className="email-domain">@sura.com.ve</span>
-              </div>
             </div>
           </div>
 
@@ -368,20 +445,12 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
               <button type="button" className="cancel-button" onClick={onClose}>
                 Cancelar
               </button>
-              <button type="submit" className="save-button">
-                Guardar
+              <button type="submit" className="save-button" disabled={loading}>
+                {loading ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>
         </form>
-
-        {showAssignModal && savedEmployee && (
-          <AssignEquipmentModal
-            employee={savedEmployee}
-            onClose={() => setShowAssignModal(false)}
-            onAssign={handleAssignSuccess}
-          />
-        )}
       </div>
     </div>
   );

@@ -1414,6 +1414,60 @@ def desincorporar_activo(activo_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/empleados', methods=['POST'])
+def create_empleado():
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        required_fields = ['nombre_completo', 'cedula', 'sede_id', 'gerencia_id', 'departamento_id', 'area_id', 'cargo_id']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'El campo {field} es requerido'}), 400
+
+        # Generar ficha automáticamente
+        last_empleado = Empleado.query.order_by(Empleado.ficha.desc()).first()
+        if last_empleado and last_empleado.ficha and last_empleado.ficha.isdigit():
+            next_ficha = str(int(last_empleado.ficha) + 1).zfill(4)
+        else:
+            next_ficha = '1000'  # Comenzar desde 1000 si no hay fichas previas
+
+        new_empleado = Empleado(
+            nombre_completo=data['nombre_completo'],
+            ficha=next_ficha,
+            cedula=data['cedula'],
+            correo=data.get('correo'),
+            sede_id=data['sede_id'],
+            gerencia_id=data['gerencia_id'],
+            departamento_id=data['departamento_id'],
+            area_id=data['area_id'],
+            cargo_id=data['cargo_id']
+        )
+
+        db.session.add(new_empleado)
+        db.session.commit()
+
+        # Obtener las relaciones para la respuesta
+        return jsonify({
+            'id': new_empleado.id,
+            'nombre': new_empleado.nombre_completo,
+            'ficha': new_empleado.ficha,
+            'cedula': new_empleado.cedula,
+            'correo': new_empleado.correo,
+            'sede': new_empleado.sede.nombre if new_empleado.sede else None,
+            'gerencia': new_empleado.gerencia.nombre if new_empleado.gerencia else None,
+            'departamento': new_empleado.departamento.nombre if new_empleado.departamento else None,
+            'area': new_empleado.area.nombre if new_empleado.area else None,
+            'cargo': new_empleado.cargo.nombre if new_empleado.cargo else None,
+            'equipo_asignado': None,
+            'smartphone_asignado': None
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error en create_empleado:", str(e))
+        return jsonify({'error': str(e)}), 500
+
 # Modificar la función de registrar logs
 def registrar_log(categoria, accion, descripcion, item_id):
     try:
