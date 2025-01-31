@@ -1468,6 +1468,50 @@ def create_empleado():
         print("Error en create_empleado:", str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/empleados/<int:empleado_id>', methods=['DELETE'])
+def delete_empleado(empleado_id):
+    try:
+        empleado = Empleado.query.get(empleado_id)
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+
+        # Liberar activo asignado si existe
+        if empleado.equipo_asignado:
+            activo = Asset.query.get(int(empleado.equipo_asignado))
+            if activo:
+                activo.empleado_id = None
+                activo.estado = 'Disponible'
+                activo.updated_at = datetime.utcnow()
+                descripcion = f"Se liberó el activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) por eliminación del empleado {empleado.nombre_completo}"
+                registrar_log('assets', 'desasignación', descripcion, activo.id)
+
+        # Liberar smartphone asignado si existe
+        if empleado.smartphone:
+            smartphone = empleado.smartphone
+            smartphone.empleado_id = None
+            smartphone.estado = 'Disponible'
+            smartphone.fecha_asignacion = None
+            smartphone.updated_at = datetime.utcnow()
+            descripcion = f"Se liberó el smartphone {smartphone.marca} {smartphone.modelo} (ID: {smartphone.id}) por eliminación del empleado {empleado.nombre_completo}"
+            registrar_log('smartphones', 'desasignación', descripcion, smartphone.id)
+
+        # Registrar log de eliminación del empleado
+        descripcion = f"Se eliminó al empleado {empleado.nombre_completo} (Ficha: {empleado.ficha})"
+        registrar_log('empleados', 'eliminación', descripcion, empleado_id)
+
+        # Eliminar el empleado
+        db.session.delete(empleado)
+        db.session.commit()
+
+        return jsonify({
+            'message': f'Empleado {empleado.nombre_completo} eliminado exitosamente'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print("Error en delete_empleado:", str(e))
+        return jsonify({'error': str(e)}), 500
+
 # Modificar la función de registrar logs
 def registrar_log(categoria, accion, descripcion, item_id):
     try:

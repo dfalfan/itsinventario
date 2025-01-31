@@ -5,6 +5,7 @@ import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
 import AssetModal from './AssetModal';
 import './EmployeesView.css';
+import axios from 'axios';
 
 function EmployeesView() {
   const [data, setData] = useState([]);
@@ -148,8 +149,20 @@ function EmployeesView() {
     console.log('Editar empleado:', employee);
   };
 
-  const handleDelete = (employee) => {
-    console.log('Eliminar empleado:', employee);
+  const handleDelete = async (employee) => {
+    const confirmacion = window.confirm(`¿Confirmas eliminar a ${employee.nombre_completo || 'este empleado'}?`);
+    if (confirmacion) {
+      try {
+        const response = await axios.delete(`http://192.168.141.50:5000/api/empleados/${employee.id}`);
+        if (response.status === 200) {
+          setData(prev => prev.filter(e => e.id !== employee.id));
+          window.alert('Empleado eliminado exitosamente');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        window.alert(error.response?.data?.error || 'Error al eliminar');
+      }
+    }
   };
 
   const handleEmployeeAdded = (newEmployee) => {
