@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaPhoneSquare, FaHistory } from 'react-icons/fa';
+import { FaPhoneSquare, FaHistory, FaBook } from 'react-icons/fa';
 import TableView from './TableView';
 import TimelineView from './TimelineView';
 import axios from 'axios';
 import './AssetsView.css';
+import { useNavigate } from 'react-router-dom';
 
 function ExtensionsView() {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -164,6 +166,13 @@ function ExtensionsView() {
           <button className="history-button" onClick={() => setShowTimeline(true)}>
             <FaHistory className="history-icon" />
             Historial
+          </button>
+          <button 
+            className="directory-button"
+            onClick={() => navigate('/extensions-directory')}
+          >
+            <FaBook className="directory-icon" />
+            Ver Directorio
           </button>
         </div>
       </div>

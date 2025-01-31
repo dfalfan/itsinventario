@@ -16,6 +16,8 @@ body {
   padding: 0;
   max-width: 100%;
   margin: 0 auto;
+  display: flex;
+  min-height: 100vh;
 }
 
 /* Variables globales */
@@ -468,4 +470,16 @@ th[data-column="acciones"],
 td[data-column="acciones"] {
   min-width: 120px;
   text-align: center;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  margin-left: 250px;
+  background-color: #f5f6f8;
+}
+
+.main-content.no-navbar {
+  margin-left: 0;
+  padding: 0;
 }

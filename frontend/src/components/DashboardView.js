@@ -18,7 +18,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
+import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import './DashboardView.css';
 
 ChartJS.register(
@@ -80,6 +80,26 @@ function DashboardView() {
     }]
   };
 
+  const tasaUtilizacionData = {
+    labels: stats.tasaUtilizacion.map(item => item.estado),
+    datasets: [{
+      data: stats.tasaUtilizacion.map(item => item.cantidad),
+      backgroundColor: [
+        '#4BC0C0',
+        '#FF6384'
+      ]
+    }]
+  };
+
+  const equiposPorDepartamentoData = {
+    labels: stats.equiposPorDepartamento.map(item => item.departamento),
+    datasets: [{
+      label: 'Equipos por Departamento',
+      data: stats.equiposPorDepartamento.map(item => item.cantidad),
+      backgroundColor: '#FFCE56'
+    }]
+  };
+
   return (
     <div className="dashboard">
       <h1>Dashboard</h1>
@@ -125,8 +145,6 @@ function DashboardView() {
             <p>{stats.equiposEnStock}</p>
           </div>
         </div>
-
-
       </div>
 
       {/* Gráficos */}
@@ -145,7 +163,49 @@ function DashboardView() {
               data={equiposPorSedeData}
               options={{
                 responsive: true,
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h3>Tasa de Utilización</h3>
+          <div className="chart-wrapper">
+            <Doughnut 
+              data={tasaUtilizacionData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'bottom'
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h3>Top 10 Departamentos</h3>
+          <div className="chart-wrapper">
+            <Bar 
+              data={equiposPorDepartamentoData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                  x: {
+                    beginAtZero: true
+                  }
+                }
               }}
             />
           </div>

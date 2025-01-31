@@ -10,8 +10,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import os
 import io
-from ldap3 import Server, Connection, ALL
+from ldap3 import Server, Connection, ALL, NTLM
 from io import BytesIO
+from dotenv import load_dotenv
+from unidecode import unidecode
 
 app = Flask(__name__)
 CORS(app)
@@ -298,6 +300,24 @@ def get_dashboard_stats():
             Sede.nombre,
             db.func.count(Asset.id).label('cantidad')
         ).join(Asset).group_by(Sede.nombre).all()
+
+        # Tasa de utilización
+        equipos_asignados = Asset.query.filter(Asset.empleado_id.isnot(None)).count()
+        tasa_utilizacion = [
+            {'estado': 'Asignados', 'cantidad': equipos_asignados},
+            {'estado': 'No Asignados', 'cantidad': total_equipos - equipos_asignados}
+        ]
+
+        # Distribución por departamento
+        equipos_por_departamento = db.session.query(
+            Departamento.nombre,
+            db.func.count(Asset.id).label('cantidad')
+        ).join(Empleado, Asset.empleado_id == Empleado.id)\
+         .join(Departamento, Empleado.departamento_id == Departamento.id)\
+         .group_by(Departamento.nombre)\
+         .order_by(db.func.count(Asset.id).desc())\
+         .limit(10)\
+         .all()
         
         return jsonify({
             'totalEquipos': total_equipos,
@@ -311,6 +331,11 @@ def get_dashboard_stats():
             'equiposPorSede': [
                 {'sede': sede, 'cantidad': cantidad}
                 for sede, cantidad in equipos_por_sede
+            ],
+            'tasaUtilizacion': tasa_utilizacion,
+            'equiposPorDepartamento': [
+                {'departamento': depto, 'cantidad': cantidad}
+                for depto, cantidad in equipos_por_departamento
             ]
         })
     except Exception as e:
@@ -1512,19 +1537,138 @@ def delete_empleado(empleado_id):
         print("Error en delete_empleado:", str(e))
         return jsonify({'error': str(e)}), 500
 
-# Modificar la función de registrar logs
-def registrar_log(categoria, accion, descripcion, item_id):
+@app.route('/api/empleados/<int:empleado_id>', methods=['PATCH'])
+def update_empleado(empleado_id):
     try:
-        log = Log(
-            categoria=categoria,
-            accion=accion,
-            descripcion=descripcion,
-            item_id=item_id
-        )
-        db.session.add(log)
+        empleado = Empleado.query.get(empleado_id)
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+
+        data = request.get_json()
+        
+        # Lista de campos permitidos para editar
+        allowed_fields = ['extension', 'nombre_completo', 'ficha', 'cedula', 'correo', 'sede_id', 'gerencia_id', 'departamento_id', 'area_id', 'cargo_id']
+        
+        for field in data:
+            if field in allowed_fields:
+                setattr(empleado, field, data[field])
+                
+                # Si se actualizó la extensión, actualizar el PDF
+                if field == 'extension':
+                    update_extensions_pdf()
+        
         db.session.commit()
+        
+        return jsonify({
+            'message': 'Empleado actualizado exitosamente',
+            'updated_fields': list(data.keys())
+        })
+        
     except Exception as e:
-        print(f"Error registrando log: {str(e)}")
+        db.session.rollback()
+        print("Error en update_empleado:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+def update_extensions_pdf():
+    try:
+        # Obtener todos los empleados con extensiones
+        empleados = Empleado.query.filter(Empleado.extension.isnot(None)).order_by(Empleado.extension).all()
+        
+        # Agrupar por sede
+        empleados_por_sede = {}
+        for emp in empleados:
+            sede = emp.sede.nombre if emp.sede else 'Sin Sede'
+            if sede not in empleados_por_sede:
+                empleados_por_sede[sede] = []
+            empleados_por_sede[sede].append({
+                'nombre': emp.nombre_completo,
+                'extension': emp.extension,
+                'departamento': emp.departamento.nombre if emp.departamento else 'Sin Departamento',
+                'cargo': emp.cargo.nombre if emp.cargo else 'Sin Cargo'
+            })
+        
+        # Registrar la fuente Montserrat
+        pdfmetrics.registerFont(TTFont('Montserrat', 'static/Montserrat-Regular.ttf'))
+        pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'static/Montserrat-Bold.ttf'))
+        
+        # Crear el PDF
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Añadir logo
+        p.drawImage('static/logo_sura.png', 50, height - 100, width=120, height=50)
+        
+        # Título
+        p.setFont("Montserrat-Bold", 18)
+        p.drawString(width/2 - 100, height - 100, "Directorio de Extensiones")
+        
+        # Fecha de actualización
+        p.setFont("Montserrat", 10)
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        p.drawString(width - 200, height - 50, f"Actualizado: {fecha_actual}")
+        
+        y = height - 150
+        
+        # Por cada sede
+        for sede, empleados in empleados_por_sede.items():
+            if y < 100:  # Nueva página si no hay espacio
+                p.showPage()
+                y = height - 50
+            
+            # Título de la sede
+            p.setFont("Montserrat-Bold", 14)
+            p.drawString(50, y, sede)
+            y -= 30
+            
+            # Encabezados
+            p.setFont("Montserrat-Bold", 10)
+            p.drawString(50, y, "Extensión")
+            p.drawString(150, y, "Nombre")
+            p.drawString(350, y, "Departamento")
+            p.drawString(500, y, "Cargo")
+            y -= 20
+            
+            # Línea separadora
+            p.line(50, y, width-50, y)
+            y -= 15
+            
+            # Datos de empleados
+            p.setFont("Montserrat", 10)
+            for emp in empleados:
+                if y < 50:  # Nueva página si no hay espacio
+                    p.showPage()
+                    y = height - 50
+                    
+                    # Repetir encabezados en nueva página
+                    p.setFont("Montserrat-Bold", 10)
+                    p.drawString(50, y, "Extensión")
+                    p.drawString(150, y, "Nombre")
+                    p.drawString(350, y, "Departamento")
+                    p.drawString(500, y, "Cargo")
+                    y -= 20
+                    p.line(50, y, width-50, y)
+                    y -= 15
+                    p.setFont("Montserrat", 10)
+                
+                p.drawString(50, y, emp['extension'])
+                p.drawString(150, y, emp['nombre'])
+                p.drawString(350, y, emp['departamento'])
+                p.drawString(500, y, emp['cargo'])
+                y -= 20
+            
+            y -= 30  # Espacio entre sedes
+        
+        p.save()
+        
+        # Guardar el PDF en la carpeta pública del frontend
+        pdf_path = '../frontend/public/EXTENSIONES.pdf'
+        with open(pdf_path, 'wb') as f:
+            f.write(buffer.getvalue())
+            
+    except Exception as e:
+        print("Error generando PDF de extensiones:", str(e))
+        raise e
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
