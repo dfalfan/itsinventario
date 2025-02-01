@@ -21,6 +21,15 @@ body {
   flex-direction: column;
 }
 
+.no-navbar .navbar {
+  display: none !important;
+}
+
+.main-content.no-navbar {
+  margin-left: 0;
+  width: 100%;
+}
+
 /* Variables globales */
 :root {
   --primary: #1976d2;
