@@ -1670,5 +1670,28 @@ def update_extensions_pdf():
         print("Error generando PDF de extensiones:", str(e))
         raise e
 
+def registrar_log(categoria, accion, descripcion, item_id):
+    """
+    Registra una acción en el log del sistema.
+    
+    Args:
+        categoria (str): Categoría del log (smartphones, assets, impresoras, etc.)
+        accion (str): Tipo de acción realizada (asignación, desasignación, etc.)
+        descripcion (str): Descripción detallada de la acción
+        item_id (int): ID del elemento afectado
+    """
+    try:
+        nuevo_log = Log(
+            categoria=categoria,
+            accion=accion,
+            descripcion=descripcion,
+            item_id=item_id
+        )
+        db.session.add(nuevo_log)
+        db.session.flush()  # Para obtener el ID sin hacer commit
+    except Exception as e:
+        print(f"Error registrando log: {str(e)}")
+        raise
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
