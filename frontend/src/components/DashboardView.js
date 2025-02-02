@@ -6,7 +6,13 @@ import {
   FaWarehouse,
   FaChartPie,
   FaBuilding,
-  FaBell
+  FaBell,
+  FaChevronLeft,
+  FaChevronRight,
+  FaChartLine,
+  FaEnvelope,
+  FaNetworkWired,
+  FaMobileAlt
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -35,6 +41,7 @@ function DashboardView() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedDashboard, setSelectedDashboard] = useState('principal');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -101,116 +108,148 @@ function DashboardView() {
   };
 
   return (
-    <div className="dashboard">
-      <h1>Dashboard</h1>
+    <div className="dashboard-layout">
+      <nav className="dashboard-nav">
+        <div className="nav-items">
+          <button
+            className={`nav-item ${selectedDashboard === 'principal' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('principal')}
+          >
+            Principal
+          </button>
+          <button
+            className={`nav-item ${selectedDashboard === 'correos' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('correos')}
+          >
+            Correos
+          </button>
+          <button
+            className={`nav-item ${selectedDashboard === 'dominio' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('dominio')}
+          >
+            Dominio
+          </button>
+          <button
+            className={`nav-item ${selectedDashboard === 'smartphones' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('smartphones')}
+          >
+            Smartphones
+          </button>
+        </div>
+      </nav>
       
-      {/* Tarjetas de Estadísticas */}
-      <div className="stats-cards">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FaLaptop />
-          </div>
-          <div className="stat-info">
-            <h3>Total Equipos</h3>
-            <p>{stats.totalEquipos}</p>
-          </div>
-        </div>
+      <main className="dashboard-content">
+        {selectedDashboard === 'principal' && (
+          <>
+            <h1>Dashboard Principal</h1>
+            <div className="stats-cards">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaLaptop />
+                </div>
+                <div className="stat-info">
+                  <h3>Total Equipos</h3>
+                  <p>{stats.totalEquipos}</p>
+                </div>
+              </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FaUserSlash />
-          </div>
-          <div className="stat-info">
-            <h3>Sin Equipo Asignado</h3>
-            <p>{stats.empleadosSinEquipo}</p>
-          </div>
-        </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaUserSlash />
+                </div>
+                <div className="stat-info">
+                  <h3>Sin Equipo Asignado</h3>
+                  <p>{stats.empleadosSinEquipo}</p>
+                </div>
+              </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FaTools />
-          </div>
-          <div className="stat-info">
-            <h3>En Reparación</h3>
-            <p>{stats.equiposEnReparacion}</p>
-          </div>
-        </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaTools />
+                </div>
+                <div className="stat-info">
+                  <h3>En Reparación</h3>
+                  <p>{stats.equiposEnReparacion}</p>
+                </div>
+              </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FaWarehouse />
-          </div>
-          <div className="stat-info">
-            <h3>En Stock</h3>
-            <p>{stats.equiposEnStock}</p>
-          </div>
-        </div>
-      </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaWarehouse />
+                </div>
+                <div className="stat-info">
+                  <h3>En Stock</h3>
+                  <p>{stats.equiposEnStock}</p>
+                </div>
+              </div>
+            </div>
 
-      {/* Gráficos */}
-      <div className="charts-container">
-        <div className="chart-card">
-          <h3>Equipos por Tipo</h3>
-          <div className="chart-wrapper">
-            <Pie data={equiposPorTipoData} />
-          </div>
-        </div>
+            <div className="charts-container">
+              <div className="chart-card">
+                <h3>Equipos por Tipo</h3>
+                <div className="chart-wrapper">
+                  <Pie data={equiposPorTipoData} />
+                </div>
+              </div>
 
-        <div className="chart-card">
-          <h3>Distribución por Sede</h3>
-          <div className="chart-wrapper">
-            <Bar 
-              data={equiposPorSedeData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
+              <div className="chart-card">
+                <h3>Distribución por Sede</h3>
+                <div className="chart-wrapper">
+                  <Bar 
+                    data={equiposPorSedeData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                        y: {
+                          beginAtZero: true
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
 
-        <div className="chart-card">
-          <h3>Tasa de Utilización</h3>
-          <div className="chart-wrapper">
-            <Doughnut 
-              data={tasaUtilizacionData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'bottom'
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
+              <div className="chart-card">
+                <h3>Tasa de Utilización</h3>
+                <div className="chart-wrapper">
+                  <Doughnut 
+                    data={tasaUtilizacionData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
 
-        <div className="chart-card">
-          <h3>Top 10 Departamentos</h3>
-          <div className="chart-wrapper">
-            <Bar 
-              data={equiposPorDepartamentoData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                scales: {
-                  x: {
-                    beginAtZero: true
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
+              <div className="chart-card">
+                <h3>Top 10 Departamentos</h3>
+                <div className="chart-wrapper">
+                  <Bar 
+                    data={equiposPorDepartamentoData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      indexAxis: 'y',
+                      scales: {
+                        x: {
+                          beginAtZero: true
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }
