@@ -8,6 +8,7 @@ import NewAssetModal from './NewAssetModal';
 import AssetModal from './AssetModal';
 import EmployeeModal from './EmployeeModal';
 import TimelineView from './TimelineView';
+import BrandLogo from './BrandLogo';
 import './AssetsView.css';
 import axios from 'axios';
 
@@ -85,14 +86,11 @@ function AssetsView() {
       {
         header: 'Marca',
         accessorKey: 'marca',
-        cell: ({ row, column, table }) => (
-          <EditableCell
-            value={row.original.marca}
-            column={column}
-            row={row}
-            table={table}
-            options={marcas}
-            onSave={handleSave}
+        cell: ({ row }) => (
+          <BrandLogo 
+            brand={row.original.marca} 
+            onSave={(newValue) => handleSave(row.original.id, 'marca', newValue)}
+            isEditable={true}
           />
         )
       },
