@@ -239,7 +239,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="apellidos">
-                <FaUser className="input-icon" /> Apellidos
+                <FaUser className="input-icon" /> Apellido
               </label>
               <input
                 type="text"
@@ -247,14 +247,14 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 name="apellidos"
                 value={formData.apellidos}
                 onChange={handleInputChange}
-                placeholder="Apellidos"
+                placeholder="Apellido"
                 required
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="nombres">
-                <FaUser className="input-icon" /> Nombres
+                <FaUser className="input-icon" /> Nombre
               </label>
               <input
                 type="text"
@@ -262,7 +262,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 name="nombres"
                 value={formData.nombres}
                 onChange={handleInputChange}
-                placeholder="Nombres"
+                placeholder="Nombre"
                 required
               />
             </div>
@@ -334,7 +334,9 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                     checked={incluirCorreo}
                     onChange={(e) => setIncluirCorreo(e.target.checked)}
                   />
-                  <label htmlFor="incluirCorreo" className="email-opt-label">Crear cuenta de correo</label>
+                  <label htmlFor="incluirCorreo" className="email-opt-label">
+                    Crear cuenta de correo
+                  </label>
                 </div>
               </div>
             </div>

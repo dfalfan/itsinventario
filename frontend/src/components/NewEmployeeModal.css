@@ -151,13 +151,20 @@
     display: flex;
     align-items: center;
     order: 2;
+    margin-top: 8px;
+}
+
+.email-opt-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
 }
 
 .email-checkbox input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
     margin: 0;
-    cursor: pointer;
+    position: relative;
+    top: 1px;
 }
 
 .email-checkbox label {
@@ -189,14 +196,6 @@
 
 .email-input-container input:focus {
     box-shadow: none;
-}
-
-.email-domain {
-    padding: 0.75rem;
-    background-color: #f8f9fa;
-    color: #666;
-    border-left: 1px solid #ddd;
-    white-space: nowrap;
 }
 
 .form-group input::placeholder {
@@ -233,3 +232,83 @@
     border-radius: 4px;
     background-color: #fff;
 }
+
+/* Eliminar asterisco del label "Correo" */
+.form-group label[for="correo"]::after {
+    content: none !important;
+}
+
+/* Eliminar asterisco del checkbox label */
+.email-opt-label::after {
+    content: none !important;
+}
+
+.warning-message {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+  }
+  
+  .email-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .email-input-group input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.75rem;
+  }
+  
+  .email-input-group input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+  
+  .email-domain {
+    padding: 0.75rem;
+    color: #666;
+    font-size: 0.9em;
+    white-space: nowrap;
+    background-color: #f8f9fa;
+  }
+  
+  .email-checkbox {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    padding-left: 0;
+  }
+  
+  .email-opt-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .email-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+  }
+  
+  .email-opt-label {
+    font-size: 0.9em;
+    color: #666;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  /* Remover asteriscos */
+  .form-group label[for="correo"]::after,
+  .email-opt-label::after,
+  .form-group:has(input[name="correo"]) label::after {
+    content: none !important;
+  } 
