@@ -33,6 +33,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   });
 
   const [incluirCorreo, setIncluirCorreo] = useState(true);
+  const [warning, setWarning] = useState(null);
 
   const [sedes, setSedes] = useState([]);
   const [gerencias, setGerencias] = useState([]);
@@ -179,6 +180,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setWarning(null);
 
     try {
       // Construir el nombre completo
@@ -188,7 +190,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
       const empleadoData = {
         nombre_completo,
         ficha: formData.ficha,
-        cedula: formData.cedula,  // Mantenemos los puntos en la cédula
+        cedula: formData.cedula,
         nacionalidad: formData.nacionalidad,
         correo: incluirCorreo ? `${formData.correo}@sura.com.ve` : null,
         sede_id: parseInt(formData.sede_id),
@@ -200,15 +202,15 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
         equipo_asignado: null
       };
 
-      console.log('Datos a enviar:', empleadoData); // Para debug
+      console.log('Datos a enviar:', empleadoData);
 
-      const response = await axios.post('http://192.168.141.50:5000/api/empleados', empleadoData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      const response = await axios.post('http://192.168.141.50:5000/api/empleados', empleadoData);
       
+      // Verificar si hay advertencias sobre el correo
+      if (response.data.google_workspace?.warning) {
+        setWarning(response.data.google_workspace.warning);
+      }
+
       if (response.data) {
         onEmployeeAdded(response.data);
         onClose();
@@ -231,6 +233,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
         <h2>Nuevo Empleado</h2>
         
         {error && <div className="error-message">{error}</div>}
+        {warning && <div className="warning-message">{warning}</div>}
         
         <form onSubmit={handleSubmit} className="new-employee-form">
           <div className="form-grid">
@@ -309,29 +312,29 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="correo">
+              <label>
                 <FaEnvelope className="input-icon" /> Correo
               </label>
-              <div className="email-container">
-                <div className="email-input-container">
-                  <input
-                    type="text"
-                    id="correo"
-                    name="correo"
-                    value={formData.correo}
-                    readOnly
-                    disabled={!incluirCorreo}
-                    placeholder="usuario"
-                  />
-                  <span className="email-domain">@sura.com.ve</span>
-                </div>
-                <div className="email-checkbox">
+              <div className="email-input-group">
+                <input
+                  type="text"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleInputChange}
+                  placeholder="nombre.apellido"
+                  disabled={!incluirCorreo}
+                />
+                <span className="email-domain">@sura.com.ve</span>
+              </div>
+              <div className="email-checkbox">
+                <div className="email-opt-container">
                   <input
                     type="checkbox"
                     id="incluirCorreo"
                     checked={incluirCorreo}
                     onChange={(e) => setIncluirCorreo(e.target.checked)}
                   />
+                  <label htmlFor="incluirCorreo" className="email-opt-label">Crear cuenta de correo</label>
                 </div>
               </div>
             </div>

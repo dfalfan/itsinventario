@@ -14,6 +14,9 @@ from ldap3 import Server, Connection, ALL, NTLM
 from io import BytesIO
 from dotenv import load_dotenv
 from unidecode import unidecode
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +25,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://its:sura@postgres:5432/its
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+# Configuración de Google Workspace
+SCOPES = ['https://www.googleapis.com/auth/admin.directory.user']
+SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 class Sede(db.Model):
     __tablename__ = 'sedes'
@@ -1239,6 +1246,7 @@ def generar_constancia_smartphone(smartphone_id):
                     p.drawString(margin, y, word)
                 
                 y -= line_height
+            
             return y
 
         # Escribir el primer párrafo con formato mixto y justificado
@@ -1442,12 +1450,15 @@ def desincorporar_activo(activo_id):
 @app.route('/api/empleados', methods=['POST'])
 def create_empleado():
     try:
+        print("=== Iniciando creación de empleado ===")
         data = request.get_json()
+        print(f"Datos recibidos: {json.dumps(data, indent=2)}")
         
         # Validar campos requeridos
         required_fields = ['nombre_completo', 'cedula', 'sede_id', 'gerencia_id', 'departamento_id', 'area_id', 'cargo_id']
         for field in required_fields:
             if not data.get(field):
+                print(f"❌ Campo requerido faltante: {field}")
                 return jsonify({'error': f'El campo {field} es requerido'}), 400
 
         # Generar ficha automáticamente
@@ -1455,13 +1466,53 @@ def create_empleado():
         if last_empleado and last_empleado.ficha and last_empleado.ficha.isdigit():
             next_ficha = str(int(last_empleado.ficha) + 1).zfill(4)
         else:
-            next_ficha = '1000'  # Comenzar desde 1000 si no hay fichas previas
+            next_ficha = '1000'
+        print(f"Ficha generada: {next_ficha}")
 
+        # Separar nombre y apellido
+        nombre_completo = data['nombre_completo'].split()
+        print(f"Procesando nombre completo: {nombre_completo}")
+        if len(nombre_completo) >= 2:
+            nombre = nombre_completo[0]
+            apellido = ' '.join(nombre_completo[1:])
+        else:
+            nombre = data['nombre_completo']
+            apellido = ''
+        print(f"Nombre separado - Nombre: {nombre}, Apellido: {apellido}")
+
+        # Inicializar variables para el correo
+        email = None
+        google_result = {'success': True}
+
+        # Solo intentar crear correo si se proporciona uno
+        if data.get('correo'):
+            email = data['correo']
+            print(f"Correo proporcionado: {email}")
+
+            print("=== Iniciando creación en Google Workspace ===")
+            google_result = crear_usuario_google(nombre, apellido, email)
+            print(f"Resultado de Google Workspace: {json.dumps(google_result, indent=2)}")
+            
+            if not google_result['success'] and 'Domain user limit reached' in str(google_result.get('error', '')):
+                print("⚠️ Límite de usuarios alcanzado en Google Workspace")
+                google_result = {
+                    'success': False,
+                    'warning': 'No se pudo crear el correo: límite de licencias alcanzado',
+                    'error': 'Domain user limit reached'
+                }
+            elif not google_result['success']:
+                print("❌ Error en la creación de Google Workspace")
+                return jsonify({
+                    'error': 'Error creando usuario en Google Workspace',
+                    'details': google_result['error']
+                }), 500
+
+        print("=== Creando empleado en base de datos local ===")
         new_empleado = Empleado(
             nombre_completo=data['nombre_completo'],
             ficha=next_ficha,
             cedula=data['cedula'],
-            correo=data.get('correo'),
+            correo=email if google_result['success'] else None,
             sede_id=data['sede_id'],
             gerencia_id=data['gerencia_id'],
             departamento_id=data['departamento_id'],
@@ -1471,26 +1522,42 @@ def create_empleado():
 
         db.session.add(new_empleado)
         db.session.commit()
+        print("✓ Empleado creado exitosamente en la base de datos")
 
-        # Obtener las relaciones para la respuesta
-        return jsonify({
-            'id': new_empleado.id,
-            'nombre': new_empleado.nombre_completo,
-            'ficha': new_empleado.ficha,
-            'cedula': new_empleado.cedula,
-            'correo': new_empleado.correo,
-            'sede': new_empleado.sede.nombre if new_empleado.sede else None,
-            'gerencia': new_empleado.gerencia.nombre if new_empleado.gerencia else None,
-            'departamento': new_empleado.departamento.nombre if new_empleado.departamento else None,
-            'area': new_empleado.area.nombre if new_empleado.area else None,
-            'cargo': new_empleado.cargo.nombre if new_empleado.cargo else None,
-            'equipo_asignado': None,
-            'smartphone_asignado': None
-        }), 201
+        response_data = {
+            'message': 'Empleado creado exitosamente',
+            'empleado': {
+                'id': new_empleado.id,
+                'nombre': new_empleado.nombre_completo,
+                'ficha': new_empleado.ficha,
+                'cedula': new_empleado.cedula,
+                'correo': new_empleado.correo,
+                'sede': new_empleado.sede.nombre if new_empleado.sede else None,
+                'gerencia': new_empleado.gerencia.nombre if new_empleado.gerencia else None,
+                'departamento': new_empleado.departamento.nombre if new_empleado.departamento else None,
+                'area': new_empleado.area.nombre if new_empleado.area else None,
+                'cargo': new_empleado.cargo.nombre if new_empleado.cargo else None
+            }
+        }
+
+        # Solo incluir información de Google Workspace si se intentó crear el correo
+        if data.get('correo'):
+            response_data['google_workspace'] = {
+                'success': google_result['success'],
+                'email': email if google_result['success'] else None,
+                'temp_password': google_result.get('temp_password'),
+                'warning': google_result.get('warning')
+            }
+
+        print(f"Respuesta final: {json.dumps(response_data, indent=2)}")
+        return jsonify(response_data), 201
         
     except Exception as e:
         db.session.rollback()
-        print("Error en create_empleado:", str(e))
+        print(f"❌ Error en create_empleado: {str(e)}")
+        print(f"Tipo de error: {type(e).__name__}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/empleados/<int:empleado_id>', methods=['DELETE'])
@@ -1693,5 +1760,99 @@ def registrar_log(categoria, accion, descripcion, item_id):
         print(f"Error registrando log: {str(e)}")
         raise
 
+@app.route('/api/test-google-connection')
+def test_google_connection():
+    try:
+        print("Iniciando prueba de conexión con Google Workspace...")
+        
+        # Intentar cargar el archivo de credenciales
+        print(f"Intentando cargar credenciales desde: {SERVICE_ACCOUNT_FILE}")
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=SCOPES,
+            subject='daniel.falfan@sura.com.ve'
+        )
+        print("✓ Credenciales cargadas exitosamente")
+        
+        # Intentar construir el servicio
+        print("Intentando construir el servicio de Directory API...")
+        service = build('admin', 'directory_v1', credentials=credentials)
+        print("✓ Servicio construido exitosamente")
+        
+        # Intentar hacer una llamada simple a la API
+        print("Intentando hacer una llamada de prueba a la API...")
+        result = service.users().list(domain='sura.com.ve', maxResults=1).execute()
+        print("✓ Llamada a la API exitosa")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Conexión exitosa con Google Workspace',
+            'details': {
+                'credentials_loaded': True,
+                'service_built': True,
+                'api_call_successful': True
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error durante la prueba de conexión: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'details': {
+                'error_type': type(e).__name__,
+                'error_message': str(e)
+            }
+        }), 500
+
+def crear_usuario_google(nombre, apellido, email):
+    try:
+        print(f"Iniciando creación de usuario en Google Workspace para: {email}")
+        
+        print("Cargando credenciales...")
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=SCOPES,
+            subject='daniel.falfan@sura.com.ve'
+        )
+        print("✓ Credenciales cargadas")
+        
+        print("Construyendo servicio...")
+        service = build('admin', 'directory_v1', credentials=credentials)
+        print("✓ Servicio construido")
+        
+        # Generar contraseña temporal
+        import random
+        import string
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        
+        user_data = {
+            'primaryEmail': email,
+            'name': {
+                'givenName': nombre,
+                'familyName': apellido
+            },
+            'password': temp_password,
+            'changePasswordAtNextLogin': True
+        }
+        
+        print(f"Intentando crear usuario con datos: {json.dumps(user_data, indent=2)}")
+        result = service.users().insert(body=user_data).execute()
+        print("✓ Usuario creado exitosamente")
+        
+        return {
+            'success': True,
+            'email': email,
+            'temp_password': temp_password
+        }
+        
+    except Exception as e:
+        print(f"❌ Error creando usuario en Google Workspace: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
 if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
     app.run(host='0.0.0.0', port=5000, debug=True)
