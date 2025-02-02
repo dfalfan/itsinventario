@@ -169,7 +169,7 @@ function ExtensionsView() {
           </button>
           <button 
             className="directory-button"
-            onClick={() => navigate('/extensions-directory')}
+            onClick={() => window.open('/extensions-directory', '_blank')}
           >
             <FaBook className="directory-icon" />
             Ver Directorio

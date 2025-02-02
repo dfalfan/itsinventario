@@ -484,7 +484,7 @@ td[data-column="acciones"] {
 
 .main-content {
   flex: 1;
-  padding: 20px;
+  padding: 2rem;
   background-color: #f5f6f8;
   width: 100%;
 }
@@ -498,4 +498,10 @@ td[data-column="acciones"] {
   position: sticky;
   top: 0;
   z-index: 1000;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }

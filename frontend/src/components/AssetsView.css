@@ -435,3 +435,26 @@ table {
   font-size: 16px;
 }
 
+.directory-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.directory-button:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.directory-icon {
+  font-size: 16px;
+}
+
