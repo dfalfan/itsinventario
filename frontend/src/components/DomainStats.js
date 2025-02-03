@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUsers, FaDesktop, FaUserShield, FaCheckCircle, FaTimesCircle, FaClock } from 'react-icons/fa';
+import { FaUsers, FaDesktop, FaUserShield, FaCheckCircle, FaTimesCircle, FaClock, FaLock, FaShieldAlt, FaHistory, FaServer, FaExclamationTriangle } from 'react-icons/fa';
 import './DomainStats.css';
 
 function DomainStats() {
@@ -106,7 +106,38 @@ function DomainStats() {
           </div>
         </div>
 
-        {/* Estadísticas de Grupos */}
+        {/* Equipos sin Actividad */}
+        <div className="domain-card">
+          <div className="domain-card-header">
+            <FaClock className="domain-icon" />
+            <h3>Equipos sin Actividad</h3>
+          </div>
+          <div className="domain-card-content">
+            <div className="stat-item total-inactive">
+              <span>Total Equipos Inactivos</span>
+              <strong className={domainStats.computers.security[0].critical ? 'critical' : ''}>
+                {domainStats.computers.security[0].count} equipos
+              </strong>
+              <small>Equipos sin actividad por más de 30 días</small>
+            </div>
+            <div className="inactive-computers">
+              <h4>Top 5 Equipos con Mayor Tiempo sin Actividad</h4>
+              {domainStats.computers.inactive.map((computer, index) => (
+                <div key={index} className="stat-item">
+                  <div className="computer-info">
+                    <span>{computer.name}</span>
+                    <small>Último inicio: {computer.lastLogon}</small>
+                  </div>
+                  <strong className={computer.daysInactive > 90 ? 'critical' : ''}>
+                    {computer.daysInactive} días
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Grupos de Seguridad */}
         <div className="domain-card">
           <div className="domain-card-header">
             <FaUserShield className="domain-icon" />
@@ -129,24 +160,62 @@ function DomainStats() {
           </div>
         </div>
 
-        {/* Equipos Inactivos */}
+        {/* Contraseñas por Expirar */}
         <div className="domain-card">
           <div className="domain-card-header">
-            <FaClock className="domain-icon" />
-            <h3>Equipos Inactivos</h3>
+            <FaLock className="domain-icon" />
+            <h3>Contraseñas por Expirar</h3>
           </div>
           <div className="domain-card-content">
-            <div className="inactive-computers">
-              <h4>Equipos con Mayor Tiempo sin Actividad</h4>
-              {domainStats.computers.inactive.map((computer, index) => (
-                <div key={index} className="stat-item">
-                  <div className="computer-info">
-                    <span>{computer.name}</span>
-                    <small>Último inicio: {computer.lastLogon}</small>
+            {domainStats.users.passwordsToExpire?.length > 0 ? (
+              <div className="passwords-list">
+                {domainStats.users.passwordsToExpire
+                  .sort((a, b) => a.daysUntilExpire - b.daysUntilExpire)
+                  .map((user, index) => (
+                    <div key={index} className="stat-item">
+                      <span>{user.name.replace('@sura.com.ve', '@sura.corp')}</span>
+                      <strong className={user.daysUntilExpire <= 15 ? 'critical' : ''}>
+                        {user.daysUntilExpire} días
+                      </strong>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="no-data">No hay contraseñas próximas a expirar</div>
+            )}
+          </div>
+        </div>
+
+        {/* Estado de Servicios */}
+        <div className="domain-card">
+          <div className="domain-card-header">
+            <FaServer className="domain-icon" />
+            <h3>Estado de Servicios</h3>
+          </div>
+          <div className="domain-card-content">
+            <div className="services-grid">
+              {domainStats.services?.length > 0 ? (
+                domainStats.services.map((service, index) => (
+                  <div key={index} className="service-item">
+                    <div className="service-header">
+                      <span className="service-name">{service.name}</span>
+                      <div className={`service-status ${service.status.toLowerCase()}`}>
+                        {service.status === 'Error' ? (
+                          <FaExclamationTriangle className="status-icon error" />
+                        ) : (
+                          <FaCheckCircle className="status-icon active" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="service-details">
+                      <small className="server-name">{service.server}</small>
+                      <small className="status-details">{service.details}</small>
+                    </div>
                   </div>
-                  <strong>{computer.daysInactive} días</strong>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="no-data">No hay información de servicios disponible</div>
+              )}
             </div>
           </div>
         </div>

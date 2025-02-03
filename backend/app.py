@@ -17,6 +17,7 @@ from unidecode import unidecode
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import json
+import socket
 
 app = Flask(__name__)
 CORS(app)
@@ -2071,40 +2072,35 @@ def get_domain_stats():
         
         # Estadísticas de usuarios
         print("Obteniendo estadísticas de usuarios...")
-        conn.search('dc=sura,dc=corp', '(&(objectClass=user)(objectCategory=person))', attributes=['mail', 'userAccountControl'])
+        conn.search('dc=sura,dc=corp', '(&(objectClass=user)(objectCategory=person))', 
+                   attributes=['mail', 'userAccountControl'])
         total_users = len(conn.entries)
         active_users = sum(1 for entry in conn.entries if entry['userAccountControl'].value & 2 == 0)
         disabled_users = total_users - active_users
-        
+
         # Estadísticas de equipos
-        print("\n=== INICIO BÚSQUEDA DE EQUIPOS INACTIVOS ===")
+        print("\n=== INICIO BÚSQUEDA DE EQUIPOS ===")
         print("Obteniendo estadísticas de equipos...")
         conn.search('dc=sura,dc=corp', '(objectClass=computer)', 
                    attributes=['lastLogon', 'name', 'distinguishedName', 'whenChanged', 'operatingSystem'])
         total_computers = len(conn.entries)
-        print(f"Total de equipos encontrados: {total_computers}")
 
-        # Inicializar contadores de SO
+        # Inicializar contadores
         os_distribution = {
             'Windows 10': 0,
             'Windows 11': 0,
             'Otros': 0
         }
-
         inactive_computers = []
+        all_inactive_computers = 0  # Contador para todos los equipos inactivos
         computers_without_timestamp = 0
         computers_with_error = 0
-        computers_processed = 0
 
+        # Procesar cada equipo
         for entry in conn.entries:
             try:
-                computers_processed += 1
-                print(f"\n--- Procesando equipo {computers_processed}/{total_computers} ---")
-                print(f"Nombre: {entry['name'].value}")
-                
                 # Procesar Sistema Operativo
                 os_name = entry['operatingSystem'].value if entry['operatingSystem'] else 'Desconocido'
-                print(f"Sistema Operativo: {os_name}")
                 
                 # Clasificar SO
                 if os_name and isinstance(os_name, str):
@@ -2122,32 +2118,21 @@ def get_domain_stats():
                 last_logon = entry['lastLogon'].value
                 when_changed = entry['whenChanged'].value
                 
-                print(f"lastLogon: {last_logon}")
-                print(f"whenChanged: {when_changed}")
-                
                 if last_logon:
                     try:
-                        # Ya es un objeto datetime, solo necesitamos convertirlo a timezone-naive
                         last_logon_date = last_logon.replace(tzinfo=None)
                         days_inactive = (datetime.now() - last_logon_date).days
                         
-                        print(f"Fecha último inicio: {last_logon_date}")
-                        print(f"Días inactivo: {days_inactive}")
-                        
-                        if days_inactive > 30:  # Solo equipos con más de 30 días sin actividad
+                        if days_inactive > 30:
+                            all_inactive_computers += 1  # Incrementar contador total
                             computer_info = {
                                 'name': entry['name'].value,
                                 'daysInactive': days_inactive,
                                 'lastLogon': last_logon_date.strftime('%Y-%m-%d')
                             }
                             inactive_computers.append(computer_info)
-                            print(f"¡EQUIPO INACTIVO ENCONTRADO!")
-                            print(f"Detalles: {computer_info}")
                     except Exception as e:
-                        print(f"Error procesando lastLogon: {str(e)}")
-                        # Si falla lastLogon, intentar con whenChanged
                         try:
-                            # Convertir whenChanged a timezone-naive también
                             when_changed_date = when_changed.replace(tzinfo=None)
                             days_inactive = (datetime.now() - when_changed_date).days
                             
@@ -2158,39 +2143,86 @@ def get_domain_stats():
                                     'lastLogon': when_changed_date.strftime('%Y-%m-%d')
                                 }
                                 inactive_computers.append(computer_info)
-                                print(f"¡EQUIPO INACTIVO ENCONTRADO (usando whenChanged)!")
-                                print(f"Detalles: {computer_info}")
                         except Exception as e:
-                            print(f"Error procesando whenChanged: {str(e)}")
+                            computers_with_error += 1
                 else:
-                    print("No se encontró lastLogon")
                     computers_without_timestamp += 1
             except Exception as e:
                 computers_with_error += 1
-                print(f"ERROR procesando equipo: {str(e)}")
                 continue
-        
-        print("\n=== RESUMEN DE PROCESAMIENTO ===")
-        print(f"Total de equipos procesados: {computers_processed}")
-        print(f"Equipos sin timestamp: {computers_without_timestamp}")
-        print(f"Equipos con error: {computers_with_error}")
-        print(f"Equipos inactivos encontrados: {len(inactive_computers)}")
-        
+
         # Ordenar por días de inactividad y tomar los 5 más inactivos
         inactive_computers = sorted(
             inactive_computers,
             key=lambda x: x['daysInactive'],
             reverse=True
         )[:5]
+
+        # Estadísticas de seguridad de equipos
+        security_stats = [
+            {
+                'name': 'Total Equipos Inactivos',
+                'description': 'Equipos sin actividad por más de 30 días',
+                'count': all_inactive_computers,
+                'critical': all_inactive_computers > 10
+            }
+        ]
+
+        # Buscar usuarios con contraseñas por expirar
+        print("Verificando contraseñas por expirar...")
+        conn.search('dc=sura,dc=corp', '(&(objectClass=user)(objectCategory=person))', 
+                   attributes=['mail', 'pwdLastSet', 'userAccountControl'])
         
-        if inactive_computers:
-            print("\nTop 5 equipos más inactivos:")
-            for comp in inactive_computers:
-                print(f"- {comp['name']}: {comp['daysInactive']} días (Último inicio: {comp['lastLogon']})")
-        else:
-            print("\nNo se encontraron equipos inactivos")
-        
-        # Estadísticas de grupos de seguridad
+        passwords_to_expire = []
+        for entry in conn.entries:
+            try:
+                pwd_last_set = entry['pwdLastSet'].value
+                user_account_control = entry['userAccountControl'].value
+                
+                # Verificar si la contraseña está configurada para nunca expirar (0x10000)
+                password_never_expires = bool(user_account_control & 0x10000)
+                
+                if not password_never_expires and pwd_last_set and pwd_last_set != 0 and entry['mail'].value:
+                    # Si ya es datetime, solo remover timezone
+                    if isinstance(pwd_last_set, datetime):
+                        pwd_date = pwd_last_set.replace(tzinfo=None)
+                    else:
+                        # Si es un timestamp de Windows, convertirlo
+                        pwd_date = datetime(1601, 1, 1) + timedelta(seconds=int(pwd_last_set)/10000000)
+                    
+                    days_since_set = (datetime.now() - pwd_date).days
+                    days_until_expire = 90 - days_since_set  # 90 días es el límite
+                    
+                    # Solo incluir si faltan 30 días o menos para expirar
+                    if 0 < days_until_expire <= 30:
+                        email = entry['mail'].value
+                        if '@' not in email:
+                            email = f"{email}@sura.corp"
+                        passwords_to_expire.append({
+                            'name': email,
+                            'daysUntilExpire': days_until_expire,
+                            'lastSet': pwd_date.strftime('%Y-%m-%d')
+                        })
+            except Exception as e:
+                print(f"Error procesando pwdLastSet para {entry['mail'].value if entry['mail'] else 'usuario desconocido'}: {str(e)}")
+                continue
+
+        # Ordenar por días restantes (ascendente)
+        passwords_to_expire = sorted(
+            passwords_to_expire,
+            key=lambda x: x['daysUntilExpire']
+        )
+
+        # Agregar estadística de contraseñas
+        if passwords_to_expire:
+            security_stats.append({
+                'name': 'Contraseñas por Expirar',
+                'description': 'Usuarios que deben cambiar su contraseña en los próximos 30 días',
+                'count': len(passwords_to_expire),
+                'critical': any(p['daysUntilExpire'] <= 15 for p in passwords_to_expire)
+            })
+
+        # Estadísticas de grupos
         print("Obteniendo estadísticas de grupos...")
         conn.search('dc=sura,dc=corp', '(objectClass=group)', attributes=['name', 'member'])
         total_groups = len(conn.entries)
@@ -2201,23 +2233,325 @@ def get_domain_stats():
             key=lambda x: x['members'],
             reverse=True
         )[:5]
+
+        # Obtener últimos cambios en el dominio
+        print("Obteniendo últimos cambios en el dominio...")
         
+        recent_changes = []
+        
+        # 1. Cambios en usuarios
+        conn.search('dc=sura,dc=corp', '(&(objectClass=user)(objectCategory=person))', 
+                   attributes=['mail', 'whenCreated', 'whenChanged', 'displayName', 
+                             'pwdLastSet', 'userAccountControl', 'sAMAccountName',
+                             'distinguishedName', 'name', 'lastLogon'])
+        
+        for entry in conn.entries:
+            try:
+                when_created = entry['whenCreated'].value
+                when_changed = entry['whenChanged'].value
+                last_logon = entry['lastLogon'].value
+                display_name = entry['displayName'].value if entry['displayName'] else entry['sAMAccountName'].value
+                distinguished_name = entry['distinguishedName'].value
+                
+                # Nuevas cuentas (7 días)
+                if when_created:
+                    created_date = when_created.replace(tzinfo=None)
+                    days_since_created = (datetime.now() - created_date).days
+                    if days_since_created <= 7:
+                        recent_changes.append({
+                            'type': 'Nueva Cuenta',
+                            'name': display_name,
+                            'date': created_date.strftime('%Y-%m-%d'),
+                            'timestamp': created_date,  # Guardamos el timestamp completo para ordenar
+                            'description': 'Usuario creado'
+                        })
+                
+                # Cambios de contraseña (3 días)
+                pwd_last_set = entry['pwdLastSet'].value
+                if pwd_last_set:
+                    if isinstance(pwd_last_set, datetime):
+                        pwd_date = pwd_last_set.replace(tzinfo=None)
+                    else:
+                        pwd_date = datetime(1601, 1, 1) + timedelta(seconds=int(pwd_last_set)/10000000)
+                    
+                    days_since_pwd = (datetime.now() - pwd_date).days
+                    if days_since_pwd <= 3:
+                        recent_changes.append({
+                            'type': 'Contraseña',
+                            'name': display_name,
+                            'date': pwd_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                            'timestamp': pwd_date,
+                            'description': 'Cambio de contraseña'
+                        })
+                
+                # Cambios de OU o nombre (1 día)
+                if when_changed and last_logon:
+                    changed_date = when_changed.replace(tzinfo=None)
+                    last_logon_date = last_logon.replace(tzinfo=None) if isinstance(last_logon, datetime) else None
+                    
+                    if (datetime.now() - changed_date).days <= 1 and last_logon_date:
+                        if changed_date > last_logon_date:
+                            if 'OU=' in distinguished_name:
+                                ou_name = distinguished_name.split(",")[1].replace("OU=", "")
+                                if any(dept in ou_name.lower() for dept in [
+                                    'comercializacion', 'planificacion', 'compras', 'cuentas', 
+                                    'finanzas', 'tecnologia', 'rrhh', 'operaciones'
+                                ]):
+                                    recent_changes.append({
+                                        'type': 'Ubicación',
+                                        'name': display_name,
+                                        'date': changed_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                                        'timestamp': changed_date,
+                                        'description': f'Movido a {ou_name}'
+                                    })
+            except Exception as e:
+                print(f"Error procesando cambios de usuario: {str(e)}")
+                continue
+
+        # 2. Cambios en equipos (omitir cambios de ubicación por replicación)
+        conn.search('dc=sura,dc=corp', '(objectClass=computer)', 
+                   attributes=['name', 'whenCreated', 'whenChanged', 'distinguishedName', 'operatingSystem'])
+        
+        for entry in conn.entries:
+            try:
+                when_created = entry['whenCreated'].value
+                when_changed = entry['whenChanged'].value
+                computer_name = entry['name'].value
+                
+                # Nuevos equipos (7 días)
+                if when_created:
+                    created_date = when_created.replace(tzinfo=None)
+                    days_since_created = (datetime.now() - created_date).days
+                    if days_since_created <= 7:
+                        recent_changes.append({
+                            'type': 'Nuevo Equipo',
+                            'name': computer_name,
+                            'date': created_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                            'timestamp': created_date,
+                            'description': f'Equipo agregado al dominio'
+                        })
+                
+                # Cambios en equipos (3 días)
+                if when_changed:
+                    changed_date = when_changed.replace(tzinfo=None)
+                    days_since_changed = (datetime.now() - changed_date).days
+                    if days_since_changed <= 3:
+                        distinguished_name = entry['distinguishedName'].value
+                        if 'OU=' in distinguished_name:
+                            recent_changes.append({
+                                'type': 'Equipo',
+                                'name': computer_name,
+                                'date': changed_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                                'timestamp': changed_date,
+                                'description': f'Movido a {distinguished_name.split(",")[1].replace("OU=", "")}'
+                            })
+            except Exception as e:
+                print(f"Error procesando cambios de equipo: {str(e)}")
+                continue
+
+        # 3. Cambios en grupos
+        conn.search('dc=sura,dc=corp', '(objectClass=group)', 
+                   attributes=['name', 'whenCreated', 'whenChanged', 'member', 'memberOf', 'distinguishedName'])
+        
+        for entry in conn.entries:
+            try:
+                when_created = entry['whenCreated'].value
+                when_changed = entry['whenChanged'].value
+                group_name = entry['name'].value
+                
+                # Nuevos grupos (7 días)
+                if when_created:
+                    created_date = when_created.replace(tzinfo=None)
+                    days_since_created = (datetime.now() - created_date).days
+                    if days_since_created <= 7:
+                        recent_changes.append({
+                            'type': 'Nuevo Grupo',
+                            'name': group_name,
+                            'date': created_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                            'timestamp': created_date,
+                            'description': 'Grupo creado'
+                        })
+                
+                # Cambios en grupos (3 días)
+                if when_changed:
+                    changed_date = when_changed.replace(tzinfo=None)
+                    days_since_changed = (datetime.now() - changed_date).days
+                    if days_since_changed <= 3:
+                        # Solo registrar cambios en grupos importantes
+                        if any(important in group_name.lower() 
+                              for important in ['admin', 'it', 'seguridad', 'vpn', 'remoto']):
+                            recent_changes.append({
+                                'type': 'Grupo',
+                                'name': group_name,
+                                'date': changed_date.strftime('%Y-%m-%d %H:%M'),  # Incluimos la hora
+                                'timestamp': changed_date,
+                                'description': 'Cambios en membresía del grupo'
+                            })
+                            
+                        # Verificar cambios de OU
+                        distinguished_name = entry['distinguishedName'].value
+                        if 'OU=' in distinguished_name:
+                            recent_changes.append({
+                                'type': 'Grupo',
+                                'name': group_name,
+                                'date': changed_date.strftime('%Y-%m-%d'),
+                                'description': f'Movido a {distinguished_name.split(",")[1].replace("OU=", "")}'
+                            })
+            except Exception as e:
+                print(f"Error procesando cambios en grupos: {str(e)}")
+                continue
+
+        # Ordenar cambios por timestamp exacto y limitar a los 5 más recientes
+        recent_changes = sorted(
+            recent_changes,
+            key=lambda x: x['timestamp'],  # Ordenar por el timestamp completo
+            reverse=True
+        )[:5]
+
+        # Formatear las fechas después de ordenar y remover el timestamp
+        for change in recent_changes:
+            # Convertir el timestamp a string con formato consistente
+            change['date'] = change['timestamp'].strftime('%Y-%m-%d')
+            # Eliminar el campo timestamp que usamos para ordenar
+            del change['timestamp']
+
+        # Obtener estado de servicios críticos
+        print("Obteniendo estado de servicios críticos...")
+        
+        services_status = []
+        critical_services = [
+            'NTDS',           # Active Directory Domain Services
+            'DNS',            # DNS Server
+            'Netlogon',       # Net Logon
+            'DFSR',           # DFS Replication
+            'KDC',            # Kerberos Key Distribution Center
+            'W32Time',        # Windows Time
+            'ADWS',           # Active Directory Web Services
+            'DHCPServer'      # DHCP Server
+        ]
+        
+        try:
+            # Consultar estado de servicios en ambos DCs
+            dcs = [
+                {'ip': '192.168.141.39', 'name': 'SRVVAL-AD01'},
+                {'ip': '192.168.140.39', 'name': 'SRVCDN-AD01'}
+            ]
+            
+            for dc in dcs:
+                try:
+                    # Intentar conexión LDAP
+                    dc_conn = Connection(
+                        Server(dc['ip'], get_info=ALL),
+                        user='sura\\dfalfan',
+                        password='Dief490606',
+                        auto_bind=True
+                    )
+                    
+                    # Si llegamos aquí, el DC está respondiendo
+                    dc_status = {
+                        'name': 'Controlador de Dominio',
+                        'server': dc['name'],
+                        'status': 'Activo',
+                        'details': 'Servicios funcionando correctamente',
+                        'is_critical': True
+                    }
+                    services_status.append(dc_status)
+                    
+                    # Verificar DNS
+                    try:
+                        dns_query = socket.gethostbyname_ex(dc['ip'])
+                        dns_status = {
+                            'name': 'Servicios de Red',
+                            'server': dc['name'],
+                            'status': 'Activo',
+                            'details': 'DNS y red funcionando',
+                            'is_critical': True
+                        }
+                    except:
+                        dns_status = {
+                            'name': 'Servicios de Red',
+                            'server': dc['name'],
+                            'status': 'Error',
+                            'details': 'Problemas con DNS',
+                            'is_critical': True
+                        }
+                    services_status.append(dns_status)
+                    
+                    # Verificar replicación
+                    try:
+                        dc_conn.search('dc=sura,dc=corp',
+                                     '(objectClass=computer)',
+                                     attributes=['whenChanged'])
+                        last_change = max(entry.whenChanged.value for entry in dc_conn.entries)
+                        
+                        # Calcular tiempo desde último cambio
+                        time_since_change = datetime.now() - last_change.replace(tzinfo=None)
+                        if time_since_change.total_seconds() < 3600:  # Menos de 1 hora
+                            repl_details = "Replicación activa"
+                        else:
+                            repl_details = f"Último cambio hace {time_since_change.days} días"
+                            
+                        replication_status = {
+                            'name': 'Estado de Replicación',
+                            'server': dc['name'],
+                            'status': 'Activo',
+                            'details': repl_details,
+                            'is_critical': True
+                        }
+                    except Exception as e:
+                        replication_status = {
+                            'name': 'Estado de Replicación',
+                            'server': dc['name'],
+                            'status': 'Error',
+                            'details': 'Problemas de replicación',
+                            'is_critical': True
+                        }
+                    services_status.append(replication_status)
+                    
+                    dc_conn.unbind()
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    if "connection refused" in error_msg.lower():
+                        details = "Servidor no responde"
+                    elif "authentication failed" in error_msg.lower():
+                        details = "Error de autenticación"
+                    else:
+                        details = "Error de conexión"
+                        
+                    services_status.append({
+                        'name': 'Controlador de Dominio',
+                        'server': dc['name'],
+                        'status': 'Error',
+                        'details': details,
+                        'is_critical': True
+                    })
+        
+        except Exception as e:
+            print(f"Error obteniendo estado de servicios: {str(e)}")
+            services_status = []
+
+        # Preparar respuesta
         response_data = {
             'users': {
                 'total': total_users,
                 'active': active_users,
                 'disabled': disabled_users,
-                'activePercentage': round((active_users / total_users * 100), 2) if total_users > 0 else 0
+                'activePercentage': round((active_users / total_users * 100), 2) if total_users > 0 else 0,
+                'passwordsToExpire': passwords_to_expire
             },
             'computers': {
                 'total': total_computers,
                 'byOperatingSystem': os_distribution,
-                'inactive': inactive_computers
+                'inactive': inactive_computers,
+                'security': security_stats
             },
             'groups': {
                 'total': total_groups,
                 'topByMembers': groups_by_members
-            }
+            },
+            'recentChanges': recent_changes,
+            'services': services_status  # Nuevo campo para estado de servicios
         }
         
         print("Estadísticas del dominio obtenidas exitosamente")
