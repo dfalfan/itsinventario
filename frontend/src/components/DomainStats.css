@@ -1,0 +1,111 @@
+.domain-stats {
+  padding: 20px;
+}
+
+.domain-stats h2 {
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.domain-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.domain-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.domain-card-header {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.domain-icon {
+  font-size: 1.5rem;
+  margin-right: 15px;
+  color: #2196f3;
+}
+
+.domain-card h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.domain-card-content {
+  padding: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-item span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.stat-item strong {
+  color: #333;
+  font-weight: 500;
+}
+
+.stat-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 1rem;
+}
+
+.status-icon.active {
+  color: #4caf50;
+}
+
+.status-icon.disabled {
+  color: #f44336;
+}
+
+.os-distribution, .top-groups {
+  margin-top: 15px;
+}
+
+.os-distribution h4, .top-groups h4 {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* Loading y Error states */
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #f44336;
+} 

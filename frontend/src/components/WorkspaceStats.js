@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaEnvelope, FaExclamationTriangle, FaDatabase, FaUsers } from 'react-icons/fa';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
 import './WorkspaceStats.css';
 
 // Registrar los componentes necesarios de Chart.js
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function WorkspaceStats() {
   const [workspaceStats, setWorkspaceStats] = useState(null);
@@ -46,49 +46,12 @@ function WorkspaceStats() {
     }]
   };
 
-  // Datos para el gráfico de top usuarios por almacenamiento
-  const topUsersData = {
-    labels: workspaceStats.topUsersByStorage.map(user => user.email.split('@')[0]),
-    datasets: [{
-      label: 'Almacenamiento (GB)',
-      data: workspaceStats.topUsersByStorage.map(user => user.storage),
-      backgroundColor: '#2196f3',
-      borderRadius: 5
-    }]
-  };
-
-  // Datos para el gráfico de top usuarios por correos
-  const topEmailsData = {
-    labels: workspaceStats.topUsersByEmails.map(user => user.email.split('@')[0]),
-    datasets: [{
-      label: 'Total de Correos',
-      data: workspaceStats.topUsersByEmails.map(user => user.total_emails),
-      backgroundColor: '#4caf50',
-      borderRadius: 5
-    }]
-  };
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'bottom'
-      }
-    }
-  };
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true
       }
     }
   };
@@ -101,7 +64,7 @@ function WorkspaceStats() {
         {/* Uso de Almacenamiento */}
         <div className="workspace-card">
           <div className="workspace-card-header">
-            <FaEnvelope className="workspace-icon" />
+            <FaDatabase className="workspace-icon" />
             <h3>Uso de Almacenamiento</h3>
           </div>
           <div className="workspace-card-content">
@@ -125,50 +88,43 @@ function WorkspaceStats() {
           </div>
         </div>
 
-        {/* Alertas de Capacidad */}
+        {/* Resumen de Licencias */}
         <div className="workspace-card">
           <div className="workspace-card-header">
-            <FaExclamationTriangle className="workspace-icon warning" />
-            <h3>Alertas de Capacidad</h3>
+            <FaUsers className="workspace-icon" />
+            <h3>Resumen de Licencias</h3>
           </div>
           <div className="workspace-card-content">
-            <div className="alerts-list">
-              {workspaceStats.storageAlerts.length > 0 ? (
-                workspaceStats.storageAlerts.map((alert, index) => (
-                  <div key={index} className="alert-item">
-                    <span>{alert.email}</span>
-                    <strong>{alert.percentage}% usado</strong>
-                  </div>
-                ))
-              ) : (
-                <p className="no-alerts">No hay alertas de capacidad</p>
-              )}
+            <div className="stat-item">
+              <span>Licencias Totales</span>
+              <strong>{workspaceStats.totalLicenses}</strong>
+            </div>
+            <div className="stat-item">
+              <span>Licencias Asignadas</span>
+              <strong>{workspaceStats.assignedLicenses}</strong>
+            </div>
+            <div className="stat-item">
+              <span>Licencias Disponibles</span>
+              <strong>{workspaceStats.availableLicenses}</strong>
             </div>
           </div>
         </div>
 
-        {/* Top Usuarios por Almacenamiento */}
-        <div className="workspace-card">
-          <div className="workspace-card-header">
-            <FaDatabase className="workspace-icon" />
-            <h3>Top Usuarios por Almacenamiento</h3>
-          </div>
-          <div className="workspace-card-content">
-            <div className="chart-container">
-              <Bar data={topUsersData} options={barOptions} />
-            </div>
-          </div>
-        </div>
-
-        {/* Top Usuarios por Actividad de Correo */}
+        {/* Top Usuarios por Actividad */}
         <div className="workspace-card">
           <div className="workspace-card-header">
             <FaEnvelope className="workspace-icon" />
-            <h3>Top Usuarios por Actividad</h3>
+            <h3>Top Usuarios por Actividad (Última Semana)</h3>
           </div>
           <div className="workspace-card-content">
-            <div className="chart-container">
-              <Bar data={topEmailsData} options={barOptions} />
+            <div className="top-users-list">
+              {workspaceStats.topUsersByEmails.map((user, index) => (
+                <div key={index} className="top-user-item">
+                  <span className="user-rank">{index + 1}</span>
+                  <span className="user-email">{user.email.split('@')[0]}</span>
+                  <span className="user-value">{user.total.toLocaleString()} correos</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -195,24 +151,24 @@ function WorkspaceStats() {
           </div>
         </div>
 
-        {/* Resumen de Licencias */}
+        {/* Alertas de Capacidad */}
         <div className="workspace-card">
           <div className="workspace-card-header">
-            <FaUsers className="workspace-icon" />
-            <h3>Resumen de Licencias</h3>
+            <FaExclamationTriangle className="workspace-icon warning" />
+            <h3>Alertas de Capacidad</h3>
           </div>
           <div className="workspace-card-content">
-            <div className="stat-item">
-              <span>Licencias Totales</span>
-              <strong>{workspaceStats.totalLicenses}</strong>
-            </div>
-            <div className="stat-item">
-              <span>Licencias Asignadas</span>
-              <strong>{workspaceStats.assignedLicenses}</strong>
-            </div>
-            <div className="stat-item">
-              <span>Licencias Disponibles</span>
-              <strong>{workspaceStats.availableLicenses}</strong>
+            <div className="alerts-list">
+              {workspaceStats.storageAlerts.length > 0 ? (
+                workspaceStats.storageAlerts.map((alert, index) => (
+                  <div key={index} className="alert-item">
+                    <span>{alert.email}</span>
+                    <strong>{alert.percentage}% usado</strong>
+                  </div>
+                ))
+              ) : (
+                <p className="no-alerts">No hay alertas de capacidad</p>
+              )}
             </div>
           </div>
         </div>

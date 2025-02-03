@@ -27,6 +27,7 @@ import {
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import './DashboardView.css';
 import WorkspaceStats from './WorkspaceStats';
+import DomainStats from './DomainStats';
 
 ChartJS.register(
   ArcElement,
@@ -256,8 +257,7 @@ function DashboardView() {
         )}
         
         {selectedDashboard === 'dominio' && (
-          <h1>Dashboard de Dominio</h1>
-          // Contenido del dashboard de dominio
+          <DomainStats />
         )}
         
         {selectedDashboard === 'smartphones' && (

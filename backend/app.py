@@ -1888,8 +1888,60 @@ def get_workspace_stats():
         users = results.get('users', [])
         active_users = [user for user in users if user.get('suspended') is False]
         
-        # Obtener uso de almacenamiento total (mantenemos esto que ya funciona)
-        total_storage_used = 2479.09  # Valor que ya sabemos que funciona
+        # Obtener uso de almacenamiento total y por usuario
+        print("Obteniendo datos de almacenamiento...")
+        total_storage_used = 2479.09  # Valor base
+        storage_by_user = []
+        
+        try:
+            # Obtener fecha de ayer para los datos de almacenamiento
+            from datetime import datetime, timedelta
+            yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+            
+            print(f"Obteniendo datos de almacenamiento para la fecha: {yesterday}")
+            
+            storage_report = reports_service.userUsageReport().get(
+                userKey='all',
+                date=yesterday,
+                parameters='accounts:used_quota_in_mb'  # Cambiado para obtener el total usado
+            ).execute()
+            
+            if 'usageReports' in storage_report:
+                print(f"Encontrados {len(storage_report['usageReports'])} reportes de usuario")
+                for report in storage_report['usageReports']:
+                    email = report.get('entity', {}).get('userEmail', '')
+                    storage_mb = 0
+                    
+                    for param in report.get('parameters', []):
+                        if param.get('name') == 'accounts:used_quota_in_mb':
+                            try:
+                                storage_mb = float(param.get('intValue', 0))
+                            except (ValueError, TypeError) as e:
+                                print(f"Error convirtiendo valor para {email}: {e}")
+                                continue
+                    
+                    storage_gb = storage_mb / 1024  # Convertir a GB
+                    if storage_gb > 0:
+                        storage_by_user.append({
+                            'email': email,
+                            'storage': round(storage_gb, 2)
+                        })
+                        print(f"Usuario {email}: {round(storage_gb, 2)} GB")
+            
+            # Ordenar por uso de almacenamiento
+            top_by_storage = sorted(
+                storage_by_user,
+                key=lambda x: x['storage'],
+                reverse=True
+            )[:5]
+            
+            print(f"Top usuarios por almacenamiento encontrados: {len(top_by_storage)}")
+            for user in top_by_storage:
+                print(f"- {user['email']}: {user['storage']} GB")
+        
+        except Exception as e:
+            print(f"Error obteniendo datos de almacenamiento: {str(e)}")
+            top_by_storage = []
         
         # Obtener estadísticas de correo
         print("Obteniendo estadísticas de correo...")
@@ -1899,20 +1951,18 @@ def get_workspace_stats():
         
         try:
             # Obtener fecha de hace 2 días para asegurar que los datos estén disponibles
-            from datetime import datetime, timedelta
             end_date = datetime.now() - timedelta(days=2)  # Cambiado a 2 días atrás
             start_date = end_date - timedelta(days=5)  # Total 7 días
             
-            print(f"Periodo de análisis: {start_date.strftime('%Y-%m-%d')} a {end_date.strftime('%Y-%m-%d')}")
+            print(f"Periodo de análisis de correos: {start_date.strftime('%Y-%m-%d')} a {end_date.strftime('%Y-%m-%d')}")
             
-            # Iterar sobre el rango de fechas
+            # Resto del código para estadísticas de correo...
             current_date = start_date
             while current_date <= end_date:
                 date_str = current_date.strftime('%Y-%m-%d')
                 print(f"Obteniendo datos para: {date_str}")
                 
                 try:
-                    # Obtener estadísticas de correo por usuario
                     email_report = reports_service.userUsageReport().get(
                         userKey='all',
                         date=date_str,
@@ -1949,7 +1999,7 @@ def get_workspace_stats():
                     print(f"Error obteniendo datos para {date_str}: {str(e)}")
                     if 'not yet available' in str(e):
                         print("Omitiendo fecha futura...")
-                        break  # Salimos del bucle si encontramos una fecha futura
+                        break
                     elif 'Data for dates earlier than' in str(e):
                         print("Omitiendo fecha muy antigua...")
                         current_date += timedelta(days=1)
@@ -1966,10 +2016,6 @@ def get_workspace_stats():
                 reverse=True
             )[:5]
             
-            print(f"Estadísticas recopiladas: {len(user_email_stats)} usuarios procesados")
-            print(f"Total emails enviados: {total_emails_sent}")
-            print(f"Total emails recibidos: {total_emails_received}")
-            
         except Exception as e:
             print(f"Error obteniendo estadísticas de correo: {str(e)}")
             top_by_emails = []
@@ -1983,10 +2029,10 @@ def get_workspace_stats():
         
         response_data = {
             'totalStorage': len(active_users) * 15,  # 15GB por usuario activo
-            'usedStorage': total_storage_used,  # Usamos el valor que ya sabemos que funciona
+            'usedStorage': total_storage_used,
             'activeAccounts': len(active_users),
             'storageAlerts': [],  # Por ahora no nos enfocamos en alertas de almacenamiento
-            'topUsersByStorage': [],  # Por ahora no nos enfocamos en almacenamiento por usuario
+            'topUsersByStorage': top_by_storage,  # Ahora incluimos el top por almacenamiento
             'topUsersByEmails': top_by_emails,
             'totalLicenses': len(users),
             'assignedLicenses': len(active_users),
@@ -2013,6 +2059,69 @@ def get_workspace_stats():
             'error': str(e),
             'details': traceback.format_exc()
         }), 500
+
+@app.route('/api/domain/stats')
+def get_domain_stats():
+    try:
+        print("Iniciando obtención de estadísticas del dominio...")
+        
+        # Configurar el servidor y la conexión
+        server = Server('192.168.141.39', get_info=ALL)
+        conn = Connection(server, user='sura\\dfalfan', password='Dief490606', auto_bind=True)
+        
+        # Estadísticas de usuarios
+        print("Obteniendo estadísticas de usuarios...")
+        conn.search('dc=sura,dc=corp', '(&(objectClass=user)(objectCategory=person))', attributes=['mail', 'userAccountControl'])
+        total_users = len(conn.entries)
+        active_users = sum(1 for entry in conn.entries if entry['userAccountControl'].value & 2 == 0)
+        disabled_users = total_users - active_users
+        
+        # Estadísticas de equipos
+        print("Obteniendo estadísticas de equipos...")
+        conn.search('dc=sura,dc=corp', '(objectClass=computer)', attributes=['operatingSystem', 'operatingSystemVersion'])
+        total_computers = len(conn.entries)
+        
+        # Agrupar por sistema operativo
+        os_distribution = {}
+        for entry in conn.entries:
+            os = entry['operatingSystem'].value if entry['operatingSystem'] else 'Desconocido'
+            os_distribution[os] = os_distribution.get(os, 0) + 1
+        
+        # Estadísticas de grupos de seguridad
+        print("Obteniendo estadísticas de grupos...")
+        conn.search('dc=sura,dc=corp', '(objectClass=group)', attributes=['name', 'member'])
+        total_groups = len(conn.entries)
+        
+        # Grupos con más miembros
+        groups_by_members = sorted(
+            [{'name': entry['name'].value, 'members': len(entry['member'])} for entry in conn.entries],
+            key=lambda x: x['members'],
+            reverse=True
+        )[:5]
+        
+        response_data = {
+            'users': {
+                'total': total_users,
+                'active': active_users,
+                'disabled': disabled_users,
+                'activePercentage': round((active_users / total_users * 100), 2) if total_users > 0 else 0
+            },
+            'computers': {
+                'total': total_computers,
+                'byOperatingSystem': os_distribution
+            },
+            'groups': {
+                'total': total_groups,
+                'topByMembers': groups_by_members
+            }
+        }
+        
+        print("Estadísticas del dominio obtenidas exitosamente")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Error al obtener estadísticas del dominio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

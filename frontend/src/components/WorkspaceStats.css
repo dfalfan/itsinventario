@@ -94,6 +94,51 @@
   font-weight: 500;
 }
 
+/* Estilos para las listas de usuarios top */
+.top-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.top-user-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.top-user-item:hover {
+  background-color: #e9ecef;
+}
+
+.user-rank {
+  width: 24px;
+  height: 24px;
+  background-color: #2196f3;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.user-email {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.user-value {
+  color: #2196f3;
+  font-weight: 500;
+}
+
 .alerts-list {
   max-height: 300px;
   overflow-y: auto;
