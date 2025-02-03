@@ -27,7 +27,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Configuración de Google Workspace
-SCOPES = ['https://www.googleapis.com/auth/admin.directory.user']
+SCOPES = [
+    'https://www.googleapis.com/auth/admin.directory.user',
+    'https://www.googleapis.com/auth/admin.reports.usage.readonly'
+]
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 class Sede(db.Model):
@@ -1765,11 +1768,11 @@ def test_google_connection():
     try:
         print("Iniciando prueba de conexión con Google Workspace...")
         
-        # Intentar cargar el archivo de credenciales
+        # Cargar las credenciales del servicio
         print(f"Intentando cargar credenciales desde: {SERVICE_ACCOUNT_FILE}")
         credentials = service_account.Credentials.from_service_account_file(
             SERVICE_ACCOUNT_FILE,
-            scopes=SCOPES,
+            scopes=['https://www.googleapis.com/auth/admin.directory.user'],  # Usar solo el scope básico primero
             subject='daniel.falfan@sura.com.ve'
         )
         print("✓ Credenciales cargadas exitosamente")
@@ -1790,18 +1793,22 @@ def test_google_connection():
             'details': {
                 'credentials_loaded': True,
                 'service_built': True,
-                'api_call_successful': True
+                'api_call_successful': True,
+                'users_found': len(result.get('users', []))
             }
         })
         
     except Exception as e:
         print(f"❌ Error durante la prueba de conexión: {str(e)}")
+        import traceback
+        print(f"Traceback completo: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e),
             'details': {
                 'error_type': type(e).__name__,
-                'error_message': str(e)
+                'error_message': str(e),
+                'traceback': traceback.format_exc()
             }
         }), 500
 
@@ -1852,6 +1859,106 @@ def crear_usuario_google(nombre, apellido, email):
             'success': False,
             'error': str(e)
         }
+
+@app.route('/api/workspace/stats')
+def get_workspace_stats():
+    try:
+        print("Iniciando obtención de estadísticas de Workspace...")
+        
+        print("Cargando credenciales...")
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=SCOPES,
+            subject='daniel.falfan@sura.com.ve'
+        )
+        print("✓ Credenciales cargadas")
+        
+        # Construir servicios necesarios
+        directory_service = build('admin', 'directory_v1', credentials=credentials)
+        reports_service = build('admin', 'reports_v1', credentials=credentials)
+        
+        # Obtener lista de usuarios
+        print("Obteniendo lista de usuarios...")
+        results = directory_service.users().list(
+            domain='sura.com.ve',
+            maxResults=500,
+            orderBy='email'
+        ).execute()
+        
+        users = results.get('users', [])
+        active_users = [user for user in users if user.get('suspended') is False]
+        
+        # Obtener uso de almacenamiento
+        print("Obteniendo datos de uso de almacenamiento...")
+        storage_data = reports_service.customerUsageReports().get(
+            date='2024-01-01'
+        ).execute()
+        
+        total_storage_used = 0
+        if 'usageReports' in storage_data:
+            for metric in storage_data['usageReports'][0].get('parameters', []):
+                if metric.get('name') == 'accounts:used_quota_in_mb':
+                    total_storage_used = float(metric.get('intValue', 0)) / 1024  # Convertir a GB
+        
+        # Obtener top usuarios por almacenamiento
+        print("Obteniendo top usuarios por uso...")
+        top_users_data = []
+        try:
+            user_reports = reports_service.userUsageReport().get(
+                userKey='all',
+                date='2024-01-01',
+                parameters='gmail:storage_used'
+            ).execute()
+            
+            if 'usageReports' in user_reports:
+                for report in user_reports['usageReports'][:10]:  # Top 10 usuarios
+                    email = report.get('entity', {}).get('userEmail', '')
+                    for param in report.get('parameters', []):
+                        if param.get('name') == 'gmail:storage_used':
+                            storage = float(param.get('intValue', 0)) / (1024 * 1024)  # Convertir a GB
+                            top_users_data.append({
+                                'email': email,
+                                'storage': round(storage, 2)
+                            })
+                
+                top_users_data.sort(key=lambda x: x['storage'], reverse=True)
+        except Exception as e:
+            print(f"Error obteniendo top usuarios: {str(e)}")
+        
+        # Calcular alertas de almacenamiento
+        storage_alerts = []
+        storage_limit = 15  # 15GB por usuario
+        for user in top_users_data:
+            if user['storage'] > (storage_limit * 0.9):  # Alerta si uso > 90%
+                storage_alerts.append({
+                    'email': user['email'],
+                    'usage': user['storage'],
+                    'limit': storage_limit,
+                    'percentage': round((user['storage'] / storage_limit) * 100, 2)
+                })
+        
+        response_data = {
+            'totalStorage': len(active_users) * 15,  # 15GB por usuario activo
+            'usedStorage': round(total_storage_used, 2),
+            'activeAccounts': len(active_users),
+            'storageAlerts': storage_alerts,
+            'topUsers': top_users_data[:5],  # Solo los top 5
+            'totalLicenses': len(users),
+            'assignedLicenses': len(active_users),
+            'availableLicenses': 0
+        }
+        
+        print("Estadísticas completas obtenidas exitosamente")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Error al obtener estadísticas de Workspace: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'error': str(e),
+            'details': traceback.format_exc()
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
