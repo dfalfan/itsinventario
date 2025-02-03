@@ -2,23 +2,71 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow-y: auto;
 }
 
 .app-container {
   min-height: 100vh;
   background-color: #f8f9fa;
-  overflow-y: auto;
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .App {
-  padding: 0;
-  max-width: 100%;
-  margin: 0 auto;
-  display: flex;
   min-height: 100vh;
+  display: flex;
   flex-direction: column;
+}
+
+/* Ajustes de la navbar */
+.navbar {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 0.5rem 1rem;
+  min-height: 64px;
+}
+
+.navbar-container {
+  width: 98%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Contenido principal */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background-color: #f8f9fa;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.table-container {
+  margin: 16px auto;
+  width: 98%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+/* Mantener el encabezado de la tabla fijo */
+thead {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
 }
 
 .no-navbar .navbar {
@@ -63,30 +111,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 2.5%;
+  padding: 16px 1%;
   margin: 0;
+  width: 98%;
+  margin: 0 auto;
 }
 
 h1 {
   margin: 0;
   font-size: 24px;
   font-weight: 500;
-}
-
-.table-container {
-  margin: 16px auto;
-  width: 95%;
-  overflow-x: auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 th,
@@ -482,27 +516,55 @@ td[data-column="acciones"] {
   text-align: center;
 }
 
-.main-content {
-  
-  flex: 1;
-  padding: 2rem;
-  background-color: #f5f6f8;
-  width: 100%;
-}
-
-.main-content.no-navbar {
-  padding: 0;
-}
-
-.navbar {
-  width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Asegurar que los contenedores de rutas permitan scroll */
+.route-container {
+  min-height: 100%;
+  position: relative;
+}
+
+/* Prevenir que elementos fixed bloqueen el scroll */
+.fixed-header,
+.fixed-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.fixed-header {
+  top: 0;
+}
+
+.fixed-footer {
+  bottom: 0;
+}
+
+/* Asegurar que los modales no afecten el scroll del contenido principal */
+.modal-container {
+  position: fixed;
+  z-index: 1050;
+  pointer-events: none;
+}
+
+.modal-container > * {
+  pointer-events: auto;
+}
+
+/* Eliminar los overflow-y: auto !important redundantes */
+.route-container,
+.main-content,
+#root {
+  position: relative;
+}
+
+/* Ajustar el contenedor principal para scroll vertical único */
+.app-container {
+  height: 100vh;
+  overflow-y: auto;  /* Un único scroll principal */
 }

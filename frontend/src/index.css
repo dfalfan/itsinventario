@@ -1,6 +1,7 @@
-body {
+html, body {
     margin: 0;
     padding: 0;
+    height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
         sans-serif;
@@ -16,4 +17,48 @@ body {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
         monospace;
+}
+
+/* Estilo único para el scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#root {
+    min-height: 100%;
+    position: relative;
+    overflow-y: auto !important;  /* Asegurar que el contenedor principal permita scroll */
+}
+
+/* Prevenir que modales o popups afecten el scroll */
+.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}
+
+/* Prevenir que elementos fixed o absolute bloqueen el scroll */
+.fixed-element,
+.absolute-element {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.fixed-element *,
+.absolute-element * {
+    pointer-events: auto;
 }
