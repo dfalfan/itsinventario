@@ -87,11 +87,14 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
   const fetchCargos = async (areaId) => {
     try {
+      console.log('Fetching cargos for areaId:', areaId);
       const response = await axios.get(`http://192.168.141.50:5000/api/cargos/${areaId}`);
+      console.log('Cargos response:', response.data);
       const uniqueCargos = removeDuplicates(response.data, 'nombre');
+      console.log('Unique cargos:', uniqueCargos);
       setCargos(uniqueCargos);
     } catch (error) {
-      console.error('Error al cargar cargos:', error);
+      console.error('Error detallado al cargar cargos:', error.response || error);
       setError('Error al cargar cargos');
     }
   };

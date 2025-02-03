@@ -2401,19 +2401,35 @@ def get_domain_stats():
                 print(f"Error procesando cambios en grupos: {str(e)}")
                 continue
 
-        # Ordenar cambios por timestamp exacto y limitar a los 5 más recientes
+        # Ordenar cambios por fecha más reciente
         recent_changes = sorted(
-            recent_changes,
-            key=lambda x: x['timestamp'],  # Ordenar por el timestamp completo
+            [change for change in recent_changes if 'timestamp' in change],  # Filtrar solo los que tienen timestamp
+            key=lambda x: x['timestamp'],
             reverse=True
         )[:5]
 
-        # Formatear las fechas después de ordenar y remover el timestamp
+        # Formatear las fechas después de ordenar
         for change in recent_changes:
-            # Convertir el timestamp a string con formato consistente
-            change['date'] = change['timestamp'].strftime('%Y-%m-%d')
-            # Eliminar el campo timestamp que usamos para ordenar
-            del change['timestamp']
+            try:
+                # Convertir el timestamp a string con formato consistente
+                if 'timestamp' in change:
+                    change['date'] = change['timestamp'].strftime('%Y-%m-%d')
+                    del change['timestamp']
+            except Exception as e:
+                print(f"Error formateando fecha para cambio: {str(e)}")
+                # Si hay error, usar fecha actual como fallback
+                change['date'] = datetime.now().strftime('%Y-%m-%d')
+
+        # Asegurarnos de que todos los cambios tengan los campos requeridos
+        recent_changes = [
+            {
+                'type': change.get('type', 'Cambio'),
+                'name': change.get('name', 'Desconocido'),
+                'date': change.get('date', datetime.now().strftime('%Y-%m-%d')),
+                'description': change.get('description', 'Actualización')
+            }
+            for change in recent_changes
+        ]
 
         # Obtener estado de servicios críticos
         print("Obteniendo estado de servicios críticos...")
