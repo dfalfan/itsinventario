@@ -1900,52 +1900,87 @@ def get_workspace_stats():
                 if metric.get('name') == 'accounts:used_quota_in_mb':
                     total_storage_used = float(metric.get('intValue', 0)) / 1024  # Convertir a GB
         
-        # Obtener top usuarios por almacenamiento
-        print("Obteniendo top usuarios por uso...")
+        # Obtener top usuarios por almacenamiento y actividad
+        print("Obteniendo datos de uso por usuario...")
         top_users_data = []
+        storage_alerts = []
+        storage_limit = 15  # 15GB por usuario
+        
         try:
             user_reports = reports_service.userUsageReport().get(
                 userKey='all',
                 date='2024-01-01',
-                parameters='gmail:storage_used'
+                parameters='gmail:storage_used,gmail:num_emails_sent,gmail:num_emails_received'
             ).execute()
             
             if 'usageReports' in user_reports:
-                for report in user_reports['usageReports'][:10]:  # Top 10 usuarios
+                for report in user_reports['usageReports']:
                     email = report.get('entity', {}).get('userEmail', '')
+                    storage_used = 0
+                    emails_sent = 0
+                    emails_received = 0
+                    
                     for param in report.get('parameters', []):
                         if param.get('name') == 'gmail:storage_used':
-                            storage = float(param.get('intValue', 0)) / (1024 * 1024)  # Convertir a GB
-                            top_users_data.append({
-                                'email': email,
-                                'storage': round(storage, 2)
-                            })
+                            storage_used = float(param.get('intValue', 0)) / (1024 * 1024)  # Convertir a GB
+                        elif param.get('name') == 'gmail:num_emails_sent':
+                            emails_sent = int(param.get('intValue', 0))
+                        elif param.get('name') == 'gmail:num_emails_received':
+                            emails_received = int(param.get('intValue', 0))
+                    
+                    user_data = {
+                        'email': email,
+                        'storage': round(storage_used, 2),
+                        'emails_sent': emails_sent,
+                        'emails_received': emails_received,
+                        'total_emails': emails_sent + emails_received
+                    }
+                    
+                    top_users_data.append(user_data)
+                    
+                    # Verificar alertas de almacenamiento
+                    if storage_used > (storage_limit * 0.9):  # Alerta si uso > 90%
+                        storage_alerts.append({
+                            'email': email,
+                            'usage': round(storage_used, 2),
+                            'limit': storage_limit,
+                            'percentage': round((storage_used / storage_limit) * 100, 2)
+                        })
                 
-                top_users_data.sort(key=lambda x: x['storage'], reverse=True)
-        except Exception as e:
-            print(f"Error obteniendo top usuarios: {str(e)}")
+                # Ordenar usuarios por diferentes métricas
+                top_by_storage = sorted(top_users_data, key=lambda x: x['storage'], reverse=True)[:5]
+                top_by_emails = sorted(top_users_data, key=lambda x: x['total_emails'], reverse=True)[:5]
         
-        # Calcular alertas de almacenamiento
-        storage_alerts = []
-        storage_limit = 15  # 15GB por usuario
-        for user in top_users_data:
-            if user['storage'] > (storage_limit * 0.9):  # Alerta si uso > 90%
-                storage_alerts.append({
-                    'email': user['email'],
-                    'usage': user['storage'],
-                    'limit': storage_limit,
-                    'percentage': round((user['storage'] / storage_limit) * 100, 2)
-                })
+        except Exception as e:
+            print(f"Error obteniendo datos de usuarios: {str(e)}")
+            top_by_storage = []
+            top_by_emails = []
+            storage_alerts = []
+        
+        # Calcular estadísticas adicionales
+        total_emails_sent = sum(user.get('emails_sent', 0) for user in top_users_data)
+        total_emails_received = sum(user.get('emails_received', 0) for user in top_users_data)
+        avg_storage_per_user = total_storage_used / len(active_users) if active_users else 0
         
         response_data = {
             'totalStorage': len(active_users) * 15,  # 15GB por usuario activo
             'usedStorage': round(total_storage_used, 2),
             'activeAccounts': len(active_users),
             'storageAlerts': storage_alerts,
-            'topUsers': top_users_data[:5],  # Solo los top 5
+            'topUsersByStorage': top_by_storage,
+            'topUsersByEmails': top_by_emails,
             'totalLicenses': len(users),
             'assignedLicenses': len(active_users),
-            'availableLicenses': 0
+            'availableLicenses': 0,
+            'emailStats': {
+                'totalSent': total_emails_sent,
+                'totalReceived': total_emails_received,
+                'averagePerUser': round((total_emails_sent + total_emails_received) / len(active_users) if active_users else 0, 2)
+            },
+            'storageStats': {
+                'averagePerUser': round(avg_storage_per_user, 2),
+                'utilizationPercentage': round((total_storage_used / (len(active_users) * 15)) * 100, 2)
+            }
         }
         
         print("Estadísticas completas obtenidas exitosamente")
