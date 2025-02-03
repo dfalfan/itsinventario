@@ -2077,15 +2077,118 @@ def get_domain_stats():
         disabled_users = total_users - active_users
         
         # Estadísticas de equipos
+        print("\n=== INICIO BÚSQUEDA DE EQUIPOS INACTIVOS ===")
         print("Obteniendo estadísticas de equipos...")
-        conn.search('dc=sura,dc=corp', '(objectClass=computer)', attributes=['operatingSystem', 'operatingSystemVersion'])
+        conn.search('dc=sura,dc=corp', '(objectClass=computer)', 
+                   attributes=['lastLogon', 'name', 'distinguishedName', 'whenChanged', 'operatingSystem'])
         total_computers = len(conn.entries)
-        
-        # Agrupar por sistema operativo
-        os_distribution = {}
+        print(f"Total de equipos encontrados: {total_computers}")
+
+        # Inicializar contadores de SO
+        os_distribution = {
+            'Windows 10': 0,
+            'Windows 11': 0,
+            'Otros': 0
+        }
+
+        inactive_computers = []
+        computers_without_timestamp = 0
+        computers_with_error = 0
+        computers_processed = 0
+
         for entry in conn.entries:
-            os = entry['operatingSystem'].value if entry['operatingSystem'] else 'Desconocido'
-            os_distribution[os] = os_distribution.get(os, 0) + 1
+            try:
+                computers_processed += 1
+                print(f"\n--- Procesando equipo {computers_processed}/{total_computers} ---")
+                print(f"Nombre: {entry['name'].value}")
+                
+                # Procesar Sistema Operativo
+                os_name = entry['operatingSystem'].value if entry['operatingSystem'] else 'Desconocido'
+                print(f"Sistema Operativo: {os_name}")
+                
+                # Clasificar SO
+                if os_name and isinstance(os_name, str):
+                    os_name = os_name.lower()
+                    if 'windows 10' in os_name:
+                        os_distribution['Windows 10'] += 1
+                    elif 'windows 11' in os_name:
+                        os_distribution['Windows 11'] += 1
+                    else:
+                        os_distribution['Otros'] += 1
+                else:
+                    os_distribution['Otros'] += 1
+                
+                # Procesar tiempo de inactividad
+                last_logon = entry['lastLogon'].value
+                when_changed = entry['whenChanged'].value
+                
+                print(f"lastLogon: {last_logon}")
+                print(f"whenChanged: {when_changed}")
+                
+                if last_logon:
+                    try:
+                        # Ya es un objeto datetime, solo necesitamos convertirlo a timezone-naive
+                        last_logon_date = last_logon.replace(tzinfo=None)
+                        days_inactive = (datetime.now() - last_logon_date).days
+                        
+                        print(f"Fecha último inicio: {last_logon_date}")
+                        print(f"Días inactivo: {days_inactive}")
+                        
+                        if days_inactive > 30:  # Solo equipos con más de 30 días sin actividad
+                            computer_info = {
+                                'name': entry['name'].value,
+                                'daysInactive': days_inactive,
+                                'lastLogon': last_logon_date.strftime('%Y-%m-%d')
+                            }
+                            inactive_computers.append(computer_info)
+                            print(f"¡EQUIPO INACTIVO ENCONTRADO!")
+                            print(f"Detalles: {computer_info}")
+                    except Exception as e:
+                        print(f"Error procesando lastLogon: {str(e)}")
+                        # Si falla lastLogon, intentar con whenChanged
+                        try:
+                            # Convertir whenChanged a timezone-naive también
+                            when_changed_date = when_changed.replace(tzinfo=None)
+                            days_inactive = (datetime.now() - when_changed_date).days
+                            
+                            if days_inactive > 30:
+                                computer_info = {
+                                    'name': entry['name'].value,
+                                    'daysInactive': days_inactive,
+                                    'lastLogon': when_changed_date.strftime('%Y-%m-%d')
+                                }
+                                inactive_computers.append(computer_info)
+                                print(f"¡EQUIPO INACTIVO ENCONTRADO (usando whenChanged)!")
+                                print(f"Detalles: {computer_info}")
+                        except Exception as e:
+                            print(f"Error procesando whenChanged: {str(e)}")
+                else:
+                    print("No se encontró lastLogon")
+                    computers_without_timestamp += 1
+            except Exception as e:
+                computers_with_error += 1
+                print(f"ERROR procesando equipo: {str(e)}")
+                continue
+        
+        print("\n=== RESUMEN DE PROCESAMIENTO ===")
+        print(f"Total de equipos procesados: {computers_processed}")
+        print(f"Equipos sin timestamp: {computers_without_timestamp}")
+        print(f"Equipos con error: {computers_with_error}")
+        print(f"Equipos inactivos encontrados: {len(inactive_computers)}")
+        
+        # Ordenar por días de inactividad y tomar los 5 más inactivos
+        inactive_computers = sorted(
+            inactive_computers,
+            key=lambda x: x['daysInactive'],
+            reverse=True
+        )[:5]
+        
+        if inactive_computers:
+            print("\nTop 5 equipos más inactivos:")
+            for comp in inactive_computers:
+                print(f"- {comp['name']}: {comp['daysInactive']} días (Último inicio: {comp['lastLogon']})")
+        else:
+            print("\nNo se encontraron equipos inactivos")
         
         # Estadísticas de grupos de seguridad
         print("Obteniendo estadísticas de grupos...")
@@ -2108,7 +2211,8 @@ def get_domain_stats():
             },
             'computers': {
                 'total': total_computers,
-                'byOperatingSystem': os_distribution
+                'byOperatingSystem': os_distribution,
+                'inactive': inactive_computers
             },
             'groups': {
                 'total': total_groups,

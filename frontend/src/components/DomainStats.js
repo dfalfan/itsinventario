@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUsers, FaDesktop, FaUserShield, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaUsers, FaDesktop, FaUserShield, FaCheckCircle, FaTimesCircle, FaClock } from 'react-icons/fa';
 import './DomainStats.css';
 
 function DomainStats() {
@@ -10,9 +10,21 @@ function DomainStats() {
   useEffect(() => {
     const fetchDomainStats = async () => {
       try {
+        setLoading(true);
         const response = await fetch('http://192.168.141.50:5000/api/domain/stats');
         if (!response.ok) throw new Error('Error al cargar estadísticas del dominio');
         const data = await response.json();
+        
+        // Validar que los datos estén completos antes de mostrarlos
+        if (!data.users || !data.computers || !data.groups) {
+          throw new Error('Datos incompletos del dominio');
+        }
+        
+        // Validar específicamente los datos de equipos inactivos
+        if (!data.computers.inactive || !Array.isArray(data.computers.inactive)) {
+          throw new Error('Datos de equipos inactivos no disponibles');
+        }
+        
         setDomainStats(data);
       } catch (err) {
         setError(err.message);
@@ -24,7 +36,13 @@ function DomainStats() {
     fetchDomainStats();
   }, []);
 
-  if (loading) return <div className="loading">Cargando estadísticas del dominio...</div>;
+  if (loading) return (
+    <div className="loading">
+      <div className="loading-spinner"></div>
+      <p>Cargando estadísticas del dominio...</p>
+      <small>Esto puede tomar unos momentos mientras se procesan los datos del Active Directory</small>
+    </div>
+  );
   if (error) return <div className="error">{error}</div>;
   if (!domainStats) return null;
 
@@ -105,6 +123,28 @@ function DomainStats() {
                 <div key={index} className="stat-item">
                   <span>{group.name}</span>
                   <strong>{group.members} miembros</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Equipos Inactivos */}
+        <div className="domain-card">
+          <div className="domain-card-header">
+            <FaClock className="domain-icon" />
+            <h3>Equipos Inactivos</h3>
+          </div>
+          <div className="domain-card-content">
+            <div className="inactive-computers">
+              <h4>Equipos con Mayor Tiempo sin Actividad</h4>
+              {domainStats.computers.inactive.map((computer, index) => (
+                <div key={index} className="stat-item">
+                  <div className="computer-info">
+                    <span>{computer.name}</span>
+                    <small>Último inicio: {computer.lastLogon}</small>
+                  </div>
+                  <strong>{computer.daysInactive} días</strong>
                 </div>
               ))}
             </div>

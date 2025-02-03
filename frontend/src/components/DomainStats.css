@@ -87,23 +87,67 @@
   color: #f44336;
 }
 
-.os-distribution, .top-groups {
+.os-distribution, .top-groups, .inactive-computers {
   margin-top: 15px;
 }
 
-.os-distribution h4, .top-groups h4 {
+.os-distribution h4, .top-groups h4, .inactive-computers h4 {
   color: #666;
   font-size: 0.9rem;
   margin-bottom: 10px;
   font-weight: 500;
 }
 
-/* Loading y Error states */
-.loading, .error {
-  text-align: center;
+.computer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.computer-info span {
+  color: #333;
+  font-weight: 500;
+}
+
+.computer-info small {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+/* Loading state mejorado */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 40px;
+  text-align: center;
+  min-height: 300px;
+}
+
+.loading p {
   color: #666;
   font-size: 1.1rem;
+  margin: 20px 0 10px;
+}
+
+.loading small {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #2196f3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error {
