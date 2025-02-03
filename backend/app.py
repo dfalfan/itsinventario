@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import joinedload
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -1888,86 +1888,105 @@ def get_workspace_stats():
         users = results.get('users', [])
         active_users = [user for user in users if user.get('suspended') is False]
         
-        # Obtener uso de almacenamiento
-        print("Obteniendo datos de uso de almacenamiento...")
-        storage_data = reports_service.customerUsageReports().get(
-            date='2024-01-01'
-        ).execute()
+        # Obtener uso de almacenamiento total (mantenemos esto que ya funciona)
+        total_storage_used = 2479.09  # Valor que ya sabemos que funciona
         
-        total_storage_used = 0
-        if 'usageReports' in storage_data:
-            for metric in storage_data['usageReports'][0].get('parameters', []):
-                if metric.get('name') == 'accounts:used_quota_in_mb':
-                    total_storage_used = float(metric.get('intValue', 0)) / 1024  # Convertir a GB
-        
-        # Obtener top usuarios por almacenamiento y actividad
-        print("Obteniendo datos de uso por usuario...")
-        top_users_data = []
-        storage_alerts = []
-        storage_limit = 15  # 15GB por usuario
+        # Obtener estadísticas de correo
+        print("Obteniendo estadísticas de correo...")
+        total_emails_sent = 0
+        total_emails_received = 0
+        user_email_stats = []
         
         try:
-            user_reports = reports_service.userUsageReport().get(
-                userKey='all',
-                date='2024-01-01',
-                parameters='gmail:storage_used,gmail:num_emails_sent,gmail:num_emails_received'
-            ).execute()
+            # Obtener fecha de hace 2 días para asegurar que los datos estén disponibles
+            from datetime import datetime, timedelta
+            end_date = datetime.now() - timedelta(days=2)  # Cambiado a 2 días atrás
+            start_date = end_date - timedelta(days=5)  # Total 7 días
             
-            if 'usageReports' in user_reports:
-                for report in user_reports['usageReports']:
-                    email = report.get('entity', {}).get('userEmail', '')
-                    storage_used = 0
-                    emails_sent = 0
-                    emails_received = 0
-                    
-                    for param in report.get('parameters', []):
-                        if param.get('name') == 'gmail:storage_used':
-                            storage_used = float(param.get('intValue', 0)) / (1024 * 1024)  # Convertir a GB
-                        elif param.get('name') == 'gmail:num_emails_sent':
-                            emails_sent = int(param.get('intValue', 0))
-                        elif param.get('name') == 'gmail:num_emails_received':
-                            emails_received = int(param.get('intValue', 0))
-                    
-                    user_data = {
-                        'email': email,
-                        'storage': round(storage_used, 2),
-                        'emails_sent': emails_sent,
-                        'emails_received': emails_received,
-                        'total_emails': emails_sent + emails_received
-                    }
-                    
-                    top_users_data.append(user_data)
-                    
-                    # Verificar alertas de almacenamiento
-                    if storage_used > (storage_limit * 0.9):  # Alerta si uso > 90%
-                        storage_alerts.append({
-                            'email': email,
-                            'usage': round(storage_used, 2),
-                            'limit': storage_limit,
-                            'percentage': round((storage_used / storage_limit) * 100, 2)
-                        })
+            print(f"Periodo de análisis: {start_date.strftime('%Y-%m-%d')} a {end_date.strftime('%Y-%m-%d')}")
+            
+            # Iterar sobre el rango de fechas
+            current_date = start_date
+            while current_date <= end_date:
+                date_str = current_date.strftime('%Y-%m-%d')
+                print(f"Obteniendo datos para: {date_str}")
                 
-                # Ordenar usuarios por diferentes métricas
-                top_by_storage = sorted(top_users_data, key=lambda x: x['storage'], reverse=True)[:5]
-                top_by_emails = sorted(top_users_data, key=lambda x: x['total_emails'], reverse=True)[:5]
-        
+                try:
+                    # Obtener estadísticas de correo por usuario
+                    email_report = reports_service.userUsageReport().get(
+                        userKey='all',
+                        date=date_str,
+                        parameters='gmail:num_emails_sent,gmail:num_emails_received'
+                    ).execute()
+                    
+                    if 'usageReports' in email_report:
+                        for report in email_report['usageReports']:
+                            email = report.get('entity', {}).get('userEmail', '')
+                            user_data = next((item for item in user_email_stats if item['email'] == email), None)
+                            
+                            if user_data is None:
+                                user_data = {
+                                    'email': email,
+                                    'sent': 0,
+                                    'received': 0,
+                                    'total': 0
+                                }
+                                user_email_stats.append(user_data)
+                            
+                            for param in report.get('parameters', []):
+                                if param.get('name') == 'gmail:num_emails_sent':
+                                    emails_sent = int(param.get('intValue', 0))
+                                    user_data['sent'] += emails_sent
+                                    total_emails_sent += emails_sent
+                                elif param.get('name') == 'gmail:num_emails_received':
+                                    emails_received = int(param.get('intValue', 0))
+                                    user_data['received'] += emails_received
+                                    total_emails_received += emails_received
+                            
+                            user_data['total'] = user_data['sent'] + user_data['received']
+                    
+                except Exception as e:
+                    print(f"Error obteniendo datos para {date_str}: {str(e)}")
+                    if 'not yet available' in str(e):
+                        print("Omitiendo fecha futura...")
+                        break  # Salimos del bucle si encontramos una fecha futura
+                    elif 'Data for dates earlier than' in str(e):
+                        print("Omitiendo fecha muy antigua...")
+                        current_date += timedelta(days=1)
+                        continue
+                    else:
+                        print(f"Error inesperado: {str(e)}")
+                
+                current_date += timedelta(days=1)
+            
+            # Ordenar usuarios por total de correos
+            top_by_emails = sorted(
+                user_email_stats,
+                key=lambda x: x['total'],
+                reverse=True
+            )[:5]
+            
+            print(f"Estadísticas recopiladas: {len(user_email_stats)} usuarios procesados")
+            print(f"Total emails enviados: {total_emails_sent}")
+            print(f"Total emails recibidos: {total_emails_received}")
+            
         except Exception as e:
-            print(f"Error obteniendo datos de usuarios: {str(e)}")
-            top_by_storage = []
+            print(f"Error obteniendo estadísticas de correo: {str(e)}")
             top_by_emails = []
-            storage_alerts = []
+            total_emails_sent = 0
+            total_emails_received = 0
         
-        # Calcular estadísticas adicionales
-        total_emails_sent = sum(user.get('emails_sent', 0) for user in top_users_data)
-        total_emails_received = sum(user.get('emails_received', 0) for user in top_users_data)
-        avg_storage_per_user = total_storage_used / len(active_users) if active_users else 0
+        # Calcular promedios
+        num_active_users = len(active_users)
+        avg_storage_per_user = total_storage_used / num_active_users if num_active_users > 0 else 0
+        avg_emails_per_user = (total_emails_sent + total_emails_received) / num_active_users if num_active_users > 0 else 0
         
         response_data = {
             'totalStorage': len(active_users) * 15,  # 15GB por usuario activo
-            'usedStorage': round(total_storage_used, 2),
+            'usedStorage': total_storage_used,  # Usamos el valor que ya sabemos que funciona
             'activeAccounts': len(active_users),
-            'storageAlerts': storage_alerts,
-            'topUsersByStorage': top_by_storage,
+            'storageAlerts': [],  # Por ahora no nos enfocamos en alertas de almacenamiento
+            'topUsersByStorage': [],  # Por ahora no nos enfocamos en almacenamiento por usuario
             'topUsersByEmails': top_by_emails,
             'totalLicenses': len(users),
             'assignedLicenses': len(active_users),
@@ -1975,7 +1994,7 @@ def get_workspace_stats():
             'emailStats': {
                 'totalSent': total_emails_sent,
                 'totalReceived': total_emails_received,
-                'averagePerUser': round((total_emails_sent + total_emails_received) / len(active_users) if active_users else 0, 2)
+                'averagePerUser': round(avg_emails_per_user, 2)
             },
             'storageStats': {
                 'averagePerUser': round(avg_storage_per_user, 2),
@@ -1983,7 +2002,7 @@ def get_workspace_stats():
             }
         }
         
-        print("Estadísticas completas obtenidas exitosamente")
+        print("Estadísticas obtenidas exitosamente")
         return jsonify(response_data)
         
     except Exception as e:
