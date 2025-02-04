@@ -45,24 +45,40 @@ class Gerencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(10))
     nombre = db.Column(db.String(100), nullable=False)
+    
+    # Relación directa con departamentos
+    departamentos = db.relationship('Departamento', back_populates='gerencia')
 
 class Departamento(db.Model):
     __tablename__ = 'departamentos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     gerencia_id = db.Column(db.Integer, db.ForeignKey('gerencias.id'))
+    
+    gerencia = db.relationship('Gerencia', back_populates='departamentos')
 
 class Area(db.Model):
     __tablename__ = 'areas'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'))
+    
+    # Agregar relación con Departamento
+    departamento = db.relationship('Departamento', backref='areas', lazy='joined')
 
-class Cargo(db.Model):
-    __tablename__ = 'cargos'
+class CargoBase(db.Model):
+    __tablename__ = 'cargos_base'
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    area_id = db.Column(db.Integer, db.ForeignKey('areas.id'))
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+
+class CargoArea(db.Model):
+    __tablename__ = 'cargos_areas'
+    id = db.Column(db.Integer, primary_key=True)
+    cargo_base_id = db.Column(db.Integer, db.ForeignKey('cargos_base.id'), nullable=False)
+    area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=False)
+    
+    cargo_base = db.relationship('CargoBase', lazy='joined')
+    area = db.relationship('Area', lazy='joined', backref='cargos')
 
 class Empleado(db.Model):
     __tablename__ = 'empleados'
@@ -77,14 +93,24 @@ class Empleado(db.Model):
     gerencia_id = db.Column(db.Integer, db.ForeignKey('gerencias.id'))
     departamento_id = db.Column(db.Integer, db.ForeignKey('departamentos.id'))
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'))
-    cargo_id = db.Column(db.Integer, db.ForeignKey('cargos.id'))
+    cargo_area_id = db.Column(db.Integer, db.ForeignKey('cargos_areas.id'))
     
     sede = db.relationship('Sede', lazy='joined')
     gerencia = db.relationship('Gerencia', lazy='joined')
     departamento = db.relationship('Departamento', lazy='joined')
     area = db.relationship('Area', lazy='joined')
-    cargo = db.relationship('Cargo', lazy='joined')
+    cargo_area = db.relationship('CargoArea', lazy='joined')
     smartphone = db.relationship('Smartphone', uselist=False, back_populates='empleado')
+
+    @property
+    def jerarquia_completa(self):
+        return {
+            'sede': self.sede.nombre if self.sede else None,
+            'gerencia': self.gerencia.nombre if self.gerencia else None,
+            'departamento': self.departamento.nombre if self.departamento else None,
+            'area': self.area.nombre if self.area else None,
+            'cargo': self.cargo_area.cargo_base.nombre if self.cargo_area else None
+        }
 
 class Asset(db.Model):
     __tablename__ = 'assets'
@@ -145,7 +171,13 @@ class Log(db.Model):
 @app.route('/api/empleados')
 def get_empleados():
     try:
-        empleados = Empleado.query.all()
+        empleados = Empleado.query.options(
+            joinedload(Empleado.sede),
+            joinedload(Empleado.gerencia),
+            joinedload(Empleado.departamento),
+            joinedload(Empleado.area),
+            joinedload(Empleado.cargo_area)
+        ).all()
         
         # Obtener todos los assets en un solo query para evitar N+1
         assets = {str(a.id): {'tipo': a.tipo, 'nombre': a.nombre_equipo} for a in Asset.query.all()}
@@ -160,7 +192,7 @@ def get_empleados():
             'gerencia': e.gerencia.nombre if e.gerencia else None,
             'departamento': e.departamento.nombre if e.departamento else None,
             'area': e.area.nombre if e.area else None,
-            'cargo': e.cargo.nombre if e.cargo else None,
+            'cargo': e.cargo_area.cargo_base.nombre if e.cargo_area else None,
             'equipo_asignado': e.equipo_asignado,
             'asset_type': assets.get(e.equipo_asignado, {}).get('tipo'),
             'asset_name': assets.get(e.equipo_asignado, {}).get('nombre'),
@@ -238,16 +270,26 @@ def get_areas(departamento_id):
 @app.route('/api/cargos/<int:area_id>')
 def get_cargos(area_id):
     try:
-        cargos = db.session.query(Cargo)\
-            .filter_by(area_id=area_id)\
-            .distinct(Cargo.nombre)\
-            .order_by(Cargo.nombre)\
+        # Obtener cargos asignados al área específica
+        cargos_asignados = CargoArea.query.filter_by(area_id=area_id)\
+            .options(joinedload(CargoArea.cargo_base))\
             .all()
-            
-        return jsonify([{
-            'id': cargo.id,
-            'nombre': cargo.nombre
-        } for cargo in cargos])
+        
+        # Obtener todos los cargos base para mostrar disponibles
+        todos_cargos = CargoBase.query.all()
+        
+        # Marcar cuáles están asignados
+        cargos = []
+        for cargo_base in todos_cargos:
+            asignado = any(ca.cargo_base_id == cargo_base.id for ca in cargos_asignados)
+            cargos.append({
+                'id': cargo_base.id,
+                'nombre': cargo_base.nombre,
+                'asignado': asignado
+            })
+        
+        return jsonify(cargos)
+        
     except Exception as e:
         print(f"Error en get_cargos: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -362,13 +404,13 @@ def get_empleados_sin_equipo():
             Empleado.nombre_completo,
             Sede.nombre.label('sede_nombre'),
             Departamento.nombre.label('departamento_nombre'),
-            Cargo.nombre.label('cargo_nombre')
+            CargoArea.cargo_base.nombre.label('cargo_nombre')
         ).outerjoin(
             Sede, Empleado.sede_id == Sede.id
         ).outerjoin(
             Departamento, Empleado.departamento_id == Departamento.id
         ).outerjoin(
-            Cargo, Empleado.cargo_id == Cargo.id
+            CargoArea, Empleado.cargo_area_id == CargoArea.id
         ).filter(
             Empleado.equipo_asignado.is_(None)
         ).order_by(Empleado.nombre_completo).all()
@@ -706,11 +748,14 @@ def buscar_activo():
 @app.route('/api/empleados/<int:empleado_id>')
 def get_empleado(empleado_id):
     try:
-        empleado = Empleado.query.get(empleado_id)
+        empleado = Empleado.query.options(
+            joinedload(Empleado.sede),
+            joinedload(Empleado.gerencia),
+            joinedload(Empleado.departamento),
+            joinedload(Empleado.area),
+            joinedload(Empleado.cargo_area)
+        ).get(empleado_id)
         
-        if not empleado:
-            return jsonify({'error': 'Empleado no encontrado'}), 404
-
         return jsonify({
             'id': empleado.id,
             'nombre': empleado.nombre_completo,
@@ -721,9 +766,10 @@ def get_empleado(empleado_id):
             'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
             'departamento': empleado.departamento.nombre if empleado.departamento else None,
             'area': empleado.area.nombre if empleado.area else None,
-            'cargo': empleado.cargo.nombre if empleado.cargo else None,
+            'cargo': e.cargo_area.cargo_base.nombre if e.cargo_area else None,
             'equipo_asignado': empleado.equipo_asignado,
-            'smartphone_asignado': empleado.smartphone.id if empleado.smartphone else None
+            'smartphone_asignado': empleado.smartphone.id if empleado.smartphone else None,
+            'jerarquia': empleado.jerarquia_completa
         })
         
     except Exception as e:
@@ -884,7 +930,7 @@ def generar_constancia(asset_id):
             ("Montserrat", ", titular de la C.I. "),
             ("Montserrat-Bold", empleado.cedula),
             ("Montserrat", ", actualmente desempeñándome en el cargo de "),
-            ("Montserrat-Bold", empleado.cargo.nombre if empleado.cargo else ''),
+            ("Montserrat-Bold", empleado.cargo_area.cargo_base.nombre if empleado.cargo_area else ''),
             ("Montserrat", ", he recibido por parte del Departamento de I.T.S. de la Empresa "),
             ("Montserrat-Bold", "SURA DE VENEZUELA, C.A."),
             ("Montserrat", " una portátil Marca "),
@@ -1148,7 +1194,7 @@ def get_empleados_sin_smartphone():
             'ficha': e.ficha,
             'sede': e.sede.nombre if e.sede else None,
             'departamento': e.departamento.nombre if e.departamento else None,
-            'cargo': e.cargo.nombre if e.cargo else None
+            'cargo': e.cargo_area.cargo_base.nombre if e.cargo_area else None
         } for e in empleados])
         
     except Exception as e:
@@ -1265,7 +1311,7 @@ def generar_constancia_smartphone(smartphone_id):
             ("Montserrat", ", titular de la C.I. "),
             ("Montserrat-Bold", empleado.cedula),
             ("Montserrat", ", actualmente desempeñándome en el cargo de "),
-            ("Montserrat-Bold", empleado.cargo.nombre if empleado.cargo else ''),
+            ("Montserrat-Bold", empleado.cargo_area.cargo_base.nombre if empleado.cargo_area else ''),
             ("Montserrat", ", he recibido por parte del Departamento de I.T.S. de la Empresa "),
             ("Montserrat-Bold", "SURA DE VENEZUELA, C.A."),
             ("Montserrat", " un teléfono celular marca "),
@@ -1521,7 +1567,7 @@ def create_empleado():
             gerencia_id=data['gerencia_id'],
             departamento_id=data['departamento_id'],
             area_id=data['area_id'],
-            cargo_id=data['cargo_id']
+            cargo_area_id=data['cargo_id']
         )
 
         db.session.add(new_empleado)
@@ -1540,7 +1586,7 @@ def create_empleado():
                 'gerencia': new_empleado.gerencia.nombre if new_empleado.gerencia else None,
                 'departamento': new_empleado.departamento.nombre if new_empleado.departamento else None,
                 'area': new_empleado.area.nombre if new_empleado.area else None,
-                'cargo': new_empleado.cargo.nombre if new_empleado.cargo else None
+                'cargo': new_empleado.cargo_area.cargo_base.nombre if new_empleado.cargo_area else None
             }
         }
 
@@ -1655,7 +1701,7 @@ def update_extensions_pdf():
                 'nombre': emp.nombre_completo,
                 'extension': emp.extension,
                 'departamento': emp.departamento.nombre if emp.departamento else 'Sin Departamento',
-                'cargo': emp.cargo.nombre if emp.cargo else 'Sin Cargo'
+                'cargo': emp.cargo_area.cargo_base.nombre if emp.cargo_area else 'Sin Cargo'
             })
         
         # Registrar la fuente Montserrat
@@ -2603,6 +2649,131 @@ def get_smartphone(smartphone_id):
         print(f"Error en get_smartphone: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/cargos/areas', methods=['POST'])
+def asignar_cargo_a_area():
+    try:
+        data = request.get_json()
+        cargo_base_id = data.get('cargo_base_id')
+        area_id = data.get('area_id')
+        
+        if not cargo_base_id or not area_id:
+            return jsonify({'error': 'cargo_base_id y area_id son requeridos'}), 400
+            
+        # Verificar si ya existe la relación
+        existente = CargoArea.query.filter_by(
+            cargo_base_id=cargo_base_id,
+            area_id=area_id
+        ).first()
+        
+        if existente:
+            return jsonify({'error': 'Esta relación ya existe'}), 400
+            
+        nuevo_cargo_area = CargoArea(
+            cargo_base_id=cargo_base_id,
+            area_id=area_id
+        )
+        
+        db.session.add(nuevo_cargo_area)
+        db.session.commit()
+        
+        return jsonify({
+            'id': nuevo_cargo_area.id,
+            'cargo_base': nuevo_cargo_area.cargo_base.nombre,
+            'area': nuevo_cargo_area.area.nombre
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cargos/<int:cargo_area_id>/jerarquia')
+def get_hierarchy_for_cargo(cargo_area_id):
+    try:
+        cargo_area = CargoArea.query.options(
+            joinedload(CargoArea.area)
+            .joinedload(Area.departamento)
+            .joinedload(Departamento.gerencia)
+        ).get(cargo_area_id)
+        
+        if not cargo_area:
+            return jsonify({'error': 'Cargo no encontrado'}), 404
+            
+        return jsonify({
+            'gerencia': {
+                'id': cargo_area.area.departamento.gerencia.id,
+                'nombre': cargo_area.area.departamento.gerencia.nombre
+            },
+            'departamento': {
+                'id': cargo_area.area.departamento.id,
+                'nombre': cargo_area.area.departamento.nombre
+            },
+            'area': {
+                'id': cargo_area.area.id,
+                'nombre': cargo_area.area.nombre
+            },
+            'cargo': {
+                'id': cargo_area.id,
+                'nombre': cargo_area.cargo_base.nombre
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/migrar-sedes-gerencias', methods=['POST'])
+def migrar_sedes_gerencias():
+    try:
+        # Asignar sede por defecto a todas las gerencias
+        sede_por_defecto = Sede.query.filter_by(nombre='Valencia').first()
+        if not sede_por_defecto:
+            sede_por_defecto = Sede(nombre='Valencia', codigo='VAL')
+            db.session.add(sede_por_defecto)
+            db.session.commit()
+
+        # Actualizar todas las gerencias
+        Gerencia.query.update({Gerencia.sede_id: sede_por_defecto.id})
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Migración completada exitosamente',
+            'gerencias_actualizadas': Gerencia.query.count()
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/asignar-cargo', methods=['POST'])
+def asignar_cargo_multiple():
+    try:
+        data = request.get_json()
+        cargo_base_id = data['cargo_base_id']
+        areas = data['areas']
+
+        nuevos = []
+        for area_id in areas:
+            # Verificar si ya existe
+            existente = CargoArea.query.filter_by(
+                cargo_base_id=cargo_base_id,
+                area_id=area_id
+            ).first()
+            
+            if not existente:
+                nuevo = CargoArea(
+                    cargo_base_id=cargo_base_id,
+                    area_id=area_id
+                )
+                db.session.add(nuevo)
+                nuevos.append(nuevo)
+        
+        db.session.commit()
+        return jsonify({
+            'asignaciones_creadas': len(nuevos),
+            'cargos': [{'id': c.id, 'area_id': c.area_id} for c in nuevos]
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
     app.run(host='0.0.0.0', port=5000, debug=True)

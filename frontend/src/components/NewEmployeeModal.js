@@ -89,10 +89,13 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
     try {
       console.log('Fetching cargos for areaId:', areaId);
       const response = await axios.get(`http://192.168.141.50:5000/api/cargos/${areaId}`);
-      console.log('Cargos response:', response.data);
-      const uniqueCargos = removeDuplicates(response.data, 'nombre');
-      console.log('Unique cargos:', uniqueCargos);
-      setCargos(uniqueCargos);
+      
+      // Filtrar solo los cargos asignados a esta área
+      const cargosAsignados = response.data.filter(cargo => cargo.asignado);
+      
+      console.log('Cargos asignados:', cargosAsignados);
+      setCargos(cargosAsignados);
+      
     } catch (error) {
       console.error('Error detallado al cargar cargos:', error.response || error);
       setError('Error al cargar cargos');
@@ -174,7 +177,11 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
           ...prev,
           cargo_id: ''
         }));
-        if (value) fetchCargos(value);
+        if (value) {
+          // Limpiar cargos anteriores mientras carga
+          setCargos([]); 
+          fetchCargos(value);
+        }
       }
     }
   };
