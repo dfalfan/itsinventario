@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop } from 'react-icons/fa';
+import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop, FaMobileAlt } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
@@ -17,15 +17,16 @@ function EmployeesView() {
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
-    ficha: false,
+    ficha: true,
     nombre: true,
     gerencia: false,
     departamento: true,
     area: false,
     cargo: true,
-    extension: true,
-    correo: true,
-    equipo_asignado: true,
+    extension: false,
+    correo: false,
+    equipo_asignado: false,
+    smartphone_asignado: false,
     acciones: true,
   });
 
@@ -87,6 +88,28 @@ function EmployeesView() {
         }
       },
       {
+        header: 'Smartphone Asignado',
+        accessorKey: 'smartphone_asignado',
+        cell: ({ row }) => {
+          const smartphone = row.original.smartphone_asignado;
+          const modelo = row.original.smartphone_modelo;
+          
+          if (!smartphone) return <span className="no-equipment">Sin smartphone asignado</span>;
+          
+          return (
+            <span 
+              className="equipment-type"
+              onClick={() => handleViewSmartphone(smartphone)}
+              title={modelo}
+            >
+              <FaMobileAlt className="equipment-icon" />
+              <span className="equipment-id"> {smartphone}</span>
+              {modelo && <span className="equipment-name"> ({modelo})</span>}
+            </span>
+          );
+        }
+      },
+      {
         header: 'Extensión',
         accessorKey: 'extension',
       },
@@ -134,7 +157,15 @@ function EmployeesView() {
       }
       
       const jsonData = await response.json();
-      setData(jsonData);
+      // Procesar los datos para incluir la información del smartphone
+      const processedData = jsonData.map(empleado => ({
+        ...empleado,
+        smartphone_asignado: empleado.sp_asignado ? empleado.sp_asignado.id : null,
+        smartphone_modelo: empleado.sp_asignado ? `${empleado.sp_asignado.marca} ${empleado.sp_asignado.modelo}` : null,
+        smartphone_linea: empleado.sp_asignado ? empleado.sp_asignado.linea : null
+      }));
+      
+      setData(processedData);
       setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -187,6 +218,26 @@ function EmployeesView() {
       setShowAssetModal(true);
     } catch (error) {
       console.error('Error completo:', error);
+    }
+  };
+
+  const handleViewSmartphone = async (smartphoneId) => {
+    try {
+      console.log('Smartphone asignado (ID):', smartphoneId);
+      
+      const response = await fetch(`http://192.168.141.50:5000/api/smartphones/${smartphoneId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al obtener detalles del smartphone');
+      }
+      
+      const smartphone = await response.json();
+      console.log('Smartphone encontrado:', smartphone);
+      setSelectedAsset(smartphone);
+      setShowAssetModal(true);
+    } catch (error) {
+      console.error('Error al obtener detalles del smartphone:', error);
     }
   };
 
