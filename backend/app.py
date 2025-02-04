@@ -2577,6 +2577,32 @@ def get_domain_stats():
         print(f"Error al obtener estadísticas del dominio: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/smartphones/<int:smartphone_id>', methods=['GET'])
+def get_smartphone(smartphone_id):
+    try:
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({'error': 'Smartphone no encontrado'}), 404
+
+        empleado = Empleado.query.get(smartphone.empleado_id) if smartphone.empleado_id else None
+        
+        return jsonify({
+            'id': smartphone.id,
+            'marca': smartphone.marca,
+            'modelo': smartphone.modelo,
+            'serial': smartphone.serial,
+            'imei': smartphone.imei,
+            'imei2': smartphone.imei2,
+            'linea': smartphone.linea,
+            'estado': smartphone.estado,
+            'empleado': empleado.nombre_completo if empleado else None,
+            'empleado_id': empleado.id if empleado else None,
+            'fecha_asignacion': smartphone.fecha_asignacion.isoformat() if smartphone.fecha_asignacion else None
+        })
+    except Exception as e:
+        print(f"Error en get_smartphone: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
     app.run(host='0.0.0.0', port=5000, debug=True)

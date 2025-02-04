@@ -4,6 +4,7 @@ import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
 import AssetModal from './AssetModal';
+import SmartphoneModal from './SmartphoneModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -15,6 +16,7 @@ function EmployeesView() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showAssetModal, setShowAssetModal] = useState(false);
+  const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
     ficha: true,
@@ -235,7 +237,7 @@ function EmployeesView() {
       const smartphone = await response.json();
       console.log('Smartphone encontrado:', smartphone);
       setSelectedAsset(smartphone);
-      setShowAssetModal(true);
+      setShowSmartphoneModal(true);
     } catch (error) {
       console.error('Error al obtener detalles del smartphone:', error);
     }
@@ -298,6 +300,16 @@ function EmployeesView() {
           asset={selectedAsset}
           onClose={() => {
             setShowAssetModal(false);
+            setSelectedAsset(null);
+          }}
+        />
+      )}
+
+      {showSmartphoneModal && selectedAsset && (
+        <SmartphoneModal
+          smartphone={selectedAsset}
+          onClose={() => {
+            setShowSmartphoneModal(false);
             setSelectedAsset(null);
           }}
         />
