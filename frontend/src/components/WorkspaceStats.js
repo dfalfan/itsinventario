@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaEnvelope, FaExclamationTriangle, FaDatabase, FaUsers } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import './WorkspaceStats.css';
+import './DashboardView.css';
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -29,8 +29,22 @@ function WorkspaceStats() {
     fetchWorkspaceStats();
   }, []);
 
-  if (loading) return <div className="loading">Cargando estadísticas de Workspace...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) return (
+    <div className="dashboard-loading">
+      <div className="loading-spinner"></div>
+      <div className="loading-text">Cargando estadísticas de Google Workspace</div>
+      <div className="loading-subtext">
+        Obteniendo información de correos, almacenamiento y licencias...
+      </div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="dashboard-error">
+      <FaExclamationTriangle size={24} style={{ marginBottom: '1rem' }} />
+      <div>{error}</div>
+    </div>
+  );
   if (!workspaceStats) return null;
 
   // Datos para el gráfico de almacenamiento

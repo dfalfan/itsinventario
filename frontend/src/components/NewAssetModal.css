@@ -160,15 +160,6 @@
   gap: 0.5rem;
 }
 
-.loading-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 150px;
-  color: #666;
-  font-size: 0.9rem;
-}
-
 .form-group input::placeholder,
 .form-group textarea::placeholder {
   color: #999;
