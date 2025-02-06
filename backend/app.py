@@ -756,6 +756,9 @@ def get_empleado(empleado_id):
             joinedload(Empleado.cargo_area)
         ).get(empleado_id)
         
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+            
         return jsonify({
             'id': empleado.id,
             'nombre': empleado.nombre_completo,
@@ -766,7 +769,7 @@ def get_empleado(empleado_id):
             'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
             'departamento': empleado.departamento.nombre if empleado.departamento else None,
             'area': empleado.area.nombre if empleado.area else None,
-            'cargo': e.cargo_area.cargo_base.nombre if e.cargo_area else None,
+            'cargo': empleado.cargo_area.cargo_base.nombre if empleado.cargo_area else None,
             'equipo_asignado': empleado.equipo_asignado,
             'smartphone_asignado': empleado.smartphone.id if empleado.smartphone else None,
             'jerarquia': empleado.jerarquia_completa
