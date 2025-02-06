@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -92,6 +92,15 @@ const TableView = ({
     pageSize: defaultPageSize,
   });
 
+  // Mantener el estado de paginación cuando los datos cambian
+  const paginationState = useMemo(
+    () => ({
+      pageIndex: pagination.pageIndex,
+      pageSize: pagination.pageSize,
+    }),
+    [pagination.pageIndex, pagination.pageSize]
+  );
+
   const [columnOrder, setColumnOrder] = useState(() => 
     columns
       .filter(col => (col.id || col.accessorKey) && col.id !== 'acciones')
@@ -128,11 +137,6 @@ const TableView = ({
     return sizing;
   }, [columns, data]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
-
   const table = useReactTable({
     data,
     columns,
@@ -159,7 +163,13 @@ const TableView = ({
       maxSize: 800,
       size: 120,
     },
+    autoResetPageIndex: false, // Evitar que se resetee la página al actualizar datos
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
 
   const handleDragEnd = (event) => {
     const { active, over } = event;

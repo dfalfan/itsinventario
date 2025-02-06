@@ -168,6 +168,7 @@ function EmployeesView() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
     ficha: false,
@@ -396,9 +397,17 @@ function EmployeesView() {
       
       if (response.data.empleado) {
         // Actualizar el estado local con todos los datos actualizados del empleado
-        setData(prevData => prevData.map(empleado => 
-          empleado.id === id ? {
-            ...empleado,
+        setData(prevData => {
+          // Encontrar el índice del empleado a actualizar
+          const index = prevData.findIndex(emp => emp.id === id);
+          if (index === -1) return prevData;
+
+          // Crear una copia superficial del array
+          const newData = [...prevData];
+          
+          // Actualizar solo el empleado modificado
+          newData[index] = {
+            ...newData[index],
             gerencia: response.data.empleado.gerencia,
             gerencia_id: response.data.empleado.gerencia_id,
             departamento: response.data.empleado.departamento,
@@ -408,8 +417,10 @@ function EmployeesView() {
             cargo: response.data.empleado.cargo,
             cargo_id: response.data.empleado.cargo_id,
             [field]: value
-          } : empleado
-        ));
+          };
+
+          return newData;
+        });
       }
     } catch (error) {
       console.error('Error al actualizar el empleado:', error);
@@ -513,6 +524,8 @@ function EmployeesView() {
         onFetchData={fetchData}
         defaultPageSize={30}
         defaultSorting={[{ id: 'nombre', desc: false }]}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
       />
 
       {selectedEmployee && (
