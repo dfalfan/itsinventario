@@ -1668,6 +1668,7 @@ def update_empleado(empleado_id):
 
         data = request.get_json()
         
+        # Campos simples
         if 'ficha' in data:
             empleado.ficha = data['ficha']
         if 'nombre_completo' in data:
@@ -1675,9 +1676,48 @@ def update_empleado(empleado_id):
         if 'cedula' in data:
             empleado.cedula = data['cedula']
             
+        # Campos jerárquicos
+        if 'gerencia_id' in data:
+            empleado.gerencia_id = data['gerencia_id']
+            # Limpiar campos dependientes
+            empleado.departamento_id = None
+            empleado.area_id = None
+            empleado.cargo_area_id = None
+            
+        if 'departamento_id' in data:
+            empleado.departamento_id = data['departamento_id']
+            # Limpiar campos dependientes
+            empleado.area_id = None
+            empleado.cargo_area_id = None
+            
+        if 'area_id' in data:
+            empleado.area_id = data['area_id']
+            # Limpiar campo dependiente
+            empleado.cargo_area_id = None
+            
+        if 'cargo_id' in data:
+            empleado.cargo_area_id = data['cargo_id']
+            
         db.session.commit()
         
-        return jsonify({'message': 'Empleado actualizado exitosamente'})
+        # Obtener los datos actualizados para la respuesta
+        return jsonify({
+            'message': 'Empleado actualizado exitosamente',
+            'empleado': {
+                'id': empleado.id,
+                'nombre': empleado.nombre_completo,
+                'ficha': empleado.ficha,
+                'cedula': empleado.cedula,
+                'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
+                'gerencia_id': empleado.gerencia_id,
+                'departamento': empleado.departamento.nombre if empleado.departamento else None,
+                'departamento_id': empleado.departamento_id,
+                'area': empleado.area.nombre if empleado.area else None,
+                'area_id': empleado.area_id,
+                'cargo': empleado.cargo_area.cargo_base.nombre if empleado.cargo_area else None,
+                'cargo_id': empleado.cargo_area_id
+            }
+        })
         
     except Exception as e:
         db.session.rollback()

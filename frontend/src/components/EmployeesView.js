@@ -12,24 +12,100 @@ import axios from 'axios';
 const EditableCell = ({ value, column, row, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setValue] = useState(value);
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setValue(value);
+  }, [value]);
+
+  // Función para obtener el mensaje del tooltip según el campo
+  const getTooltipMessage = () => {
+    switch (column.id) {
+      case 'departamento':
+        return !row.original.gerencia_id ? 'Primero debes seleccionar una Gerencia' : 'Doble clic para editar';
+      case 'area':
+        return !row.original.departamento_id ? 'Primero debes seleccionar un Departamento' : 'Doble clic para editar';
+      case 'cargo':
+        return !row.original.area_id ? 'Primero debes seleccionar un Área' : 'Doble clic para editar';
+      default:
+        return 'Doble clic para editar';
+    }
+  };
+
+  const fetchOptions = async (field) => {
+    setLoading(true);
+    try {
+      let response;
+      switch (field) {
+        case 'gerencia':
+          response = await axios.get('http://192.168.141.50:5000/api/gerencias');
+          setOptions(response.data);
+          break;
+        case 'departamento':
+          if (row.original.gerencia_id) {
+            response = await axios.get(`http://192.168.141.50:5000/api/departamentos/${row.original.gerencia_id}`);
+            setOptions(response.data);
+          }
+          break;
+        case 'area':
+          if (row.original.departamento_id) {
+            response = await axios.get(`http://192.168.141.50:5000/api/areas/${row.original.departamento_id}`);
+            setOptions(response.data);
+          }
+          break;
+        case 'cargo':
+          if (row.original.area_id) {
+            response = await axios.get(`http://192.168.141.50:5000/api/cargos/${row.original.area_id}`);
+            setOptions(response.data.filter(cargo => cargo.asignado));
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Error cargando opciones:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDoubleClick = () => {
+    if (['departamento', 'area', 'cargo'].includes(column.id)) {
+      if ((column.id === 'departamento' && !row.original.gerencia_id) ||
+          (column.id === 'area' && !row.original.departamento_id) ||
+          (column.id === 'cargo' && !row.original.area_id)) {
+        return;
+      }
+    }
+    
+    if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
+      fetchOptions(column.id);
+    }
     setIsEditing(true);
   };
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const newValue = e.target.value;
     setValue(newValue);
-    onSave(row.original.id, column.id, newValue);
+
+    if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
+      const selectedOption = options.find(opt => opt.id.toString() === newValue);
+      if (selectedOption) {
+        // Actualizar el campo con el ID correspondiente
+        await onSave(row.original.id, `${column.id}_id`, selectedOption.id);
+        
+        // Actualizar el estado local con el nuevo valor
+        setValue(selectedOption.nombre);
+      }
+    } else {
+      await onSave(row.original.id, column.id, newValue);
+    }
+    
     setIsEditing(false);
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      const newValue = e.target.value;
-      setValue(newValue);
-      onSave(row.original.id, column.id, newValue);
-      setIsEditing(false);
+      handleChange(e);
     }
     if (e.key === 'Escape') {
       setIsEditing(false);
@@ -38,6 +114,27 @@ const EditableCell = ({ value, column, row, onSave }) => {
   };
 
   if (isEditing) {
+    if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
+      return (
+        <select
+          value={currentValue || ''}
+          onChange={handleChange}
+          onBlur={handleChange}
+          onKeyDown={handleKeyPress}
+          autoFocus
+          className="editable-cell-input"
+          disabled={loading}
+        >
+          <option value="">Seleccione una opción</option>
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.nombre}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
     return (
       <input
         type="text"
@@ -52,7 +149,11 @@ const EditableCell = ({ value, column, row, onSave }) => {
   }
 
   return (
-    <div onDoubleClick={handleDoubleClick} className="editable-cell">
+    <div 
+      onDoubleClick={handleDoubleClick} 
+      className="editable-cell"
+      title={getTooltipMessage()}
+    >
       {value || 'Sin asignar'}
     </div>
   );
@@ -69,8 +170,8 @@ function EmployeesView() {
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
-    ficha: true,
-    cedula: true,
+    ficha: false,
+    cedula: false,
     nombre: true,
     gerencia: false,
     departamento: true,
@@ -128,18 +229,50 @@ function EmployeesView() {
       {
         header: 'Gerencia',
         accessorKey: 'gerencia',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'gerencia' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Departamento',
         accessorKey: 'departamento',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'departamento' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Área',
         accessorKey: 'area',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'area' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Cargo',
         accessorKey: 'cargo',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'cargo' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Equipo Asignado',
@@ -259,11 +392,25 @@ function EmployeesView() {
 
   const handleSave = async (id, field, value) => {
     try {
-      await axios.patch(`http://192.168.141.50:5000/api/empleados/${id}`, { [field]: value });
-      // Actualizar el estado local
-      setData(prevData => prevData.map(empleado => 
-        empleado.id === id ? { ...empleado, [field]: value } : empleado
-      ));
+      const response = await axios.patch(`http://192.168.141.50:5000/api/empleados/${id}`, { [field]: value });
+      
+      if (response.data.empleado) {
+        // Actualizar el estado local con todos los datos actualizados del empleado
+        setData(prevData => prevData.map(empleado => 
+          empleado.id === id ? {
+            ...empleado,
+            gerencia: response.data.empleado.gerencia,
+            gerencia_id: response.data.empleado.gerencia_id,
+            departamento: response.data.empleado.departamento,
+            departamento_id: response.data.empleado.departamento_id,
+            area: response.data.empleado.area,
+            area_id: response.data.empleado.area_id,
+            cargo: response.data.empleado.cargo,
+            cargo_id: response.data.empleado.cargo_id,
+            [field]: value
+          } : empleado
+        ));
+      }
     } catch (error) {
       console.error('Error al actualizar el empleado:', error);
       alert('Error al actualizar el campo');
