@@ -29,6 +29,7 @@ function EmployeeModal({ employee, onClose }) {
 
           <h2 className="employee-name">{employee.nombre}</h2>
           <p className="employee-title">{employee.cargo}</p>
+          <p className="employee-ficha">Ficha: {employee.ficha}</p>
 
           <div className="employee-details">
             <div className="detail-item">

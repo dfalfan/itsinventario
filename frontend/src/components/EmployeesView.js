@@ -19,11 +19,11 @@ function EmployeesView() {
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
-    ficha: true,
+    ficha: false,
     nombre: true,
     gerencia: false,
     departamento: true,
-    area: false,
+    area: true,
     cargo: true,
     extension: false,
     correo: false,

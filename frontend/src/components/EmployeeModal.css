@@ -90,6 +90,13 @@
     font-size: 1rem;
 }
 
+.employee-ficha {
+    color: #666;
+    margin: -0.75rem 0 1rem;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
 .employee-details {
     text-align: left;
     margin: 1.5rem 0;
