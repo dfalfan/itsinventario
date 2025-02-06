@@ -186,6 +186,7 @@ def get_empleados():
             'id': e.id,
             'nombre': e.nombre_completo,
             'ficha': e.ficha,
+            'cedula': e.cedula,
             'extension': e.extension,
             'correo': e.correo,
             'sede': e.sede.nombre if e.sede else None,
@@ -763,6 +764,7 @@ def get_empleado(empleado_id):
             'id': empleado.id,
             'nombre': empleado.nombre_completo,
             'ficha': empleado.ficha,
+            'cedula': empleado.cedula,
             'extension': empleado.extension,
             'correo': empleado.correo,
             'sede': empleado.sede.nombre if empleado.sede else None,
@@ -1666,27 +1668,20 @@ def update_empleado(empleado_id):
 
         data = request.get_json()
         
-        # Lista de campos permitidos para editar
-        allowed_fields = ['extension', 'nombre_completo', 'ficha', 'cedula', 'correo', 'sede_id', 'gerencia_id', 'departamento_id', 'area_id', 'cargo_id']
-        
-        for field in data:
-            if field in allowed_fields:
-                setattr(empleado, field, data[field])
-                
-                # Si se actualizó la extensión, actualizar el PDF
-                if field == 'extension':
-                    update_extensions_pdf()
-        
+        if 'ficha' in data:
+            empleado.ficha = data['ficha']
+        if 'nombre_completo' in data:
+            empleado.nombre_completo = data['nombre_completo']
+        if 'cedula' in data:
+            empleado.cedula = data['cedula']
+            
         db.session.commit()
         
-        return jsonify({
-            'message': 'Empleado actualizado exitosamente',
-            'updated_fields': list(data.keys())
-        })
+        return jsonify({'message': 'Empleado actualizado exitosamente'})
         
     except Exception as e:
         db.session.rollback()
-        print("Error en update_empleado:", str(e))
+        print(f"Error en update_empleado: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 def update_extensions_pdf():

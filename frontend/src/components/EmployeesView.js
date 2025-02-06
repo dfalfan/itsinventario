@@ -8,6 +8,56 @@ import SmartphoneModal from './SmartphoneModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
+// Componente para celdas editables
+const EditableCell = ({ value, column, row, onSave }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setValue] = useState(value);
+
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleChange = (e) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    onSave(row.original.id, column.id, newValue);
+    setIsEditing(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      const newValue = e.target.value;
+      setValue(newValue);
+      onSave(row.original.id, column.id, newValue);
+      setIsEditing(false);
+    }
+    if (e.key === 'Escape') {
+      setIsEditing(false);
+      setValue(value);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="text"
+        value={currentValue || ''}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={handleChange}
+        onKeyDown={handleKeyPress}
+        autoFocus
+        className="editable-cell-input"
+      />
+    );
+  }
+
+  return (
+    <div onDoubleClick={handleDoubleClick} className="editable-cell">
+      {value || 'Sin asignar'}
+    </div>
+  );
+};
+
 function EmployeesView() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +69,8 @@ function EmployeesView() {
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
-    ficha: false,
+    ficha: true,
+    cedula: true,
     nombre: true,
     gerencia: false,
     departamento: true,
@@ -41,10 +92,38 @@ function EmployeesView() {
       {
         header: 'Ficha',
         accessorKey: 'ficha',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'ficha' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
+      },
+      {
+        header: 'Cédula',
+        accessorKey: 'cedula',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'cedula' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Nombre',
         accessorKey: 'nombre',
+        cell: ({ row, getValue }) => (
+          <EditableCell
+            value={getValue()}
+            column={{ id: 'nombre_completo' }}
+            row={row}
+            onSave={handleSave}
+          />
+        )
       },
       {
         header: 'Gerencia',
@@ -178,8 +257,17 @@ function EmployeesView() {
     }
   };
 
-  const handleEdit = (employee) => {
-    console.log('Editar empleado:', employee);
+  const handleSave = async (id, field, value) => {
+    try {
+      await axios.patch(`http://192.168.141.50:5000/api/empleados/${id}`, { [field]: value });
+      // Actualizar el estado local
+      setData(prevData => prevData.map(empleado => 
+        empleado.id === id ? { ...empleado, [field]: value } : empleado
+      ));
+    } catch (error) {
+      console.error('Error al actualizar el empleado:', error);
+      alert('Error al actualizar el campo');
+    }
   };
 
   const handleDelete = async (employee) => {
