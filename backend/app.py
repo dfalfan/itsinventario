@@ -405,13 +405,15 @@ def get_empleados_sin_equipo():
             Empleado.nombre_completo,
             Sede.nombre.label('sede_nombre'),
             Departamento.nombre.label('departamento_nombre'),
-            CargoArea.cargo_base.nombre.label('cargo_nombre')
+            CargoBase.nombre.label('cargo_nombre')
         ).outerjoin(
             Sede, Empleado.sede_id == Sede.id
         ).outerjoin(
             Departamento, Empleado.departamento_id == Departamento.id
         ).outerjoin(
             CargoArea, Empleado.cargo_area_id == CargoArea.id
+        ).outerjoin(
+            CargoBase, CargoArea.cargo_base_id == CargoBase.id
         ).filter(
             Empleado.equipo_asignado.is_(None)
         ).order_by(Empleado.nombre_completo).all()

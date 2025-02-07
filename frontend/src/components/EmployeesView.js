@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop, FaMobileAlt } from 'react-icons/fa';
+import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop, FaMobileAlt, FaHistory } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
 import AssetModal from './AssetModal';
 import SmartphoneModal from './SmartphoneModal';
+import TimelineView from './TimelineView';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -168,13 +169,14 @@ function EmployeesView() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({
     sede: true,
     ficha: false,
     cedula: false,
     nombre: true,
-    gerencia: false,
+    gerencia: true,
     departamento: true,
     area: true,
     cargo: true,
@@ -506,12 +508,18 @@ function EmployeesView() {
     <div className="employees-view">
       <div className="header">
         <h2>Empleados</h2>
-        <button
-          className="add-button"
-          onClick={() => setShowNewEmployeeModal(true)}
-        >
-          <FaPlus /> Nuevo Empleado
-        </button>
+        <div className="header-buttons">
+          <button className="history-button" onClick={() => setShowTimeline(true)}>
+            <FaHistory className="history-icon" />
+            Historial
+          </button>
+          <button
+            className="add-button"
+            onClick={() => setShowNewEmployeeModal(true)}
+          >
+            <FaPlus /> Nuevo Empleado
+          </button>
+        </div>
       </div>
 
       <TableView
@@ -560,6 +568,13 @@ function EmployeesView() {
             setShowSmartphoneModal(false);
             setSelectedAsset(null);
           }}
+        />
+      )}
+
+      {showTimeline && (
+        <TimelineView
+          categoria="employees"
+          onClose={() => setShowTimeline(false)}
         />
       )}
     </div>
