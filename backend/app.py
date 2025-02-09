@@ -329,40 +329,62 @@ def get_activos():
 @app.route('/api/dashboard/stats')
 def get_dashboard_stats():
     try:
-        # Total de equipos
+        # Estadísticas de equipos existentes
         total_equipos = Asset.query.count()
-        
-        # Empleados sin equipo
-        empleados_sin_equipo = Empleado.query.filter(
-            Empleado.equipo_asignado.is_(None)
-        ).count()
-        
-        # Equipos en reparación
+        empleados_sin_equipo = Empleado.query.filter(Empleado.equipo_asignado.is_(None)).count()
         equipos_reparacion = Asset.query.filter_by(estado='REPARACION').count()
-        
-        # Equipos en stock (sin asignar)
         equipos_stock = Asset.query.filter_by(empleado_id=None).count()
         
-        # Distribución por tipo de equipo
+        # Estadísticas de smartphones
+        total_smartphones = Smartphone.query.count()
+        smartphones_sin_asignar = Smartphone.query.filter_by(empleado_id=None).count()
+        smartphones_asignados = total_smartphones - smartphones_sin_asignar
+        lineas_activas = Smartphone.query.filter(Smartphone.linea.isnot(None)).count()
+        
+        # Distribución por marca de smartphone
+        smartphones_por_marca = db.session.query(
+            Smartphone.marca,
+            db.func.count(Smartphone.id).label('cantidad')
+        ).group_by(Smartphone.marca).all()
+        
+        # Distribución por departamento
+        smartphones_por_departamento = db.session.query(
+            Departamento.nombre,
+            db.func.count(Smartphone.id).label('cantidad')
+        ).join(Empleado, Smartphone.empleado_id == Empleado.id)\
+         .join(Departamento, Empleado.departamento_id == Departamento.id)\
+         .group_by(Departamento.nombre)\
+         .order_by(db.func.count(Smartphone.id).desc())\
+         .limit(10)\
+         .all()
+        
+        # Asignaciones por mes
+        asignaciones_por_mes = db.session.query(
+            db.func.to_char(Smartphone.fecha_asignacion, 'YYYY-MM').label('mes'),
+            db.func.count(Smartphone.id).label('cantidad')
+        ).filter(Smartphone.fecha_asignacion.isnot(None))\
+         .group_by('mes')\
+         .order_by('mes')\
+         .limit(12)\
+         .all()
+        
+        # Resto de las estadísticas existentes...
         equipos_por_tipo = db.session.query(
             Asset.tipo,
             db.func.count(Asset.id).label('cantidad')
         ).group_by(Asset.tipo).all()
         
-        # Distribución por sede
         equipos_por_sede = db.session.query(
             Sede.nombre,
             db.func.count(Asset.id).label('cantidad')
         ).join(Asset).group_by(Sede.nombre).all()
 
-        # Tasa de utilización
         equipos_asignados = Asset.query.filter(Asset.empleado_id.isnot(None)).count()
         tasa_utilizacion = [
             {'estado': 'Asignados', 'cantidad': equipos_asignados},
             {'estado': 'No Asignados', 'cantidad': total_equipos - equipos_asignados}
         ]
 
-        # Distribución por departamento
         equipos_por_departamento = db.session.query(
             Departamento.nombre,
             db.func.count(Asset.id).label('cantidad')
@@ -390,6 +412,23 @@ def get_dashboard_stats():
             'equiposPorDepartamento': [
                 {'departamento': depto, 'cantidad': cantidad}
                 for depto, cantidad in equipos_por_departamento
+            ],
+            # Estadísticas de smartphones
+            'totalSmartphones': total_smartphones,
+            'smartphonesSinAsignar': smartphones_sin_asignar,
+            'smartphonesAsignados': smartphones_asignados,
+            'lineasActivas': lineas_activas,
+            'smartphonesPorMarca': [
+                {'marca': marca, 'cantidad': cantidad}
+                for marca, cantidad in smartphones_por_marca
+            ],
+            'smartphonesPorDepartamento': [
+                {'departamento': depto, 'cantidad': cantidad}
+                for depto, cantidad in smartphones_por_departamento
+            ],
+            'asignacionesPorMes': [
+                {'mes': mes, 'cantidad': cantidad}
+                for mes, cantidad in asignaciones_por_mes
             ]
         })
     except Exception as e:

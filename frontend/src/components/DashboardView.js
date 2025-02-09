@@ -12,7 +12,9 @@ import {
   FaChartLine,
   FaEnvelope,
   FaNetworkWired,
-  FaMobileAlt
+  FaMobileAlt,
+  FaUser,
+  FaPhoneSquare
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -273,8 +275,105 @@ function DashboardView() {
         )}
         
         {selectedDashboard === 'smartphones' && (
-          <h1>Dashboard de Smartphones</h1>
-          // Contenido del dashboard de smartphones
+          <>
+            <h1>Dashboard de Smartphones</h1>
+            <div className="stats-cards">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaMobileAlt />
+                </div>
+                <div className="stat-info">
+                  <h3>Total Smartphones</h3>
+                  <p>{stats.totalSmartphones || 0}</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaUserSlash />
+                </div>
+                <div className="stat-info">
+                  <h3>Sin Asignar</h3>
+                  <p>{stats.smartphonesSinAsignar || 0}</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaUser />
+                </div>
+                <div className="stat-info">
+                  <h3>Asignados</h3>
+                  <p>{stats.smartphonesAsignados || 0}</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FaPhoneSquare />
+                </div>
+                <div className="stat-info">
+                  <h3>Líneas Activas</h3>
+                  <p>{stats.lineasActivas || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="charts-container">
+              <div className="chart-card">
+                <h3>Estado de Asignación</h3>
+                <div className="chart-wrapper">
+                  <Doughnut 
+                    data={{
+                      labels: ['Asignados', 'Disponibles'],
+                      datasets: [{
+                        data: [
+                          stats.smartphonesAsignados || 0,
+                          stats.smartphonesSinAsignar || 0
+                        ],
+                        backgroundColor: [
+                          '#4BC0C0',
+                          '#FF6384'
+                        ]
+                      }]
+                    }}
+                    options={{
+                      plugins: {
+                        legend: {
+                          position: 'bottom'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="chart-card">
+                <h3>Asignaciones Mensuales</h3>
+                <div className="chart-wrapper">
+                  <Bar 
+                    data={{
+                      labels: stats.asignacionesPorMes?.map(item => item.mes) || [],
+                      datasets: [{
+                        label: 'Asignaciones',
+                        data: stats.asignacionesPorMes?.map(item => item.cantidad) || [],
+                        backgroundColor: '#36A2EB'
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                        y: {
+                          beginAtZero: true
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </main>
     </div>
