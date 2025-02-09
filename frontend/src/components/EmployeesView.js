@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop, FaMobileAlt, FaHistory } from 'react-icons/fa';
+import { FaEllipsisH, FaTimes, FaPlus, FaLaptop, FaDesktop, FaMobileAlt, FaHistory, FaBolt } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeeModal from './EmployeeModal';
 import NewEmployeeModal from './NewEmployeeModal';
@@ -186,6 +186,7 @@ function EmployeesView() {
     smartphone_asignado: false,
     acciones: true,
   });
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -336,19 +337,52 @@ function EmployeesView() {
       },
       {
         header: 'Acciones',
-        id: 'acciones',
+        accessorKey: 'acciones',
         cell: ({ row }) => (
           <div className="action-buttons">
-            <button 
+            <button
+              className="icon-button"
               onClick={() => handleViewEmployee(row.original)}
-              className="action-button view-button"
               title="Ver detalles"
             >
               <FaEllipsisH />
             </button>
+
+            <div className="quick-actions-container">
+              <button
+                className={`icon-button ${activeActionMenu === row.original.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveActionMenu(activeActionMenu === row.original.id ? null : row.original.id);
+                }}
+                title="Acciones rápidas"
+              >
+                <FaBolt />
+              </button>
+              {activeActionMenu === row.original.id && (
+                <div className="quick-actions-menu">
+                  <button onClick={() => console.log('Generar bienvenida')}>
+                    Generar bienvenida
+                  </button>
+                  <button onClick={() => console.log('Crear usuario AD')}>
+                    Crear usuario AD
+                  </button>
+                  <button onClick={() => console.log('Crear email')}>
+                    Crear email
+                  </button>
+                  <button onClick={() => console.log('Verificar usuario AD')}>
+                    Verificar usuario AD
+                  </button>
+                  <button onClick={() => console.log('Generar firma de correo')}>
+                    Generar firma de correo
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => handleDelete(row.original)}
-              className="action-button delete-button"
+              className="icon-button delete-button"
               title="Eliminar empleado"
             >
               <FaTimes />
@@ -357,7 +391,7 @@ function EmployeesView() {
         ),
       },
     ],
-    []
+    [activeActionMenu]
   );
 
   useEffect(() => {
