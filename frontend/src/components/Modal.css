@@ -299,4 +299,87 @@
 .button.secondary {
   background-color: #95a5a6;
   color: white;
+}
+
+.email-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.email-input-group input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  flex: 1;
+}
+
+.email-input-group .email-domain {
+  background-color: #e9ecef;
+  border: 1px solid #ddd;
+  border-left: none;
+  padding: 8px 12px;
+  color: #495057;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  font-size: 1rem;
+}
+
+.warning-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+  color: #856404;
+}
+
+.warning-message i {
+  font-size: 1.2rem;
+  color: #856404;
+}
+
+.input-icon {
+  margin-right: 8px;
+  color: #6c757d;
+}
+
+.temp-password-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.temp-password-info p {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-weight: 500;
+}
+
+.temp-password-info code {
+  display: block;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 1.2em;
+  color: #212529;
+  user-select: all;
+}
+
+.temp-password-info small {
+  display: block;
+  color: #6c757d;
+  font-size: 0.875em;
+  margin-top: 8px;
+}
+
+.success-message button {
+  margin-top: 15px;
 } 

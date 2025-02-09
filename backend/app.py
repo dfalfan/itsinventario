@@ -830,40 +830,69 @@ def get_empleado(empleado_id):
 @app.route('/api/empleados/actualizar-correos', methods=['POST'])
 def actualizar_correos():
     try:
-        # Crear función para generar correo
-        db.session.execute("""
-            CREATE OR REPLACE FUNCTION generar_correo(nombre_completo TEXT)
-            RETURNS TEXT AS $$
-            DECLARE
-                nombres TEXT;
-                apellidos TEXT;
-                primer_apellido TEXT;
-                primer_nombre TEXT;
-            BEGIN
-                -- Dividir el nombre completo en partes
-                apellidos := split_part(nombre_completo, ' ', 1);
-                nombres := substring(nombre_completo FROM position(' ' IN nombre_completo) + 1);
-                
-                -- Obtener primer nombre
-                primer_nombre := split_part(nombres, ' ', 1);
-                
-                -- Generar correo en minúsculas
-                RETURN lower(primer_nombre || '.' || apellidos || '@sura.com.ve');
-            END;
-            $$ LANGUAGE plpgsql;
-        """)
+        data = request.get_json()
+        empleado_id = data.get('empleado_id')
+        correo = data.get('correo')
         
-        # Actualizar todos los correos
-        db.session.execute("""
-            UPDATE empleados 
-            SET correo = generar_correo(nombre_completo)
-            WHERE correo IS NULL OR correo = '';
-        """)
+        if not empleado_id or not correo:
+            return jsonify({'error': 'empleado_id y correo son requeridos'}), 400
+            
+        # Verificar si el empleado existe
+        empleado = Empleado.query.get(empleado_id)
+        if not empleado:
+            return jsonify({'error': 'Empleado no encontrado'}), 404
+            
+        # Verificar si el correo ya existe en la base de datos
+        correo_existente = Empleado.query.filter(Empleado.correo == correo).first()
+        if correo_existente:
+            return jsonify({
+                'error': 'El correo ya existe en la base de datos',
+                'message': 'already exists'
+            }), 400
+            
+        # Separar nombre y apellido para Google Workspace
+        nombre_completo = empleado.nombre_completo.split()
+        if len(nombre_completo) >= 2:
+            nombre = nombre_completo[-1]
+            apellido = nombre_completo[0]
+        else:
+            return jsonify({'error': 'El formato del nombre debe ser "APELLIDOS NOMBRES"'}), 400
+            
+        # Verificar y crear usuario en Google Workspace
+        google_result = crear_usuario_google(nombre, apellido, correo)
         
+        if not google_result['success']:
+            error_msg = str(google_result.get('error', ''))
+            
+            if 'Domain user limit reached' in error_msg:
+                return jsonify({
+                    'error': 'No hay licencias disponibles',
+                    'google_workspace': {
+                        'warning': 'No se pudo crear el correo: límite de licencias alcanzado'
+                    }
+                }), 400
+            elif 'already exists' in error_msg.lower():
+                return jsonify({
+                    'error': 'El correo ya existe en Google Workspace',
+                    'message': 'already exists'
+                }), 400
+            else:
+                return jsonify({
+                    'error': 'Error al crear usuario en Google Workspace',
+                    'details': error_msg
+                }), 500
+                
+        # Si todo está bien, actualizar el correo del empleado
+        empleado.correo = correo
         db.session.commit()
         
         return jsonify({
-            'message': 'Correos actualizados exitosamente'
+            'message': 'Correo actualizado exitosamente',
+            'google_workspace': {
+                'success': True,
+                'email': correo,
+                'temp_password': google_result.get('temp_password')
+            }
         })
         
     except Exception as e:
@@ -1960,6 +1989,25 @@ def crear_usuario_google(nombre, apellido, email):
         service = build('admin', 'directory_v1', credentials=credentials)
         print("✓ Servicio construido")
         
+        # Verificar si el usuario ya existe
+        print(f"Verificando si el correo {email} ya existe...")
+        try:
+            existing_user = service.users().get(userKey=email).execute()
+            print(f"❌ El correo {email} ya existe en Google Workspace")
+            return {
+                'success': False,
+                'error': 'already exists',
+                'message': 'El correo ya existe en Google Workspace'
+            }
+        except Exception as e:
+            if 'Resource Not Found' not in str(e):
+                print(f"❌ Error verificando usuario existente: {str(e)}")
+                return {
+                    'success': False,
+                    'error': str(e)
+                }
+            print("✓ El correo está disponible")
+        
         # Generar contraseña temporal
         import random
         import string
@@ -1986,11 +2034,26 @@ def crear_usuario_google(nombre, apellido, email):
         }
         
     except Exception as e:
-        print(f"❌ Error creando usuario en Google Workspace: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
+        error_msg = str(e)
+        print(f"❌ Error creando usuario en Google Workspace: {error_msg}")
+        
+        if 'Domain user limit reached' in error_msg:
+            return {
+                'success': False,
+                'error': 'Domain user limit reached',
+                'message': 'No hay licencias disponibles'
+            }
+        elif 'already exists' in error_msg.lower():
+            return {
+                'success': False,
+                'error': 'already exists',
+                'message': 'El correo ya existe en Google Workspace'
+            }
+        else:
+            return {
+                'success': False,
+                'error': error_msg
+            }
 
 @app.route('/api/workspace/stats')
 def get_workspace_stats():

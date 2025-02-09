@@ -8,6 +8,7 @@ import SmartphoneModal from './SmartphoneModal';
 import TimelineView from './TimelineView';
 import ADUserModal from './ADUserModal';
 import CreateADUserModal from './CreateADUserModal';
+import CreateEmailModal from './CreateEmailModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -193,6 +194,8 @@ function EmployeesView() {
   const [adUserInfo, setADUserInfo] = useState(null);
   const [showCreateADUserModal, setShowCreateADUserModal] = useState(false);
   const [selectedEmployeeForAD, setSelectedEmployeeForAD] = useState(null);
+  const [showCreateEmailModal, setShowCreateEmailModal] = useState(false);
+  const [selectedEmployeeForEmail, setSelectedEmployeeForEmail] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -377,7 +380,11 @@ function EmployeesView() {
                   }}>
                     Crear usuario AD
                   </button>
-                  <button onClick={() => console.log('Crear email')}>
+                  <button onClick={() => {
+                    setSelectedEmployeeForEmail(row.original);
+                    setShowCreateEmailModal(true);
+                    setActiveActionMenu(null);
+                  }}>
                     Crear email
                   </button>
                   <button onClick={() => handleVerifyADUser(row.original)}>
@@ -734,6 +741,17 @@ function EmployeesView() {
             setSelectedEmployeeForAD(null);
           }}
           employee={selectedEmployeeForAD}
+        />
+      )}
+
+      {showCreateEmailModal && (
+        <CreateEmailModal
+          isOpen={showCreateEmailModal}
+          onClose={() => {
+            setShowCreateEmailModal(false);
+            setSelectedEmployeeForEmail(null);
+          }}
+          employee={selectedEmployeeForEmail}
         />
       )}
     </div>
