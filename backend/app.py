@@ -2860,5 +2860,55 @@ def asignar_cargo_multiple():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/verify-ad-user/<username>', methods=['GET'])
+def verify_ad_user(username):
+    try:
+        print(f"Verificando usuario AD: {username}")
+        
+        # Configurar el servidor y la conexión
+        server = Server('192.168.141.39', get_info=ALL)
+        conn = Connection(server, user='sura\\dfalfan', password='Dief490606', auto_bind=True)
+        
+        # Buscar el usuario en el AD
+        conn.search('dc=sura,dc=corp', 
+                   f'(&(objectClass=user)(objectCategory=person)(sAMAccountName={username.replace(".sura.corp", "")}*))', 
+                   attributes=['memberOf', 'lastLogon', 'userAccountControl'])
+        
+        if not conn.entries:
+            return jsonify({
+                'exists': False,
+                'message': 'Usuario no encontrado en el Active Directory'
+            })
+        
+        user = conn.entries[0]
+        
+        # Verificar si el usuario está activo (bit 2 = ACCOUNTDISABLE)
+        is_active = not bool(user['userAccountControl'].value & 2)
+        
+        # Obtener grupos
+        groups = []
+        for group_dn in user['memberOf'].values:
+            group_name = group_dn.split(',')[0].replace('CN=', '')
+            groups.append(group_name)
+        
+        # Obtener último inicio de sesión
+        last_logon = user['lastLogon'].value
+        last_logon_str = last_logon.strftime('%Y-%m-%d %H:%M:%S') if last_logon else 'Nunca'
+        
+        return jsonify({
+            'exists': True,
+            'active': is_active,
+            'domain': 'SURA',
+            'groups': groups,
+            'lastLogin': last_logon_str
+        })
+        
+    except Exception as e:
+        print(f"Error verificando usuario AD: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'exists': False
+        }), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

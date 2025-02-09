@@ -6,6 +6,7 @@ import NewEmployeeModal from './NewEmployeeModal';
 import AssetModal from './AssetModal';
 import SmartphoneModal from './SmartphoneModal';
 import TimelineView from './TimelineView';
+import ADUserModal from './ADUserModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -187,6 +188,8 @@ function EmployeesView() {
     acciones: true,
   });
   const [activeActionMenu, setActiveActionMenu] = useState(null);
+  const [showADUserModal, setShowADUserModal] = useState(false);
+  const [adUserInfo, setADUserInfo] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -370,7 +373,7 @@ function EmployeesView() {
                   <button onClick={() => console.log('Crear email')}>
                     Crear email
                   </button>
-                  <button onClick={() => console.log('Verificar usuario AD')}>
+                  <button onClick={() => handleVerifyADUser(row.original)}>
                     Verificar usuario AD
                   </button>
                   <button onClick={() => console.log('Generar firma de correo')}>
@@ -538,6 +541,99 @@ function EmployeesView() {
     }
   };
 
+  const generateADUsername = (nombre) => {
+    if (!nombre) {
+      console.log('Nombre vacío');
+      return '';
+    }
+    
+    console.log('Generando nombre de usuario para:', nombre);
+    // Eliminar espacios extra y dividir el nombre
+    const parts = nombre.trim().split(/\s+/);
+    console.log('Partes del nombre:', parts);
+    
+    if (parts.length < 2) {
+      console.log('Nombre incompleto');
+      return '';
+    }
+    
+    // El formato es "APELLIDOS NOMBRES", así que el nombre está al final
+    const firstName = parts[parts.length - 1];
+    const firstLetter = firstName.charAt(0);
+    
+    // El apellido es la primera palabra
+    const lastName = parts[0];
+    
+    const username = `${firstLetter}${lastName}`.toLowerCase();
+    console.log('Nombre de usuario generado:', username);
+    return username;
+  };
+
+  const handleVerifyADUser = async (employee) => {
+    try {
+      console.log('Verificando empleado:', employee);
+      
+      if (!employee.nombre) {
+        console.log('Empleado sin nombre');
+        setADUserInfo({
+          expectedUsername: '',
+          exists: false,
+          error: 'El empleado no tiene nombre asignado',
+          loading: false
+        });
+        setShowADUserModal(true);
+        return;
+      }
+
+      const expectedUsername = generateADUsername(employee.nombre);
+      console.log('Nombre de usuario generado:', expectedUsername);
+      
+      if (!expectedUsername) {
+        console.log('No se pudo generar el nombre de usuario');
+        setADUserInfo({
+          expectedUsername: '',
+          exists: false,
+          error: 'No se pudo generar el nombre de usuario. El formato del nombre debe ser "APELLIDOS NOMBRES"',
+          loading: false
+        });
+        setShowADUserModal(true);
+        return;
+      }
+
+      setADUserInfo({ expectedUsername, loading: true });
+      setShowADUserModal(true);
+
+      console.log('Haciendo petición al backend para:', expectedUsername);
+      const response = await axios.get(`http://192.168.141.50:5000/api/verify-ad-user/${expectedUsername}`);
+      console.log('Respuesta del backend:', response.data);
+      
+      setADUserInfo({
+        expectedUsername,
+        exists: response.data.exists,
+        active: response.data.active,
+        domain: response.data.domain,
+        groups: response.data.groups,
+        lastLogin: response.data.lastLogin,
+        message: response.data.message,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error verificando usuario AD:', error);
+      console.error('Detalles del error:', {
+        response: error.response,
+        message: error.message,
+        config: error.config
+      });
+      
+      setADUserInfo({
+        expectedUsername: generateADUsername(employee.nombre) || '',
+        exists: false,
+        error: error.response?.data?.message || 'Error al verificar el usuario',
+        loading: false
+      });
+    }
+  };
+
   return (
     <div className="employees-view">
       <div className="header">
@@ -609,6 +705,17 @@ function EmployeesView() {
         <TimelineView
           categoria="employees"
           onClose={() => setShowTimeline(false)}
+        />
+      )}
+
+      {showADUserModal && (
+        <ADUserModal
+          isOpen={showADUserModal}
+          onClose={() => {
+            setShowADUserModal(false);
+            setADUserInfo(null);
+          }}
+          userInfo={adUserInfo}
         />
       )}
     </div>
