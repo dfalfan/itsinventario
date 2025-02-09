@@ -10,7 +10,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import os
 import io
-from ldap3 import Server, Connection, ALL, NTLM
+from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
 from io import BytesIO
 from dotenv import load_dotenv
 from unidecode import unidecode
@@ -18,6 +18,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import json
 import socket
+import ssl
 
 app = Flask(__name__)
 CORS(app)
@@ -2909,6 +2910,164 @@ def verify_ad_user(username):
             'error': str(e),
             'exists': False
         }), 500
+
+@app.route('/api/ad/ous', methods=['GET'])
+def get_ad_ous():
+    try:
+        # Configuración más segura para LDAP3
+        import ssl
+        tls_configuration = {'version': ssl.PROTOCOL_TLSv1_2}
+        
+        # Conectar al servidor LDAP usando ldap3 con configuración más segura
+        server = Server('192.168.141.39', get_info=ALL, use_ssl=False, connect_timeout=5)
+        
+        try:
+            conn = Connection(
+                server,
+                user='sura\\dfalfan',
+                password='Dief490606',
+                authentication=NTLM,
+                auto_bind=True,
+                read_only=True,
+                auto_referrals=False,
+                receive_timeout=10
+            )
+        except Exception as conn_error:
+            print(f"Error de conexión LDAP: {str(conn_error)}")
+            return jsonify({'error': f'Error de conexión: {str(conn_error)}'}), 500
+
+        # Buscar todas las OUs
+        baseDN = "DC=sura,DC=corp"
+        try:
+            conn.search(
+                search_base=baseDN,
+                search_filter='(objectClass=organizationalUnit)',
+                search_scope=SUBTREE,
+                attributes=['ou', 'distinguishedName']
+            )
+        except Exception as search_error:
+            print(f"Error en búsqueda LDAP: {str(search_error)}")
+            return jsonify({'error': f'Error en búsqueda: {str(search_error)}'}), 500
+        
+        ous = []
+        for entry in conn.entries:
+            if hasattr(entry, 'ou'):
+                ous.append({
+                    'name': str(entry.ou),
+                    'path': str(entry.distinguishedName)
+                })
+
+        # Mapeo de departamentos a OUs
+        dept_ou_mapping = {
+            'Gestion Humana': 'OU=Gestion Humana,DC=sura,DC=corp',
+            'Tecnologia': 'OU=Tecnologia,DC=sura,DC=corp',
+            'Finanzas': 'OU=Finanzas,DC=sura,DC=corp',
+            'Operaciones': 'OU=Operaciones,DC=sura,DC=corp'
+        }
+
+        return jsonify({
+            'ous': ous,
+            'mappings': dept_ou_mapping
+        })
+
+    except Exception as e:
+        print(f"Error en get_ad_ous: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if 'conn' in locals() and conn.bound:
+            try:
+                conn.unbind()
+            except:
+                pass
+
+@app.route('/api/ad/create-user', methods=['POST'])
+def create_ad_user():
+    try:
+        data = request.get_json()
+        username = data['username']
+        fullName = data['fullName']
+        ou = data.get('ou')  # Opcional, se puede determinar por departamento
+        departamento = data.get('departamento')
+        
+        # Si no se proporciona OU, intentar determinarla por departamento
+        if not ou and departamento:
+            dept_ou_mapping = {
+                'Gestion Humana': 'OU=Gestion Humana,DC=sura,DC=corp',
+                'Tecnologia': 'OU=Tecnologia,DC=sura,DC=corp',
+                'Finanzas': 'OU=Finanzas,DC=sura,DC=corp',
+                'Operaciones': 'OU=Operaciones,DC=sura,DC=corp',
+            }
+            ou = dept_ou_mapping.get(departamento)
+            
+        if not ou:
+            ou = 'OU=Usuarios,DC=sura,DC=corp'  # OU por defecto si no se encuentra mapeo
+
+        # Conectar al servidor LDAP
+        server = Server('192.168.141.39', get_info=ALL)
+        conn = Connection(server, user='sura\\dfalfan', password='Dief490606', authentication=NTLM)
+        
+        if not conn.bind():
+            return jsonify({'error': 'Error de autenticación LDAP'}), 401
+
+        # Verificar si el usuario ya existe
+        conn.search(
+            search_base='DC=sura,DC=corp',
+            search_filter=f'(sAMAccountName={username})',
+            attributes=['distinguishedName']
+        )
+        
+        if len(conn.entries) > 0:
+            return jsonify({'error': 'El usuario ya existe en Active Directory'}), 400
+
+        # Crear el nuevo usuario
+        dn = f"CN={fullName},{ou}"
+        
+        # Atributos del nuevo usuario
+        attrs = {
+            'objectClass': ['top', 'person', 'organizationalPerson', 'user'],
+            'cn': fullName,
+            'sAMAccountName': username,
+            'userPrincipalName': f"{username}@sura.corp",
+            'displayName': fullName,
+            'givenName': fullName.split()[-1],  # Último nombre
+            'sn': fullName.split()[0],  # Primer apellido
+        }
+
+        # Agregar el nuevo usuario
+        if not conn.add(dn, attributes=attrs):
+            return jsonify({'error': 'Error al crear el usuario'}), 500
+
+        # Habilitar la cuenta
+        conn.modify(dn, {
+            'userAccountControl': [('MODIFY_REPLACE', [512])]  # 512 = Cuenta normal habilitada
+        })
+
+        # Agregar a grupos por defecto
+        default_groups = [
+            "CN=Domain Users,CN=Users,DC=sura,DC=corp",
+            # Agregar más grupos según sea necesario
+        ]
+        
+        for group_dn in default_groups:
+            try:
+                conn.modify(group_dn, {
+                    'member': [('ADD', [dn])]
+                })
+            except:
+                pass  # Ignorar si ya es miembro del grupo
+
+        return jsonify({
+            'message': 'Usuario creado exitosamente',
+            'username': username,
+            'dn': dn,
+            'ou': ou
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.unbind()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

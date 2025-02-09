@@ -7,6 +7,7 @@ import AssetModal from './AssetModal';
 import SmartphoneModal from './SmartphoneModal';
 import TimelineView from './TimelineView';
 import ADUserModal from './ADUserModal';
+import CreateADUserModal from './CreateADUserModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -190,6 +191,8 @@ function EmployeesView() {
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [showADUserModal, setShowADUserModal] = useState(false);
   const [adUserInfo, setADUserInfo] = useState(null);
+  const [showCreateADUserModal, setShowCreateADUserModal] = useState(false);
+  const [selectedEmployeeForAD, setSelectedEmployeeForAD] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -367,7 +370,11 @@ function EmployeesView() {
                   <button onClick={() => console.log('Generar bienvenida')}>
                     Generar bienvenida
                   </button>
-                  <button onClick={() => console.log('Crear usuario AD')}>
+                  <button onClick={() => {
+                    setSelectedEmployeeForAD(row.original);
+                    setShowCreateADUserModal(true);
+                    setActiveActionMenu(null);
+                  }}>
                     Crear usuario AD
                   </button>
                   <button onClick={() => console.log('Crear email')}>
@@ -716,6 +723,17 @@ function EmployeesView() {
             setADUserInfo(null);
           }}
           userInfo={adUserInfo}
+        />
+      )}
+
+      {showCreateADUserModal && (
+        <CreateADUserModal
+          isOpen={showCreateADUserModal}
+          onClose={() => {
+            setShowCreateADUserModal(false);
+            setSelectedEmployeeForAD(null);
+          }}
+          employee={selectedEmployeeForAD}
         />
       )}
     </div>
