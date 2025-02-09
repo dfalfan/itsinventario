@@ -43,7 +43,7 @@ function DashboardView() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedDashboard, setSelectedDashboard] = useState('principal');
+  const [selectedDashboard, setSelectedDashboard] = useState('equipos');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -114,16 +114,16 @@ function DashboardView() {
       <nav className="dashboard-nav">
         <div className="nav-items">
           <button
-            className={`nav-item ${selectedDashboard === 'principal' ? 'active' : ''}`}
-            onClick={() => setSelectedDashboard('principal')}
+            className={`nav-item ${selectedDashboard === 'equipos' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('equipos')}
           >
-            Principal
+            Equipos
           </button>
           <button
-            className={`nav-item ${selectedDashboard === 'correos' ? 'active' : ''}`}
-            onClick={() => setSelectedDashboard('correos')}
+            className={`nav-item ${selectedDashboard === 'smartphones' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('smartphones')}
           >
-            Correos
+            Smartphones
           </button>
           <button
             className={`nav-item ${selectedDashboard === 'dominio' ? 'active' : ''}`}
@@ -132,16 +132,28 @@ function DashboardView() {
             Dominio
           </button>
           <button
-            className={`nav-item ${selectedDashboard === 'smartphones' ? 'active' : ''}`}
-            onClick={() => setSelectedDashboard('smartphones')}
+            className={`nav-item ${selectedDashboard === 'correos' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('correos')}
           >
-            Smartphones
+            Correos
+          </button>
+          <button
+            className={`nav-item ${selectedDashboard === 'impresoras' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('impresoras')}
+          >
+            Impresoras
+          </button>
+          <button
+            className={`nav-item ${selectedDashboard === 'servidores' ? 'active' : ''}`}
+            onClick={() => setSelectedDashboard('servidores')}
+          >
+            Servidores
           </button>
         </div>
       </nav>
       
       <main className="dashboard-content">
-        {selectedDashboard === 'principal' && (
+        {selectedDashboard === 'equipos' && (
           <>
             <h1>Dashboard Principal</h1>
             <div className="stats-cards">
