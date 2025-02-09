@@ -7,7 +7,12 @@ const BRAND_LOGOS = {
   'DELL': '/brand-logos/dell.png',
   'ASUS': '/brand-logos/asus.png',
   'LENOVO': '/brand-logos/lenovo.png',
-  'ACER': '/brand-logos/acer.png'
+  'ACER': '/brand-logos/acer.png',
+  'CANON': '/brand-logos/canon.png',
+  'KYOCERA': '/brand-logos/kyocera.png',
+  'KONICA': '/brand-logos/konica.png',
+  'LEXMARK': '/brand-logos/lexmark.png',
+  'EPSON': '/brand-logos/epson.png'
 };
 
 function BrandLogo({ brand, onSave, isEditable = false }) {

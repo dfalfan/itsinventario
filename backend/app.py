@@ -151,9 +151,13 @@ class Impresora(db.Model):
     __tablename__ = 'impresoras'
     id = db.Column(db.Integer, primary_key=True)
     sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'))
-    impresora = db.Column(db.String(100))
+    marca = db.Column(db.String(100))
+    modelo = db.Column(db.String(100))
+    nombre = db.Column(db.String(100))
     serial = db.Column(db.String(100))
     proveedor = db.Column(db.String(100))
+    ip = db.Column(db.String(100))
+    url = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -1184,9 +1188,15 @@ def get_impresoras():
             'id': imp.id,
             'sede': sede.nombre if sede else None,
             'sede_id': imp.sede_id,
-            'impresora': imp.impresora,
+            'marca': imp.marca,
+            'modelo': imp.modelo,
+            'nombre': imp.nombre,
             'serial': imp.serial,
-            'proveedor': imp.proveedor
+            'proveedor': imp.proveedor,
+            'ip': imp.ip,
+            'url': imp.url,
+            'created_at': imp.created_at.isoformat() if imp.created_at else None,
+            'updated_at': imp.updated_at.isoformat() if imp.updated_at else None
         } for imp, sede in impresoras])
     except Exception as e:
         print(f"Error en get_impresoras: {str(e)}")
@@ -1202,16 +1212,11 @@ def update_impresora(impresora_id):
         data = request.get_json()
         
         # Lista de campos permitidos para editar
-        allowed_fields = ['impresora', 'serial', 'proveedor']
+        allowed_fields = ['marca', 'modelo', 'nombre', 'serial', 'proveedor', 'sede_id']
         
         for field in data:
             if field in allowed_fields:
                 setattr(impresora, field, data[field])
-            elif field == 'sede':
-                # Buscar la sede por nombre y actualizar sede_id
-                sede = Sede.query.filter_by(nombre=data[field]).first()
-                if sede:
-                    impresora.sede_id = sede.id
         
         impresora.updated_at = datetime.utcnow()
         db.session.commit()
@@ -2813,6 +2818,7 @@ def migrar_sedes_gerencias():
         db.session.commit()
 
         return jsonify({
+
             'message': 'Migración completada exitosamente',
             'gerencias_actualizadas': Gerencia.query.count()
         })
