@@ -9,6 +9,7 @@ import TimelineView from './TimelineView';
 import ADUserModal from './ADUserModal';
 import CreateADUserModal from './CreateADUserModal';
 import CreateEmailModal from './CreateEmailModal';
+import GenerarFirmaModal from './GenerarFirmaModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -196,6 +197,8 @@ function EmployeesView() {
   const [selectedEmployeeForAD, setSelectedEmployeeForAD] = useState(null);
   const [showCreateEmailModal, setShowCreateEmailModal] = useState(false);
   const [selectedEmployeeForEmail, setSelectedEmployeeForEmail] = useState(null);
+  const [showGenerarFirmaModal, setShowGenerarFirmaModal] = useState(false);
+  const [selectedEmployeeForFirma, setSelectedEmployeeForFirma] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -390,7 +393,11 @@ function EmployeesView() {
                   <button onClick={() => handleVerifyADUser(row.original)}>
                     Verificar usuario AD
                   </button>
-                  <button onClick={() => console.log('Generar firma de correo')}>
+                  <button onClick={() => {
+                    setSelectedEmployeeForFirma(row.original);
+                    setShowGenerarFirmaModal(true);
+                    setActiveActionMenu(null);
+                  }}>
                     Generar firma de correo
                   </button>
                 </div>
@@ -752,6 +759,21 @@ function EmployeesView() {
             setSelectedEmployeeForEmail(null);
           }}
           employee={selectedEmployeeForEmail}
+        />
+      )}
+
+      {showGenerarFirmaModal && (
+        <GenerarFirmaModal
+          isOpen={showGenerarFirmaModal}
+          onClose={() => {
+            setShowGenerarFirmaModal(false);
+            setSelectedEmployeeForFirma(null);
+          }}
+          employee={{
+            nombre: selectedEmployeeForFirma?.nombre,
+            cargo: selectedEmployeeForFirma?.cargo_area?.cargo_base?.nombre || selectedEmployeeForFirma?.cargo,
+            extension: selectedEmployeeForFirma?.extension
+          }}
         />
       )}
     </div>

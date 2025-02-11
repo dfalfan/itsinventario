@@ -1,4 +1,8 @@
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, request, jsonify, send_file
+from PIL import Image, ImageDraw, ImageFont
+import io
+import os
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -19,6 +23,7 @@ from googleapiclient.discovery import build
 import json
 import socket
 import ssl
+from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
 CORS(app)
@@ -34,6 +39,10 @@ SCOPES = [
     'https://www.googleapis.com/auth/admin.reports.usage.readonly'
 ]
 SERVICE_ACCOUNT_FILE = 'credentials.json'
+
+# Configurar la carpeta de archivos estáticos
+app.static_folder = '../frontend/public'
+app.static_url_path = ''
 
 class Sede(db.Model):
     __tablename__ = 'sedes'
@@ -3131,6 +3140,48 @@ def create_ad_user():
     finally:
         if conn:
             conn.unbind()
+
+@app.route('/api/generar-firma', methods=['POST'])
+def generar_firma():
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre')
+        cargo = data.get('cargo')
+        extension = data.get('extension')
+        
+        if not all([nombre, cargo]):
+            return jsonify({'error': 'Nombre y cargo son requeridos'}), 400
+            
+        # Abrir la imagen template
+        img = Image.open('static/firmatemplate.PNG')
+        draw = ImageDraw.Draw(img)
+        
+        # Cargar la fuente Montserrat
+        nombre_font = ImageFont.truetype('static/Montserrat-Medium.otf', 43)
+        cargo_font = ImageFont.truetype('static/Montserrat-Regular.ttf', 30)
+        extension_font = ImageFont.truetype('static/Montserrat-Regular.ttf', 30)
+        
+        # Dibujar el texto
+        draw.text((45, 160),nombre, font=nombre_font, fill='rgb(35, 48, 146)')
+        draw.text((45, 215), cargo, font=cargo_font, fill='black')
+        if extension:
+            draw.text((480, 350), extension, font=extension_font, fill='black')
+        
+        # Convertir la imagen a bytes
+        img_byte_array = io.BytesIO()
+        img.save(img_byte_array, format='PNG')
+        img_byte_array.seek(0)
+        
+        return send_file(
+            img_byte_array,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name=f"firma_{nombre.replace(' ', '_').lower()}.png"
+        )
+        
+    except Exception as e:
+        print(f"Error generando firma: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
