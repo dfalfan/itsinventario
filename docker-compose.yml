@@ -29,7 +29,7 @@ services:
       - postgres
     networks:
       - app-network
-
+ 
   frontend:
     build: ./frontend
     ports:
