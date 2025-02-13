@@ -22,6 +22,7 @@ services:
       - DATABASE_URL=postgresql://its:sura@postgres:5432/itsinventario
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - APP_ENV=production
     volumes:
       - ./backend:/app
     depends_on:
