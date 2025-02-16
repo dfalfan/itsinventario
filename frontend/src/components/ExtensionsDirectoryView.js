@@ -28,7 +28,7 @@ const FIXED_EXTENSIONS = {
   "DESARROLLO DE PRODUCTOS Y CALIDAD": [
     { nombre: "Laboratorio", cargo: "Laboratorio", extension: "1934", sede: "CDN", isFixed: true }
   ],
-  "I.T.S": [
+  "ITS": [
     { nombre: "Soporte ITS", cargo: "Soporte", extension: "3000", sede: "CDN", isFixed: true }
   ],
   "SEGURIDAD INDUSTRIAL Y PCP": [
@@ -54,18 +54,35 @@ const CARGO_PRIORITY = {
   'ASISTENTE': 6
 };
 
-// Función para obtener la prioridad del cargo
+// Actualizar constante para prioridad de departamentos
+const DEPARTMENT_PRIORITY = {
+  'PRESIDENCIA': 1,
+  'GERENCIA GENERAL': 2  // Cambiado a plural para coincidir con el nombre del departamento
+};
+
+// Función para obtener la prioridad del departamento
+const getDepartmentPriority = (departamento) => {
+  if (!departamento) return 999;
+  const deptUpper = departamento.toUpperCase();
+  return DEPARTMENT_PRIORITY[deptUpper] || 999;
+};
+
+// Modificar la función getCargoWeight para incluir más cargos específicos
 const getCargoWeight = (cargo) => {
   if (!cargo) return 999;
   const cargoUpper = cargo.toUpperCase();
   
-  // Buscar la coincidencia más cercana
-  for (const [key, value] of Object.entries(CARGO_PRIORITY)) {
-    if (cargoUpper.includes(key)) {
-      return value;
-    }
-  }
-  return 999; // Para cargos que no coinciden con ninguna categoría
+  if (cargoUpper.includes('PRESIDENTE')) return 1;
+  if (cargoUpper.includes('VICEPRESIDENTE')) return 2;
+  if (cargoUpper.includes('GERENTE')) return 3;
+  if (cargoUpper.includes('DIRECTOR')) return 4;
+  if (cargoUpper.includes('JEFE')) return 5;
+  if (cargoUpper.includes('COORDINADOR')) return 6;
+  if (cargoUpper.includes('SUPERVISOR')) return 7;
+  if (cargoUpper.includes('ANALISTA')) return 8;
+  if (cargoUpper.includes('ASISTENTE')) return 9;
+  
+  return 999;
 };
 
 function ExtensionsDirectoryView() {
@@ -91,7 +108,7 @@ function ExtensionsDirectoryView() {
       
       const empleados = await response.json();
       
-      // Filtrar solo empleados que tienen extensión y mapear los campos necesarios
+      // Volver a usar departamento en lugar de área
       const extensiones = empleados
         .filter(emp => emp.extension)
         .map(emp => ({
@@ -101,14 +118,7 @@ function ExtensionsDirectoryView() {
           departamento: normalizeDepartmentName(emp.departamento) || 'Sin asignar',
           cargo: emp.cargo || 'Sin asignar',
           extension: emp.extension || 'Sin asignar'
-        }))
-        .sort((a, b) => {
-          // Primero ordenar por departamento
-          const deptCompare = a.departamento.localeCompare(b.departamento);
-          if (deptCompare !== 0) return deptCompare;
-          // Luego por extensión
-          return a.extension.localeCompare(b.extension);
-        });
+        }));
 
       // Agrupar por departamento
       const grouped = extensiones.reduce((acc, curr) => {
@@ -119,7 +129,22 @@ function ExtensionsDirectoryView() {
         return acc;
       }, {});
 
-      setGroupedData(grouped);
+      // Ordenar los departamentos según prioridad
+      const orderedGrouped = Object.entries(grouped)
+        .sort(([deptA], [deptB]) => {
+          const priorityA = getDepartmentPriority(deptA);
+          const priorityB = getDepartmentPriority(deptB);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+          return deptA.localeCompare(deptB);
+        })
+        .reduce((acc, [dept, items]) => {
+          acc[dept] = items;
+          return acc;
+        }, {});
+
+      setGroupedData(orderedGrouped);
       setData(extensiones);
       setError(null);
     } catch (error) {
@@ -139,28 +164,18 @@ function ExtensionsDirectoryView() {
   };
 
   const filterData = () => {
-    // Comenzar con los datos de la base de datos
     let filteredData = { ...groupedData };
     
-    // Agregar las extensiones fijas a los departamentos existentes o crear nuevos
+    // Agregar las extensiones fijas a los departamentos
     Object.entries(FIXED_EXTENSIONS).forEach(([departamento, extensiones]) => {
       const normalizedDepartamento = normalizeDepartmentName(departamento);
-      
-      // Buscar el departamento correspondiente en los datos existentes
-      const departamentoExistente = Object.keys(filteredData).find(
-        dep => normalizeDepartmentName(dep) === normalizedDepartamento
-      );
-
-      if (departamentoExistente) {
-        // Si existe el departamento, agregar las extensiones fijas a ese departamento
-        filteredData[departamentoExistente] = [
-          ...filteredData[departamentoExistente],
-          ...extensiones
-        ];
-      } else {
-        // Si no existe, crear el departamento
-        filteredData[normalizedDepartamento] = extensiones;
+      if (!filteredData[normalizedDepartamento]) {
+        filteredData[normalizedDepartamento] = [];
       }
+      filteredData[normalizedDepartamento] = [
+        ...filteredData[normalizedDepartamento],
+        ...extensiones
+      ];
     });
     
     // Filtrar por sede
@@ -194,18 +209,31 @@ function ExtensionsDirectoryView() {
     // Ordenar las extensiones dentro de cada departamento
     Object.keys(filteredData).forEach(departamento => {
       filteredData[departamento].sort((a, b) => {
-        // Primero ordenar por cargo (jerarquía)
         const cargoPriorityA = getCargoWeight(a.cargo);
         const cargoPriorityB = getCargoWeight(b.cargo);
         if (cargoPriorityA !== cargoPriorityB) {
           return cargoPriorityA - cargoPriorityB;
         }
-        // Si tienen el mismo cargo, ordenar por extensión
         return a.extension.localeCompare(b.extension);
       });
     });
 
-    return filteredData;
+    // Ordenar los departamentos según prioridad
+    const orderedData = Object.entries(filteredData)
+      .sort(([deptA], [deptB]) => {
+        const priorityA = getDepartmentPriority(deptA);
+        const priorityB = getDepartmentPriority(deptB);
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return deptA.localeCompare(deptB);
+      })
+      .reduce((acc, [dept, items]) => {
+        acc[dept] = items;
+        return acc;
+      }, {});
+
+    return orderedData;
   };
 
   const handlePrint = () => {
