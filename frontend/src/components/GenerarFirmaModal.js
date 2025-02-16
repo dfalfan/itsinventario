@@ -7,6 +7,7 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationError, setValidationError] = useState(null);
+  const [numeroCelular, setNumeroCelular] = useState('');
 
   useEffect(() => {
     console.log('Datos del empleado recibidos:', employee);
@@ -16,6 +17,7 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
     } else {
       setValidationError(null);
     }
+    setNumeroCelular(employee?.numero_celular || '');
   }, [employee]);
 
   const handleGenerarFirma = async () => {
@@ -28,13 +30,15 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
       console.log('Enviando datos para generar firma:', {
         nombre: employee.nombre,
         cargo: employee.cargo,
-        extension: employee.extension
+        extension: employee.extension,
+        numero_celular: numeroCelular
       });
       
       const response = await axios.post('http://192.168.141.50:5000/api/generar-firma', {
         nombre: employee.nombre,
         cargo: employee.cargo,
-        extension: employee.extension
+        extension: employee.extension,
+        numero_celular: numeroCelular
       }, {
         responseType: 'blob'
       });
@@ -81,6 +85,17 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
                 {employee?.extension && (
                   <p><strong>Extensión:</strong> {employee.extension}</p>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="numeroCelular">Número Celular (opcional):</label>
+                <input 
+                  id="numeroCelular"
+                  type="text"
+                  value={numeroCelular}
+                  onChange={(e) => setNumeroCelular(e.target.value)}
+                  placeholder="Ingrese número celular"
+                />
               </div>
 
               {validationError && (

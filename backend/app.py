@@ -3141,6 +3141,27 @@ def create_ad_user():
         if conn:
             conn.unbind()
 
+def invertir_nombre(nombre):
+    words = nombre.split()
+    if len(words) == 2:
+        return words[1] + " " + words[0]
+    else:
+        particles = {"de", "del", "la", "las", "los"}
+        # Si el primer elemento es una partícula, se asume que el apellido son las dos primeras palabras
+        if words[0].lower() in particles:
+            surname = " ".join(words[:2])
+            given = " ".join(words[2:])
+        # Si la segunda palabra es una partícula, se asume que el apellido son las tres primeras palabras
+        elif len(words) >= 3 and words[1].lower() in particles:
+            surname = " ".join(words[:3])
+            given = " ".join(words[3:])
+        else:
+            surname = words[0]
+            given = " ".join(words[1:])
+        if given == "":
+            return surname
+        return given + " " + surname
+
 @app.route('/api/generar-firma', methods=['POST'])
 def generar_firma():
     try:
@@ -3148,10 +3169,14 @@ def generar_firma():
         nombre = data.get('nombre')
         cargo = data.get('cargo')
         extension = data.get('extension')
+        numero_celular = data.get('numero_celular')
         
         if not all([nombre, cargo]):
             return jsonify({'error': 'Nombre y cargo son requeridos'}), 400
             
+        # Invertir el orden asumiendo que el primer elemento es el apellido y el resto conforma el nombre
+        nombre = invertir_nombre(nombre)
+        
         # Abrir la imagen template
         img = Image.open('static/firmatemplate.PNG')
         draw = ImageDraw.Draw(img)
@@ -3162,10 +3187,13 @@ def generar_firma():
         extension_font = ImageFont.truetype('static/Montserrat-Regular.ttf', 30)
         
         # Dibujar el texto
-        draw.text((45, 160),nombre, font=nombre_font, fill='rgb(35, 48, 146)')
-        draw.text((45, 215), cargo, font=cargo_font, fill='black')
+        draw.text((45, 55),nombre, font=nombre_font, fill='rgb(35, 48, 146)')
+        draw.text((45, 105), cargo, font=cargo_font, fill='black')
         if extension:
-            draw.text((480, 350), extension, font=extension_font, fill='black')
+            draw.text((470, 235), extension, font=extension_font, fill='black')
+        if numero_celular:
+            y_cel = 235 + (35 if extension else 0)
+            draw.text((175, y_cel), numero_celular, font=extension_font, fill='black')
         
         # Convertir la imagen a bytes
         img_byte_array = io.BytesIO()
