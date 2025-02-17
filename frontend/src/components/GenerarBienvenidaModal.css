@@ -1,5 +1,5 @@
 /* Estilos del Modal base */
-.modal-overlay {
+.bienvenida-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,7 +12,7 @@
   z-index: 1000;
 }
 
-.modal-content {
+.bienvenida-modal-content {
   background: white;
   padding: 0;
   border-radius: 8px;
@@ -24,7 +24,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.modal-header {
+.bienvenida-modal-header {
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -34,13 +34,13 @@
   border-radius: 8px 8px 0 0;
 }
 
-.modal-header h2 {
+.bienvenida-modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
   color: #333;
 }
 
-.close-button {
+.bienvenida-close-button {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -50,11 +50,11 @@
   margin: 0;
 }
 
-.close-button:hover {
+.bienvenida-close-button:hover {
   color: #333;
 }
 
-.modal-body {
+.bienvenida-modal-body {
   padding: 1rem;
 }
 

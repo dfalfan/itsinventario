@@ -3282,5 +3282,117 @@ def check_printer_connection(ip):
             'details': str(e)
         })
 
+@app.route('/api/generar-bienvenida', methods=['POST'])
+def generar_bienvenida():
+    try:
+        data = request.get_json()
+        
+        # Abrir la imagen template
+        img = Image.open('static/templatebienvenida.png')
+        draw = ImageDraw.Draw(img)
+        
+        # Cargar las fuentes
+        font = ImageFont.truetype('static/Montserrat-Regular.ttf', 25)
+        title_font = ImageFont.truetype('static/Montserrat-Bold.ttf', 28)
+        name_font = ImageFont.truetype('static/Montserrat-Bold.ttf', 25)  # Para el nombre del empleado
+        
+        # Dibujar el nombre después de "estimado(a)"
+        nombre_empleado = data.get('nombre_empleado', '')
+        if nombre_empleado:
+            draw.text((450, 150), nombre_empleado, font=name_font, fill='black')  # Ajusta las coordenadas según necesites
+        
+        # Coordenadas base para las dos columnas
+        y_start = 300
+        y_spacing = 30
+        title_spacing = 50  # Espacio extra después de títulos
+        
+        # Coordenadas X para ambas columnas
+        col1_x_label = 150
+        col1_x_value = 350
+        col2_x_label = 800
+        col2_x_value = 1000
+        
+        # Inicializar posiciones Y para ambas columnas
+        col1_y = y_start
+        col2_y = y_start
+        
+        # Contador para cambiar de columna
+        section_count = 0
+        
+        # Función helper para dibujar una sección
+        def draw_section(title, fields, x_label, x_value, current_y):
+            # Dibujar título
+            draw.text((x_label, current_y), title, font=title_font, fill='black')
+            current_y += title_spacing
+            
+            # Dibujar campos
+            for label, value in fields:
+                draw.text((x_label, current_y), label, font=font, fill='black')
+                draw.text((x_value, current_y), value, font=font, fill='black')
+                current_y += y_spacing
+            
+            return current_y + y_spacing  # Retornar nueva posición Y
+        
+        # Procesar secciones habilitadas
+        sections = []
+        
+        if data['windows']['enabled']:
+            sections.append(('Acceso Windows', [
+                ('Usuario:', data['windows']['username']),
+                ('Contraseña:', data['windows']['password'])
+            ]))
+            
+        if data['email']['enabled']:
+            sections.append(('Correo Electrónico', [
+                ('Correo:', data['email']['username']),
+                ('Contraseña:', data['email']['password'])
+            ]))
+            
+        if data['profit']['enabled']:
+            sections.append(('Sistema Profit', [
+                ('Usuario:', data['profit']['username']),
+                ('Contraseña:', data['profit']['password'])
+            ]))
+            
+        if data['fuerzaMovil']['enabled']:
+            sections.append(('Fuerza Móvil', [
+                ('ID:', data['fuerzaMovil']['id']),
+                ('Usuario:', data['fuerzaMovil']['username']),
+                ('Contraseña:', data['fuerzaMovil']['password'])
+            ]))
+            
+        if data['dispositivoMovil']['enabled']:
+            sections.append(('Dispositivo Móvil', [
+                ('Patrón:', 'Formato en L')
+            ]))
+            
+        if data['pinImpresion']['enabled']:
+            sections.append(('Impresión', [
+                ('PIN:', data['pinImpresion']['pin'])
+            ]))
+        
+        # Dibujar secciones en columnas
+        for i, (title, fields) in enumerate(sections):
+            if i < 3:  # Primera columna
+                col1_y = draw_section(title, fields, col1_x_label, col1_x_value, col1_y)
+            else:      # Segunda columna
+                col2_y = draw_section(title, fields, col2_x_label, col2_x_value, col2_y)
+        
+        # Convertir la imagen a bytes
+        img_byte_array = io.BytesIO()
+        img.save(img_byte_array, format='PNG')
+        img_byte_array.seek(0)
+        
+        return send_file(
+            img_byte_array,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name=f"bienvenida.png"
+        )
+        
+    except Exception as e:
+        print(f"Error generando imagen de bienvenida: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

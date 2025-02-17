@@ -70,8 +70,13 @@ const GenerarBienvenidaModal = ({ isOpen, onClose, employee }) => {
 
   const generateEmailUsername = (nombre) => {
     if (!nombre) return '';
-    const windowsUser = generateWindowsUsername(nombre);
-    return `${windowsUser}@sura.com.ve`;
+    const parts = nombre.trim().split(/\s+/);
+    if (parts.length < 2) return '';
+    
+    // El formato es nombre.apellido@sura.com.ve
+    const firstName = parts[parts.length - 1].toLowerCase();
+    const lastName = parts[0].toLowerCase();
+    return `${firstName}.${lastName}@sura.com.ve`;
   };
 
   const handleCheckboxChange = (section) => {
@@ -99,9 +104,12 @@ const GenerarBienvenidaModal = ({ isOpen, onClose, employee }) => {
     setError(null);
     
     try {
-      console.log('Datos para generar bienvenida:', formData);
+      const dataToSend = {
+        ...formData,
+        nombre_empleado: employee.nombre
+      };
       
-      const response = await axios.post('http://192.168.141.50:5000/api/generar-bienvenida', formData, {
+      const response = await axios.post('http://192.168.141.50:5000/api/generar-bienvenida', dataToSend, {
         responseType: 'blob'
       });
       
@@ -127,13 +135,13 @@ const GenerarBienvenidaModal = ({ isOpen, onClose, employee }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
+    <div className="bienvenida-modal-overlay">
+      <div className="bienvenida-modal-content">
+        <div className="bienvenida-modal-header">
           <h2>Generar Imagen de Bienvenida</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
+          <button className="bienvenida-close-button" onClick={onClose}>&times;</button>
         </div>
-        <div className="modal-body">
+        <div className="bienvenida-modal-body">
           {loading ? (
             <div className="loading">
               <div className="spinner"></div>
