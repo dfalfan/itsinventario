@@ -10,6 +10,7 @@ import ADUserModal from './ADUserModal';
 import CreateADUserModal from './CreateADUserModal';
 import CreateEmailModal from './CreateEmailModal';
 import GenerarFirmaModal from './GenerarFirmaModal';
+import GenerarBienvenidaModal from './GenerarBienvenidaModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -199,6 +200,8 @@ function EmployeesView() {
   const [selectedEmployeeForEmail, setSelectedEmployeeForEmail] = useState(null);
   const [showGenerarFirmaModal, setShowGenerarFirmaModal] = useState(false);
   const [selectedEmployeeForFirma, setSelectedEmployeeForFirma] = useState(null);
+  const [showGenerarBienvenidaModal, setShowGenerarBienvenidaModal] = useState(false);
+  const [selectedEmployeeForBienvenida, setSelectedEmployeeForBienvenida] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -373,9 +376,6 @@ function EmployeesView() {
               </button>
               {activeActionMenu === row.original.id && (
                 <div className="quick-actions-menu">
-                  <button onClick={() => console.log('Generar bienvenida')}>
-                    Generar bienvenida
-                  </button>
                   <button onClick={() => {
                     setSelectedEmployeeForAD(row.original);
                     setShowCreateADUserModal(true);
@@ -399,6 +399,13 @@ function EmployeesView() {
                     setActiveActionMenu(null);
                   }}>
                     Generar firma de correo
+                  </button>
+                  <button onClick={() => {
+                    setSelectedEmployeeForBienvenida(row.original);
+                    setShowGenerarBienvenidaModal(true);
+                    setActiveActionMenu(null);
+                  }}>
+                    Generar bienvenida
                   </button>
                 </div>
               )}
@@ -774,6 +781,17 @@ function EmployeesView() {
             cargo: selectedEmployeeForFirma?.cargo_area?.cargo_base?.nombre || selectedEmployeeForFirma?.cargo,
             extension: selectedEmployeeForFirma?.extension
           }}
+        />
+      )}
+
+      {showGenerarBienvenidaModal && (
+        <GenerarBienvenidaModal
+          isOpen={showGenerarBienvenidaModal}
+          onClose={() => {
+            setShowGenerarBienvenidaModal(false);
+            setSelectedEmployeeForBienvenida(null);
+          }}
+          employee={selectedEmployeeForBienvenida}
         />
       )}
     </div>
