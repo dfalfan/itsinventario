@@ -24,6 +24,7 @@ import json
 import socket
 import ssl
 from PIL import Image, ImageDraw, ImageFont
+from pysnmp.hlapi import *
 
 app = Flask(__name__)
 CORS(app)
@@ -3210,6 +3211,76 @@ def generar_firma():
     except Exception as e:
         print(f"Error generando firma: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/impresoras/check-connection/<ip>')
+def check_printer_connection(ip):
+    try:
+        # Usar subprocess en lugar de os.system para mejor control
+        import subprocess
+        
+        # Ajustar el comando ping según el sistema operativo
+        if os.name == 'nt':  # Windows
+            ping_cmd = ['ping', '-n', '1', '-w', '1000', ip]
+        else:  # Linux/Unix
+            ping_cmd = ['ping', '-c', '1', '-W', '1', ip]
+            
+        # Ejecutar el ping y capturar la salida
+        result = subprocess.run(ping_cmd, 
+                              stdout=subprocess.PIPE, 
+                              stderr=subprocess.PIPE,
+                              timeout=2)  # Timeout de 2 segundos
+        
+        is_connected = result.returncode == 0
+        
+        # Si responde al ping, intentar SNMP
+        if is_connected:
+            try:
+                errorIndication, errorStatus, errorIndex, varBinds = next(
+                    getCmd(SnmpEngine(),
+                          CommunityData('public', mpModel=0),
+                          UdpTransportTarget((ip, 161), timeout=1, retries=0),
+                          ContextData(),
+                          ObjectType(ObjectIdentity('1.3.6.1.2.1.1.5.0')))  # sysName
+                )
+                
+                if errorIndication or errorStatus:
+                    return jsonify({
+                        'isConnected': True,
+                        'status': 'Responde a ping',
+                        'details': 'No responde a SNMP'
+                    })
+                    
+                return jsonify({
+                    'isConnected': True,
+                    'status': 'Conectada',
+                    'details': 'Responde a ping y SNMP'
+                })
+                
+            except Exception as snmp_error:
+                return jsonify({
+                    'isConnected': True,
+                    'status': 'Responde a ping',
+                    'details': f'Error SNMP: {str(snmp_error)}'
+                })
+        
+        return jsonify({
+            'isConnected': False,
+            'status': 'No responde',
+            'details': 'No responde a ping'
+        })
+        
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'isConnected': False,
+            'status': 'Timeout',
+            'details': 'La solicitud excedió el tiempo de espera'
+        })
+    except Exception as e:
+        return jsonify({
+            'isConnected': False,
+            'status': 'Error',
+            'details': str(e)
+        })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

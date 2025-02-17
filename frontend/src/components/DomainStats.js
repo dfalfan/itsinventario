@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUsers, FaDesktop, FaUserShield, FaCheckCircle, FaTimesCircle, FaClock, FaLock, FaShieldAlt, FaHistory, FaServer, FaExclamationTriangle } from 'react-icons/fa';
 import './DashboardView.css';
+import LoadingScreen from './LoadingScreen';
 
 function DomainStats() {
   const [domainStats, setDomainStats] = useState(null);
@@ -54,15 +55,14 @@ function DomainStats() {
     fetchDomainStats();
   }, []);
 
-  if (loading) return (
-    <div className="dashboard-loading">
-      <div className="loading-spinner"></div>
-      <div className="loading-text">Cargando estadísticas del dominio</div>
-      <div className="loading-subtext">
-        Obteniendo información del Active Directory y servicios críticos...
-      </div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <LoadingScreen 
+        title="Conectando con Active Directory"
+        message="Obteniendo información de usuarios, equipos y políticas de dominio..."
+      />
+    );
+  }
   
   if (error) return (
     <div className="dashboard-error">

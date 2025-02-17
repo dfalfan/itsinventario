@@ -3,6 +3,7 @@ import { FaEnvelope, FaExclamationTriangle, FaDatabase, FaUsers } from 'react-ic
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import './DashboardView.css';
+import LoadingScreen from './LoadingScreen';
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -29,15 +30,14 @@ function WorkspaceStats() {
     fetchWorkspaceStats();
   }, []);
 
-  if (loading) return (
-    <div className="dashboard-loading">
-      <div className="loading-spinner"></div>
-      <div className="loading-text">Cargando estadísticas de Google Workspace</div>
-      <div className="loading-subtext">
-        Obteniendo información de correos, almacenamiento y licencias...
-      </div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <LoadingScreen 
+        title="Cargando estadísticas de Google Workspace"
+        message="Obteniendo información de correos, almacenamiento y licencias..."
+      />
+    );
+  }
   
   if (error) return (
     <div className="dashboard-error">
