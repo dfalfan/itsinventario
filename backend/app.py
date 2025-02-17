@@ -3294,13 +3294,26 @@ def generar_bienvenida():
         # Cargar las fuentes
         font = ImageFont.truetype('static/Montserrat-Regular.ttf', 25)
         title_font = ImageFont.truetype('static/Montserrat-Bold.ttf', 28)
-        name_font = ImageFont.truetype('static/Montserrat-Bold.ttf', 25)  # Para el nombre del empleado
+        bold_font = ImageFont.truetype('static/Montserrat-Bold.ttf', 25)  # Para el nombre en negrita
         
-        # Dibujar el nombre después de "estimado(a)"
-        nombre_empleado = data.get('nombre_empleado', '')
-        if nombre_empleado:
-            draw.text((450, 150), nombre_empleado, font=name_font, fill='black')  # Ajusta las coordenadas según necesites
+        # Obtener solo el primer nombre
+        nombre_completo = data.get('nombre_empleado', '').split()
+        primer_nombre = nombre_completo[-1] if nombre_completo else ''  # Tomamos el último elemento porque el formato es "APELLIDO NOMBRE"
         
+        # Dibujar el texto de bienvenida en partes para poder poner el nombre en negrita
+        texto_inicial = "Buen día estimado(a) "
+        draw.text((150, 190), texto_inicial, font=font, fill='black')
+        nombre_width = font.getlength(texto_inicial)  # Usar getlength en lugar de getsize
+        draw.text((150 + nombre_width, 190), primer_nombre, font=bold_font, fill='black')
+        nombre_bold_width = bold_font.getlength(primer_nombre)  # Usar getlength en lugar de getsize
+        draw.text((150 + nombre_width + nombre_bold_width, 190), ", te damos la bienvenida a la familia de SURA de Venezuela,", font=font, fill='black')
+        
+        # Dibujar el texto de instrucciones
+        instrucciones_text = "a continuación se presentan tus datos de usuario y claves de acceso a la red de SURA para iniciar"
+        draw.text((150, 220), instrucciones_text, font=font, fill='black')
+        aplicativos_text = "sesión en los diferentes aplicativos:"
+        draw.text((150, 250), aplicativos_text, font=font, fill='black')
+
         # Coordenadas base para las dos columnas
         y_start = 300
         y_spacing = 30
