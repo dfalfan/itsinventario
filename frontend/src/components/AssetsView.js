@@ -274,14 +274,16 @@ function AssetsView() {
                     Verificar en AD
                   </button>
                   <button onClick={() => {
+                    handleVerifyName(row.original);
                     setActiveActionMenu(null);
                   }}>
-                    Cambiar estado
+                    Verificar nombre en DB
                   </button>
                   <button onClick={() => {
+                    handleCopyInfo(row.original);
                     setActiveActionMenu(null);
                   }}>
-                    Desincorporar
+                    Copiar información
                   </button>
                 </div>
               )}
@@ -501,6 +503,79 @@ function AssetsView() {
         error: error.response?.data?.message || 'Error al verificar el equipo',
         loading: false
       });
+    }
+  };
+
+  const handleCopyInfo = (asset) => {
+    const info = `
+Equipo: ${asset.nombre_equipo || 'N/A'}
+Tipo: ${asset.tipo || 'N/A'}
+Marca: ${asset.marca || 'N/A'}
+Modelo: ${asset.modelo || 'N/A'}
+Serial: ${asset.serial || 'N/A'}
+RAM: ${asset.ram || 'N/A'}
+Disco: ${asset.disco || 'N/A'}
+Activo Fijo: ${asset.activo_fijo || 'N/A'}
+Estado: ${asset.estado || 'N/A'}
+${asset.empleado ? `Asignado a: ${asset.empleado}` : 'Sin asignar'}
+    `.trim();
+
+    try {
+      // Crear un elemento textarea temporal
+      const el = document.createElement('textarea');
+      el.value = info;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      
+      // Seleccionar y copiar el texto
+      el.select();
+      document.execCommand('copy');
+      
+      // Eliminar el elemento temporal
+      document.body.removeChild(el);
+      
+      // Mostrar mensaje de éxito
+      alert('✅ Información copiada al portapapeles');
+    } catch (err) {
+      console.error('Error al copiar:', err);
+      alert('❌ Error al copiar la información');
+    }
+  };
+
+  const handleVerifyName = (asset) => {
+    if (!asset.nombre_equipo) {
+      alert('El equipo no tiene nombre asignado');
+      return;
+    }
+
+    const getTipoPrefix = (tipo) => {
+      switch(tipo.toUpperCase()) {
+        case 'AIO': return 'A';
+        case 'LAPTOP': return 'L';
+        case 'DESKTOP': return 'D';
+        default: return 'X';
+      }
+    };
+
+    const getSedePrefix = (sede) => {
+      switch(sede?.toUpperCase()) {
+        case 'CDN': return 'G';
+        case 'CA1': return 'V';
+        case 'MERCADEO': return 'C';
+        case 'COMERCIAL': return 'F';
+        default: return 'X';
+      }
+    };
+
+    const nombreActual = asset.nombre_equipo;
+    const formatoEsperado = `${getTipoPrefix(asset.tipo)}${getSedePrefix(asset.sede)}-`;
+
+    if (nombreActual.startsWith(formatoEsperado)) {
+      alert('✅ El nombre del equipo sigue el formato correcto');
+    } else {
+      alert(`⚠️ El nombre del equipo debería comenzar con: ${formatoEsperado}`);
     }
   };
 

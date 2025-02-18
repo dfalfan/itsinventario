@@ -138,6 +138,42 @@ function SmartphonesView() {
     ));
   };
 
+  const handleCopyInfo = (smartphone) => {
+    const info = `
+Marca: ${smartphone.marca || 'N/A'}
+Modelo: ${smartphone.modelo || 'N/A'}
+Serial: ${smartphone.serial || 'N/A'}
+IMEI: ${smartphone.imei || 'N/A'}
+IMEI2: ${smartphone.imei2 || 'N/A'}
+Línea: ${smartphone.linea || 'N/A'}
+Estado: ${smartphone.estado || 'N/A'}
+${smartphone.empleado ? `Asignado a: ${smartphone.empleado}` : 'Sin asignar'}
+    `.trim();
+
+    try {
+      // Crear un elemento textarea temporal
+      const el = document.createElement('textarea');
+      el.value = info;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      
+      // Seleccionar y copiar el texto
+      el.select();
+      document.execCommand('copy');
+      
+      // Eliminar el elemento temporal
+      document.body.removeChild(el);
+      
+      // Mostrar mensaje de éxito
+      alert('✅ Información copiada al portapapeles');
+    } catch (err) {
+      console.error('Error al copiar:', err);
+      alert('❌ Error al copiar la información');
+    }
+  };
+
   const EditableCell = ({ value, column, row, table, onSave }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
@@ -355,19 +391,10 @@ function SmartphonesView() {
                     Imprimir constancia de entrega
                   </button>
                   <button onClick={() => {
+                    handleCopyInfo(row.original);
                     setActiveActionMenu(null);
                   }}>
-                    Verificar línea
-                  </button>
-                  <button onClick={() => {
-                    setActiveActionMenu(null);
-                  }}>
-                    Cambiar estado
-                  </button>
-                  <button onClick={() => {
-                    setActiveActionMenu(null);
-                  }}>
-                    Desincorporar
+                    Copiar información
                   </button>
                 </div>
               )}
