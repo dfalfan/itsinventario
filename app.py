@@ -3,6 +3,7 @@ from flask_restful import Resource
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
+from ldap3 import Server, Connection, MODIFY_REPLACE
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
