@@ -1079,19 +1079,51 @@ def verificar_equipos():
         conn = Connection(server, user='sura\\dfalfan', password='Dief490606', auto_bind=True)
 
         # Realizar la búsqueda en el AD
-        conn.search('dc=sura,dc=corp', '(objectClass=computer)', attributes=['cn'])
-
-        # Obtener los nombres de los equipos
-        equipos_ad = [entry.cn.value for entry in conn.entries]
+        conn.search('dc=sura,dc=corp', '(objectClass=computer)', 
+                   attributes=['cn', 'lastLogon', 'operatingSystem', 'whenChanged'])
 
         # Obtener los equipos de la base de datos
         equipos_db = Asset.query.with_entities(Asset.nombre_equipo).all()
-        equipos_db = [equipo.nombre_equipo for equipo in equipos_db]
+        equipos_db = [equipo.nombre_equipo for equipo in equipos_db if equipo.nombre_equipo]
 
-        # Comparar y marcar los equipos
+        # Procesar los resultados
         resultado = {}
+        equipos_ad = {}
+
+        # Primero, procesar todos los equipos del AD
+        for entry in conn.entries:
+            nombre = entry.cn.value
+            last_logon = entry.lastLogon.value
+            os = entry.operatingSystem.value if hasattr(entry, 'operatingSystem') else None
+            when_changed = entry.whenChanged.value if hasattr(entry, 'whenChanged') else None
+
+            # Calcular el estado basado en lastLogon
+            estado = 'rojo'  # Por defecto, rojo
+            if last_logon:
+                last_logon_date = last_logon.replace(tzinfo=None)
+                dias_inactivo = (datetime.now() - last_logon_date).days
+                if dias_inactivo <= 30:  # Si se ha conectado en los últimos 30 días
+                    estado = 'verde'
+
+            equipos_ad[nombre] = {
+                'exists': True,
+                'estado': estado,
+                'last_logon': last_logon.strftime('%Y-%m-%d %H:%M:%S') if last_logon else None,
+                'operating_system': os,
+                'last_changed': when_changed.strftime('%Y-%m-%d %H:%M:%S') if when_changed else None,
+                'dias_inactivo': dias_inactivo if last_logon else None
+            }
+
+        # Luego, procesar los equipos de la base de datos
         for equipo in equipos_db:
-            resultado[equipo] = 'verde' if equipo in equipos_ad else 'rojo'
+            if equipo in equipos_ad:
+                resultado[equipo] = equipos_ad[equipo]
+            else:
+                resultado[equipo] = {
+                    'exists': False,
+                    'estado': 'rojo',
+                    'error': 'No encontrado en Active Directory'
+                }
 
         return jsonify(resultado)
     except Exception as e:

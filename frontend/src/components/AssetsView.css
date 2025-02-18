@@ -544,3 +544,39 @@ table {
   transform: translateX(5px);
 }
 
+.status-success {
+  color: #28a745;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-error {
+  color: #dc3545;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ad-info {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.ad-info p {
+  margin: 8px 0;
+}
+
+.error-message {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+

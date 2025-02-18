@@ -50,6 +50,8 @@ function AssetsView() {
   const [rams, setRams] = useState([]);
   const [discos, setDiscos] = useState([]);
   const [showConstanciaModal, setShowConstanciaModal] = useState(false);
+  const [showADVerifyModal, setShowADVerifyModal] = useState(false);
+  const [adEquipmentInfo, setADEquipmentInfo] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -266,6 +268,7 @@ function AssetsView() {
                     Imprimir constancia de entrega
                   </button>
                   <button onClick={() => {
+                    handleVerifyAD(row.original);
                     setActiveActionMenu(null);
                   }}>
                     Verificar en AD
@@ -451,6 +454,53 @@ function AssetsView() {
     } catch (error) {
       console.error('Error al actualizar el activo:', error);
       // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const handleVerifyAD = async (asset) => {
+    try {
+      console.log('Verificando equipo:', asset);
+      
+      if (!asset.nombre_equipo) {
+        console.log('Equipo sin nombre');
+        setADEquipmentInfo({
+          expectedName: '',
+          exists: false,
+          error: 'El equipo no tiene nombre asignado',
+          loading: false
+        });
+        setShowADVerifyModal(true);
+        return;
+      }
+
+      setADEquipmentInfo({ expectedName: asset.nombre_equipo, loading: true });
+      setShowADVerifyModal(true);
+
+      console.log('Haciendo petición al backend para:', asset.nombre_equipo);
+      const response = await axios.get(`http://192.168.141.50:5000/api/verificar_equipos`);
+      console.log('Respuesta del backend:', response.data);
+      
+      const equipoInfo = response.data[asset.nombre_equipo];
+      
+      setADEquipmentInfo({
+        expectedName: asset.nombre_equipo,
+        ...equipoInfo,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error verificando equipo en AD:', error);
+      console.error('Detalles del error:', {
+        response: error.response,
+        message: error.message,
+        config: error.config
+      });
+      
+      setADEquipmentInfo({
+        expectedName: asset.nombre_equipo || '',
+        exists: false,
+        error: error.response?.data?.message || 'Error al verificar el equipo',
+        loading: false
+      });
     }
   };
 
@@ -661,6 +711,65 @@ function AssetsView() {
                 setSelectedAsset(null);
               }} className="button primary">
                 Generar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showADVerifyModal && adEquipmentInfo && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Verificación en Active Directory</h2>
+            <div className="modal-body">
+              {adEquipmentInfo.loading ? (
+                <p>Verificando equipo en AD...</p>
+              ) : adEquipmentInfo.error ? (
+                <div className="error-message">
+                  <p>{adEquipmentInfo.error}</p>
+                </div>
+              ) : (
+                <div className="ad-info">
+                  <p><strong>Nombre del equipo:</strong> {adEquipmentInfo.expectedName}</p>
+                  <p><strong>Estado en AD:</strong> {
+                    adEquipmentInfo.exists ? 
+                      <span className="status-success">Encontrado en AD</span> : 
+                      <span className="status-error">No encontrado en AD</span>
+                  }</p>
+                  {adEquipmentInfo.exists && (
+                    <>
+                      <p><strong>Estado de conexión:</strong> {
+                        adEquipmentInfo.estado === 'verde' ? 
+                          <span className="status-success">Conectado</span> : 
+                          <span className="status-error">Desconectado</span>
+                      }</p>
+                      {adEquipmentInfo.operating_system && (
+                        <p><strong>Sistema Operativo:</strong> {adEquipmentInfo.operating_system}</p>
+                      )}
+                      {adEquipmentInfo.last_logon && (
+                        <p><strong>Último inicio de sesión:</strong> {adEquipmentInfo.last_logon}</p>
+                      )}
+                      {adEquipmentInfo.dias_inactivo !== null && (
+                        <p><strong>Días inactivo:</strong> {
+                          adEquipmentInfo.dias_inactivo > 30 ? 
+                            <span className="status-error">{adEquipmentInfo.dias_inactivo} días</span> :
+                            <span className="status-success">{adEquipmentInfo.dias_inactivo} días</span>
+                        }</p>
+                      )}
+                      {adEquipmentInfo.last_changed && (
+                        <p><strong>Último cambio:</strong> {adEquipmentInfo.last_changed}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => {
+                setShowADVerifyModal(false);
+                setADEquipmentInfo(null);
+              }} className="button primary">
+                Cerrar
               </button>
             </div>
           </div>
