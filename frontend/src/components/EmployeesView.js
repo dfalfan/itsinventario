@@ -354,9 +354,9 @@ function EmployeesView() {
         header: 'Acciones',
         accessorKey: 'acciones',
         cell: ({ row }) => (
-          <div className="action-buttons">
+          <div className={`action-buttons ${activeActionMenu === row.original.id ? 'menu-active' : ''}`}>
             <button
-              className="icon-button"
+              className="action-button view-button"
               onClick={() => handleViewEmployee(row.original)}
               title="Ver detalles"
             >
@@ -413,7 +413,7 @@ function EmployeesView() {
 
             <button 
               onClick={() => handleDelete(row.original)}
-              className="icon-button delete-button"
+              className="action-button delete-button"
               title="Eliminar empleado"
             >
               <FaTimes />
@@ -692,6 +692,7 @@ function EmployeesView() {
         defaultSorting={[{ id: 'nombre', desc: false }]}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        activeActionMenu={activeActionMenu}
       />
 
       {selectedEmployee && (

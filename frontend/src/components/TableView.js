@@ -82,7 +82,8 @@ const TableView = ({
   setColumnVisibility,
   onFetchData,
   defaultSorting = [],
-  defaultPageSize = 30
+  defaultPageSize = 30,
+  activeActionMenu
 }) => {
   const [sorting, setSorting] = useState(defaultSorting);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -307,7 +308,10 @@ const TableView = ({
                 </thead>
                 <tbody>
                   {table.getRowModel().rows.map(row => (
-                    <tr key={row.id}>
+                    <tr 
+                      key={row.id}
+                      className={activeActionMenu === row.original.id ? 'selected-row' : ''}
+                    >
                       {row.getVisibleCells().map(cell => (
                         <td key={cell.id}>
                           {flexRender(

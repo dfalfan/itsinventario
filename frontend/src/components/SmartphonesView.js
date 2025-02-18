@@ -316,7 +316,7 @@ function SmartphonesView() {
         header: 'Acciones',
         id: 'acciones',
         cell: ({ row }) => (
-          <div className="action-buttons">
+          <div className={`action-buttons ${activeActionMenu === row.original.id ? 'menu-active' : ''}`}>
             <button 
               className="action-button view-button"
               title="Ver detalles"
@@ -407,6 +407,7 @@ function SmartphonesView() {
         setColumnVisibility={setColumnVisibility}
         defaultPageSize={30}
         defaultSorting={[{ id: 'id', desc: false }]}
+        activeActionMenu={activeActionMenu}
       />
 
       {showAssignModal && selectedSmartphone && (

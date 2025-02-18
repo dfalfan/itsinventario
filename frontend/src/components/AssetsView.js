@@ -227,7 +227,7 @@ function AssetsView() {
         header: 'Acciones',
         id: 'acciones',
         cell: ({ row }) => (
-          <div className="action-buttons">
+          <div className={`action-buttons ${activeActionMenu === row.original.id ? 'menu-active' : ''}`}>
             <button 
               onClick={() => handleView(row.original)}
               className="action-button view-button"
@@ -553,6 +553,7 @@ function AssetsView() {
         setColumnVisibility={setColumnVisibility}
         defaultPageSize={30}
         defaultSorting={[{ id: 'id', desc: false }]}
+        activeActionMenu={activeActionMenu}
       />
 
       {showModal && selectedAsset && (
