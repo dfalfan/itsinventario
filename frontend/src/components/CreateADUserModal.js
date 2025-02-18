@@ -29,7 +29,9 @@ const CreateADUserModal = ({ isOpen, onClose, employee }) => {
       const response = await axios.post('http://192.168.141.50:5000/api/ad/create-user', {
         username,
         fullName: employee?.nombre || '',
-        departamento: employee?.departamento
+        departamento: employee?.departamento,
+        cargo: employee?.cargo || '',
+        extension: employee?.extension || ''
       });
       
       setSuccess(true);
@@ -75,6 +77,11 @@ const CreateADUserModal = ({ isOpen, onClose, employee }) => {
               <div className="form-group">
                 <label>Departamento:</label>
                 <div className="info-field">{employee?.departamento || 'No disponible'}</div>
+              </div>
+              
+              <div className="form-group">
+                <label>Cargo:</label>
+                <div className="info-field">{employee?.cargo || 'No disponible'}</div>
               </div>
               
               <div className="form-group">

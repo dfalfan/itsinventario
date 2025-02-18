@@ -14,7 +14,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import os
 import io
-from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
+from ldap3 import Server, Connection, ALL, NTLM, SUBTREE, MODIFY_REPLACE
 from io import BytesIO
 from dotenv import load_dotenv
 from unidecode import unidecode
@@ -25,6 +25,8 @@ import socket
 import ssl
 from PIL import Image, ImageDraw, ImageFont
 from pysnmp.hlapi import *
+import time
+import ldap3
 
 app = Flask(__name__)
 CORS(app)
@@ -3057,89 +3059,194 @@ def get_ad_ous():
 def create_ad_user():
     try:
         data = request.get_json()
-        username = data['username']
-        fullName = data['fullName']
-        ou = data.get('ou')  # Opcional, se puede determinar por departamento
-        departamento = data.get('departamento')
+        print("Datos recibidos:", data)  # Debug para ver qué datos llegan
         
-        # Si no se proporciona OU, intentar determinarla por departamento
-        if not ou and departamento:
-            dept_ou_mapping = {
-                'Gestion Humana': 'OU=Gestion Humana,DC=sura,DC=corp',
-                'Tecnologia': 'OU=Tecnologia,DC=sura,DC=corp',
-                'Finanzas': 'OU=Finanzas,DC=sura,DC=corp',
-                'Operaciones': 'OU=Operaciones,DC=sura,DC=corp',
-            }
-            ou = dept_ou_mapping.get(departamento)
-            
-        if not ou:
-            ou = 'OU=Usuarios,DC=sura,DC=corp'  # OU por defecto si no se encuentra mapeo
+        username = data['username'].lower().strip()
+        fullName = data['fullName'].strip()
+
+        
+        
+        # Obtener el cargo desde la base de datos
+        try:
+            usuario = db.session.query(Usuario).filter_by(username=username).first()
+            if usuario:
+                cargo = usuario.cargo
+            else:
+                cargo = data.get('cargo', '').strip()
+        except Exception as db_error:
+            print(f"Error obteniendo cargo de la BD: {str(db_error)}")
+            cargo = data.get('cargo', '').strip()
+
+        nombres = fullName.split()
+        nombre_email = nombres[-1].lower()  # último elemento (nombre)
+        apellido_email = nombres[0].lower()  # primer elemento (apellido)
+        email = f"{nombre_email}.{apellido_email}@sura.com.ve"
+        departamento = data.get('departamento', '').strip()
+        extension = data.get('extension', '').strip()
+        
+        # Preparar el nombre para display (solo apellido en mayúsculas inicial)
+        nombres = fullName.split()
+        apellido = nombres[0].capitalize()  # Primera letra mayúscula
+        nombre = nombres[-1]
+        display_name = f"{apellido}, {nombre} SURA.CORP"
 
         # Conectar al servidor LDAP
-        server = Server('192.168.141.39', get_info=ALL)
-        conn = Connection(server, user='sura\\dfalfan', password='Dief490606', authentication=NTLM)
+        server = Server('192.168.141.39', get_info=ALL, use_ssl=False)
         
-        if not conn.bind():
-            return jsonify({'error': 'Error de autenticación LDAP'}), 401
+        print(f"Intentando conectar como sura\\dfalfan...")
+        conn = Connection(
+            server,
+            user='sura\\dfalfan',
+            password='Dief490606',
+            authentication=NTLM,
+            auto_bind=True
+        )
+
+        # Verificar la conexión
+        if not conn.bound:
+            return jsonify({'error': 'No se pudo conectar al servidor AD'}), 500
+
+        print("Conexión exitosa, verificando permisos...")
+        
+        # Verificar permisos listando el contenedor Users
+        conn.search(
+            search_base='CN=Users,DC=sura,DC=corp',
+            search_filter='(objectClass=*)',
+            search_scope='BASE',
+            attributes=['*']
+        )
+        
+        if not conn.entries:
+            return jsonify({'error': 'No se puede acceder al contenedor Users'}), 500
+
+        print("Acceso al contenedor Users verificado...")
 
         # Verificar si el usuario ya existe
         conn.search(
             search_base='DC=sura,DC=corp',
-            search_filter=f'(sAMAccountName={username})',
+            search_filter=f'(&(objectClass=user)(sAMAccountName={username}))',
             attributes=['distinguishedName']
         )
         
         if len(conn.entries) > 0:
             return jsonify({'error': 'El usuario ya existe en Active Directory'}), 400
 
-        # Crear el nuevo usuario
-        dn = f"CN={fullName},{ou}"
-        
-        # Atributos del nuevo usuario
+        # Preparar el DN
+        dn = f"CN={fullName},CN=Users,DC=sura,DC=corp"
+
+       # Atributos iniciales
         attrs = {
             'objectClass': ['top', 'person', 'organizationalPerson', 'user'],
             'cn': fullName,
             'sAMAccountName': username,
             'userPrincipalName': f"{username}@sura.corp",
-            'displayName': fullName,
-            'givenName': fullName.split()[-1],  # Último nombre
-            'sn': fullName.split()[0],  # Primer apellido
+            'givenName': nombre,
+            'sn': apellido,
+            'displayName': display_name,
+            'userAccountControl': 514,
+            'company': 'Sura de Venezuela',
+            'mail': email,  # Usando el nuevo formato de correo
+            'wWWHomePage': 'www.sura.com.ve',
+            'telephoneNumber': '0241-3001900 / Ext. 1900'
         }
 
-        # Agregar el nuevo usuario
-        if not conn.add(dn, attributes=attrs):
-            return jsonify({'error': 'Error al crear el usuario'}), 500
+        print("Cargo obtenido:", cargo)  # Debug para ver el cargo
 
-        # Habilitar la cuenta
-        conn.modify(dn, {
-            'userAccountControl': [('MODIFY_REPLACE', [512])]  # 512 = Cuenta normal habilitada
-        })
+        # Agregar atributos opcionales solo si tienen valor no vacío
+        if cargo and cargo.strip():
+            print("Agregando cargo:", cargo)  # Debug
+            attrs['title'] = cargo
+            attrs['description'] = cargo
 
-        # Agregar a grupos por defecto
-        default_groups = [
-            "CN=Domain Users,CN=Users,DC=sura,DC=corp",
-            # Agregar más grupos según sea necesario
-        ]
+        if departamento and departamento.strip():
+            attrs['department'] = departamento
+            attrs['physicalDeliveryOfficeName'] = departamento
+
+        if extension and extension.strip():
+            attrs['telephoneNumber'] = extension
+
+        print(f"Intentando crear usuario con DN: {dn}")
+        print(f"Atributos: {attrs}")
         
-        for group_dn in default_groups:
-            try:
-                conn.modify(group_dn, {
-                    'member': [('ADD', [dn])]
-                })
-            except:
-                pass  # Ignorar si ya es miembro del grupo
+        # Crear el usuario
+        result = conn.add(dn, attributes=attrs)
+        
+        if not result:
+            error_msg = conn.result.get('message', 'Unknown error')
+            desc = conn.result.get('description', 'No description')
+            print(f"Error al crear usuario: {error_msg} - {desc}")
+            return jsonify({
+                'error': 'Error al crear el usuario',
+                'details': f"{error_msg} - {desc}",
+                'dn_used': dn,
+                'result': conn.result,
+                'attributes_used': attrs,
+                'bound_as': conn.user
+            }), 500
 
+        print("Usuario creado exitosamente, estableciendo contraseña...")
+
+        # Establecer contraseña y habilitar cuenta
+        temp_password = 'sura2025*'
+        try:
+            # Establecer contraseña
+            conn.extend.microsoft.modify_password(dn, temp_password)
+            
+            # Habilitar cuenta y configurar que no expire
+            changes = {
+                'userAccountControl': [(ldap3.MODIFY_REPLACE, [512])]  # Solo cuenta normal habilitada
+            }
+            
+            if not conn.modify(dn, changes):
+                print(f"Error habilitando cuenta: {conn.result}")
+                # No fallar si no se puede habilitar, solo registrar el error
+            
+            # Intentar configurar que la contraseña no expire
+            changes = {
+                'userAccountControl': [(ldap3.MODIFY_REPLACE, [66048])]
+            }
+            
+            if not conn.modify(dn, changes):
+                print(f"Error configurando contraseña que no expire: {conn.result}")
+                # No fallar si no se puede configurar, solo registrar el error
+            
+        except Exception as pwd_error:
+            print(f"Error estableciendo contraseña: {str(pwd_error)}")
+            try:
+                conn.delete(dn)
+                print("Usuario eliminado después del error")
+            except Exception as del_error:
+                print(f"Error eliminando usuario: {str(del_error)}")
+            return jsonify({
+                'error': f'Error estableciendo contraseña: {str(pwd_error)}',
+                'details': str(pwd_error)
+            }), 500
+
+        print("Usuario creado y configurado exitosamente")
         return jsonify({
             'message': 'Usuario creado exitosamente',
             'username': username,
             'dn': dn,
-            'ou': ou
+            'temp_password': temp_password,
+            'status': 'created_disabled',
+            'attributes': {
+                'cargo': cargo if cargo else 'No especificado',
+                'departamento': departamento if departamento else 'No especificado',
+                'extension': extension if extension else 'No especificada',
+                'email': email,
+                'displayName': display_name
+            }
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error creando usuario AD: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'type': type(e).__name__,
+            'details': getattr(e, 'description', str(e))
+        }), 500
     finally:
-        if conn:
+        if 'conn' in locals() and conn.bound:
             conn.unbind()
 
 def invertir_nombre(nombre):
