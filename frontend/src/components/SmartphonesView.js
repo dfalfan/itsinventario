@@ -36,6 +36,7 @@ function SmartphonesView() {
   const [showTimeline, setShowTimeline] = useState(false);
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [selectedSmartphoneForView, setSelectedSmartphoneForView] = useState(null);
+  const [showConstanciaModal, setShowConstanciaModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -339,6 +340,16 @@ function SmartphonesView() {
               {activeActionMenu === row.original.id && (
                 <div className="quick-actions-menu">
                   <button onClick={() => {
+                    row.original.empleado ? handleUnassignClick(row.original) : handleAssignClick(row.original);
+                    setActiveActionMenu(null);
+                  }}>
+                    {row.original.empleado ? 'Desasignar smartphone' : 'Asignar smartphone'}
+                  </button>
+                  <button onClick={() => {
+                    if (row.original.empleado) {
+                      setSelectedSmartphone(row.original);
+                      setShowConstanciaModal(true);
+                    }
                     setActiveActionMenu(null);
                   }}>
                     Imprimir constancia de entrega
@@ -362,13 +373,6 @@ function SmartphonesView() {
               )}
             </div>
 
-            <button 
-              onClick={() => row.original.empleado ? handleUnassignClick(row.original) : handleAssignClick(row.original)}
-              className="action-button assign-button"
-              title={row.original.empleado ? 'Desasignar' : 'Asignar'}
-            >
-              {row.original.empleado ? '↩' : '→'}
-            </button>
             <button 
               className="action-button delete-button"
               title="Eliminar"
@@ -487,6 +491,54 @@ function SmartphonesView() {
           }}
           onUpdate={handleSmartphoneUpdate}
         />
+      )}
+
+      {showConstanciaModal && selectedSmartphone && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Confirmar Impresión</h2>
+            <div className="modal-body">
+              <p>¿Desea generar la constancia de entrega?</p>
+              <div className="smartphone-info">
+                <p><strong>Marca:</strong> {selectedSmartphone.marca}</p>
+                <p><strong>Modelo:</strong> {selectedSmartphone.modelo}</p>
+                <p><strong>Empleado:</strong> {selectedSmartphone.empleado}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => {
+                setShowConstanciaModal(false);
+                setSelectedSmartphone(null);
+              }} className="button secondary">
+                No Generar
+              </button>
+              <button onClick={async () => {
+                try {
+                  const constanciaResponse = await fetch(`http://192.168.141.50:5000/api/smartphones/${selectedSmartphone.id}/constancia`);
+                  if (!constanciaResponse.ok) {
+                    throw new Error('Error al generar la constancia');
+                  }
+
+                  const blob = await constanciaResponse.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `constancia_entrega_${selectedSmartphone.empleado}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } catch (error) {
+                  console.error('Error generando constancia:', error);
+                }
+                setShowConstanciaModal(false);
+                setSelectedSmartphone(null);
+              }} className="button primary">
+                Generar PDF
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

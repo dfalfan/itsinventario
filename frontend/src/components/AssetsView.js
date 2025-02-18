@@ -49,6 +49,7 @@ function AssetsView() {
   const [modelos, setModelos] = useState([]);
   const [rams, setRams] = useState([]);
   const [discos, setDiscos] = useState([]);
+  const [showConstanciaModal, setShowConstanciaModal] = useState(false);
 
   const columns = useMemo(
     () => [
@@ -250,6 +251,16 @@ function AssetsView() {
               {activeActionMenu === row.original.id && (
                 <div className="quick-actions-menu">
                   <button onClick={() => {
+                    handleAssignClick(row.original);
+                    setActiveActionMenu(null);
+                  }}>
+                    {row.original.estado?.toLowerCase() === 'asignado' ? 'Desasignar equipo' : 'Asignar equipo'}
+                  </button>
+                  <button onClick={() => {
+                    if (row.original.estado?.toLowerCase() === 'asignado') {
+                      setSelectedAsset(row.original);
+                      setShowConstanciaModal(true);
+                    }
                     setActiveActionMenu(null);
                   }}>
                     Imprimir constancia de entrega
@@ -273,13 +284,6 @@ function AssetsView() {
               )}
             </div>
 
-            <button 
-              onClick={() => handleAssignClick(row.original)}
-              className="action-button assign-button"
-              title={row.original.estado?.toLowerCase() === 'asignado' ? 'Desasignar' : 'Asignar'}
-            >
-              {row.original.estado?.toLowerCase() === 'asignado' ? '↩' : '→'}
-            </button>
             <button 
               onClick={() => handleDelete(row.original)}
               className="action-button delete-button"
@@ -613,6 +617,54 @@ function AssetsView() {
           categoria="assets"
           onClose={() => setShowTimeline(false)}
         />
+      )}
+
+      {showConstanciaModal && selectedAsset && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Confirmar Impresión</h2>
+            <div className="modal-body">
+              <p>¿Desea generar la constancia de entrega?</p>
+              <div className="asset-info">
+                <p><strong>Equipo:</strong> {selectedAsset.nombre_equipo}</p>
+                <p><strong>Serial:</strong> {selectedAsset.serial}</p>
+                <p><strong>Empleado:</strong> {selectedAsset.empleado}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => {
+                setShowConstanciaModal(false);
+                setSelectedAsset(null);
+              }} className="button secondary">
+                No Generar
+              </button>
+              <button onClick={async () => {
+                try {
+                  const constanciaResponse = await fetch(`http://192.168.141.50:5000/api/activos/${selectedAsset.id}/constancia`);
+                  if (!constanciaResponse.ok) {
+                    throw new Error('Error al generar la constancia');
+                  }
+
+                  const blob = await constanciaResponse.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `constancia_entrega_${selectedAsset.empleado}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } catch (error) {
+                  console.error('Error generando constancia:', error);
+                }
+                setShowConstanciaModal(false);
+                setSelectedAsset(null);
+              }} className="button primary">
+                Generar PDF
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
