@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory, FaBolt } from 'react-icons/fa';
 import TableView from './TableView';
 import EmployeesWithoutEquipmentModal from './EmployeesWithoutEquipmentModal';
 import UnassignAssetModal from './UnassignAssetModal';
@@ -26,6 +26,7 @@ function AssetsView() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     sede: true,
@@ -234,6 +235,44 @@ function AssetsView() {
             >
               <FaEllipsisH />
             </button>
+
+            <div className="quick-actions-container">
+              <button
+                className={`icon-button ${activeActionMenu === row.original.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveActionMenu(activeActionMenu === row.original.id ? null : row.original.id);
+                }}
+                title="Acciones rápidas"
+              >
+                <FaBolt />
+              </button>
+              {activeActionMenu === row.original.id && (
+                <div className="quick-actions-menu">
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Imprimir constancia de entrega
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Verificar en AD
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Cambiar estado
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Desincorporar
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => handleAssignClick(row.original)}
               className="action-button assign-button"
@@ -252,7 +291,7 @@ function AssetsView() {
         ),
       }
     ],
-    [sedes, tipos, marcas, modelos, rams, discos]
+    [sedes, tipos, marcas, modelos, rams, discos, activeActionMenu]
   );
 
   useEffect(() => {

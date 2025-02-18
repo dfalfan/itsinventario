@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory } from 'react-icons/fa';
+import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory, FaBolt } from 'react-icons/fa';
 import TableView from './TableView';
 import AssignSmartphoneModal from './AssignSmartphoneModal';
 import EmployeeModal from './EmployeeModal';
@@ -18,6 +18,7 @@ function SmartphonesView() {
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedSmartphone, setSelectedSmartphone] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [columnVisibility, setColumnVisibility] = useState({
     id: true,
     marca: true,
@@ -323,6 +324,44 @@ function SmartphonesView() {
             >
               <FaEllipsisH />
             </button>
+
+            <div className="quick-actions-container">
+              <button
+                className={`icon-button ${activeActionMenu === row.original.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveActionMenu(activeActionMenu === row.original.id ? null : row.original.id);
+                }}
+                title="Acciones rápidas"
+              >
+                <FaBolt />
+              </button>
+              {activeActionMenu === row.original.id && (
+                <div className="quick-actions-menu">
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Imprimir constancia de entrega
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Verificar línea
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Cambiar estado
+                  </button>
+                  <button onClick={() => {
+                    setActiveActionMenu(null);
+                  }}>
+                    Desincorporar
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => row.original.empleado ? handleUnassignClick(row.original) : handleAssignClick(row.original)}
               className="action-button assign-button"
@@ -340,7 +379,7 @@ function SmartphonesView() {
         ),
       }
     ],
-    []
+    [activeActionMenu]
   );
 
   return (

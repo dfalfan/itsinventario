@@ -230,6 +230,7 @@
 }
 
 .quick-actions-menu {
+  position: relative;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 4px;
