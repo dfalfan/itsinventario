@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import './DeleteAssetModal.css';
+import './DeleteAssetModal.css';  // Reutilizamos los estilos del modal de activos
 import { FaTools, FaTrash, FaExclamationTriangle, FaCheck, FaTrashAlt } from 'react-icons/fa';
 import PropTypes from 'prop-types';
 
-function DeleteAssetModal({ asset, onClose, onSuccess }) {
+function DeleteSmartphoneModal({ smartphone, onClose, onSuccess }) {
   const [selectedState, setSelectedState] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,9 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
       setLoading(true);
       setError(null);
 
-      // Si el activo está asignado, primero lo desasignamos
-      if (asset.empleado_id) {
-        const unassignResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desasignar`, {
+      // Si el smartphone está asignado, primero lo desasignamos
+      if (smartphone.empleado_id) {
+        const unassignResponse = await fetch(`http://192.168.141.50:5000/api/smartphones/${smartphone.id}/desasignar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -27,13 +27,13 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
         });
 
         if (!unassignResponse.ok) {
-          throw new Error('Error al desasignar el activo');
+          throw new Error('Error al desasignar el smartphone');
         }
       }
 
       if (selectedState === 'ELIMINAR') {
-        // Eliminar definitivamente el activo
-        const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desincorporar`, {
+        // Eliminar definitivamente el smartphone
+        const response = await fetch(`http://192.168.141.50:5000/api/smartphones/${smartphone.id}/desincorporar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -41,11 +41,11 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
         });
 
         if (!response.ok) {
-          throw new Error('Error al eliminar el activo');
+          throw new Error('Error al eliminar el smartphone');
         }
       } else {
         // Para todos los demás estados, usamos el endpoint de cambiar estado
-        const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/cambiar-estado`, {
+        const response = await fetch(`http://192.168.141.50:5000/api/smartphones/${smartphone.id}/cambiar-estado`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
         });
 
         if (!response.ok) {
-          throw new Error(`Error al cambiar el estado del activo a ${selectedState}`);
+          throw new Error(`Error al cambiar el estado del smartphone a ${selectedState}`);
         }
       }
 
@@ -73,11 +73,11 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
       <div className="delete-asset-modal" onClick={e => e.stopPropagation()}>
         <h2>
           <FaExclamationTriangle className="warning-icon" />
-          Cambiar Estado del Activo
+          Cambiar Estado del Smartphone
         </h2>
         
         <p className="modal-description">
-          ¿Qué desea hacer con el activo <strong>{asset.nombre_equipo}</strong>?
+          ¿Qué desea hacer con el smartphone <strong>{smartphone.marca} {smartphone.modelo}</strong>?
         </p>
         
         <div className="radio-options">
@@ -159,14 +159,15 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
   );
 }
 
-DeleteAssetModal.propTypes = {
-  asset: PropTypes.shape({
+DeleteSmartphoneModal.propTypes = {
+  smartphone: PropTypes.shape({
     id: PropTypes.number.isRequired,
-    nombre_equipo: PropTypes.string.isRequired,
+    marca: PropTypes.string.isRequired,
+    modelo: PropTypes.string.isRequired,
     empleado_id: PropTypes.number
   }).isRequired,
   onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func.isRequired
 };
 
-export default DeleteAssetModal; 
+export default DeleteSmartphoneModal; 

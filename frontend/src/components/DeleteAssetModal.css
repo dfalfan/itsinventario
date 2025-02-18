@@ -76,12 +76,20 @@
   font-size: 1.25rem;
 }
 
+.radio-option:has(input[value="DISPONIBLE"]) .option-icon {
+  color: #10b981;
+}
+
 .radio-option:has(input[value="REPARACION"]) .option-icon {
   color: #f59e0b;
 }
 
 .radio-option:has(input[value="DESINCORPORADO"]) .option-icon {
   color: #ef4444;
+}
+
+.radio-option:has(input[value="ELIMINAR"]) .option-icon {
+  color: #7f1d1d;
 }
 
 .radio-option span {
@@ -135,12 +143,20 @@
   color: white;
 }
 
+.confirm-button.success {
+  background-color: #10b981;
+}
+
 .confirm-button.warning {
   background-color: #f59e0b;
 }
 
 .confirm-button.danger {
   background-color: #ef4444;
+}
+
+.confirm-button.success:hover:not(:disabled) {
+  background-color: #059669;
 }
 
 .confirm-button.warning:hover:not(:disabled) {

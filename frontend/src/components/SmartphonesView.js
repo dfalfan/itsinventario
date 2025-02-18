@@ -8,6 +8,7 @@ import axios from 'axios';
 import './AssetsView.css';
 import AddSmartphoneModal from './AddSmartphoneModal';
 import SmartphoneModal from './SmartphoneModal';
+import DeleteSmartphoneModal from './DeleteSmartphoneModal';
 
 function SmartphonesView() {
   const [data, setData] = useState([]);
@@ -37,6 +38,7 @@ function SmartphonesView() {
   const [showSmartphoneModal, setShowSmartphoneModal] = useState(false);
   const [selectedSmartphoneForView, setSelectedSmartphoneForView] = useState(null);
   const [showConstanciaModal, setShowConstanciaModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -172,6 +174,17 @@ ${smartphone.empleado ? `Asignado a: ${smartphone.empleado}` : 'Sin asignar'}
       console.error('Error al copiar:', err);
       alert('❌ Error al copiar la información');
     }
+  };
+
+  const handleDelete = (smartphone) => {
+    setSelectedSmartphone(smartphone);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteSuccess = () => {
+    setShowDeleteModal(false);
+    setSelectedSmartphone(null);
+    fetchData();
   };
 
   const EditableCell = ({ value, column, row, table, onSave }) => {
@@ -402,7 +415,8 @@ ${smartphone.empleado ? `Asignado a: ${smartphone.empleado}` : 'Sin asignar'}
 
             <button 
               className="action-button delete-button"
-              title="Eliminar"
+              title="Cambiar estado"
+              onClick={() => handleDelete(row.original)}
             >
               <FaTimes />
             </button>
@@ -566,6 +580,14 @@ ${smartphone.empleado ? `Asignado a: ${smartphone.empleado}` : 'Sin asignar'}
             </div>
           </div>
         </div>
+      )}
+
+      {showDeleteModal && selectedSmartphone && (
+        <DeleteSmartphoneModal
+          smartphone={selectedSmartphone}
+          onClose={() => setShowDeleteModal(false)}
+          onSuccess={handleDeleteSuccess}
+        />
       )}
     </div>
   );

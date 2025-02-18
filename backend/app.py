@@ -3691,5 +3691,75 @@ def generar_hoja_vigilancia():
         print(f"Error generando hoja de vigilancia: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/smartphones/<int:smartphone_id>/cambiar-estado', methods=['POST'])
+def cambiar_estado_smartphone(smartphone_id):
+    try:
+        data = request.get_json()
+        estado = data.get('estado')
+        
+        if not estado:
+            return jsonify({"error": "El estado es requerido"}), 400
+            
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({"error": "Smartphone no encontrado"}), 404
+
+        # Si el smartphone está asignado, desasignarlo primero
+        if smartphone.empleado_id:
+            empleado = Empleado.query.get(smartphone.empleado_id)
+            if empleado:
+                smartphone.empleado_id = None
+                smartphone.fecha_asignacion = None
+
+        smartphone.estado = estado
+        smartphone.updated_at = datetime.utcnow()
+        
+        # Registrar el log
+        descripcion = f"Se cambió el estado del smartphone {smartphone.marca} {smartphone.modelo} (ID: {smartphone.id}) a {estado}"
+        registrar_log('smartphones', 'cambio_estado', descripcion, smartphone_id)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Estado del smartphone actualizado exitosamente",
+            "nuevo_estado": estado
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartphones/<int:smartphone_id>/desincorporar', methods=['POST'])
+def desincorporar_smartphone(smartphone_id):
+    try:
+        smartphone = Smartphone.query.get(smartphone_id)
+        if not smartphone:
+            return jsonify({"error": "Smartphone no encontrado"}), 404
+
+        # Si el smartphone está asignado, desasignarlo primero
+        if smartphone.empleado_id:
+            empleado = Empleado.query.get(smartphone.empleado_id)
+            if empleado:
+                smartphone.empleado_id = None
+                smartphone.fecha_asignacion = None
+
+        # Guardar información para el log antes de eliminar
+        descripcion = f"Se desincorporó el smartphone {smartphone.marca} {smartphone.modelo} (ID: {smartphone.id})"
+        
+        # Registrar el log antes de eliminar el smartphone
+        registrar_log('smartphones', 'desincorporación', descripcion, smartphone_id)
+        
+        # Eliminar el smartphone
+        db.session.delete(smartphone)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Smartphone desincorporado exitosamente"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
