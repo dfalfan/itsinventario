@@ -11,6 +11,7 @@ import CreateADUserModal from './CreateADUserModal';
 import CreateEmailModal from './CreateEmailModal';
 import GenerarFirmaModal from './GenerarFirmaModal';
 import GenerarBienvenidaModal from './GenerarBienvenidaModal';
+import DeleteEmployeeModal from './DeleteEmployeeModal';
 import './EmployeesView.css';
 import axios from 'axios';
 
@@ -202,6 +203,8 @@ function EmployeesView() {
   const [selectedEmployeeForFirma, setSelectedEmployeeForFirma] = useState(null);
   const [showGenerarBienvenidaModal, setShowGenerarBienvenidaModal] = useState(false);
   const [selectedEmployeeForBienvenida, setSelectedEmployeeForBienvenida] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedEmployeeForDelete, setSelectedEmployeeForDelete] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -495,19 +498,21 @@ function EmployeesView() {
     }
   };
 
-  const handleDelete = async (employee) => {
-    const confirmacion = window.confirm(`¿Confirmas eliminar a ${employee.nombre_completo || 'este empleado'}?`);
-    if (confirmacion) {
-      try {
-        const response = await axios.delete(`http://192.168.141.50:5000/api/empleados/${employee.id}`);
-        if (response.status === 200) {
-          setData(prev => prev.filter(e => e.id !== employee.id));
-          window.alert('Empleado eliminado exitosamente');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        window.alert(error.response?.data?.error || 'Error al eliminar');
+  const handleDelete = (employee) => {
+    setSelectedEmployeeForDelete(employee);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async (options) => {
+    try {
+      const response = await axios.delete(`http://192.168.141.50:5000/api/empleados/${selectedEmployeeForDelete.id}`);
+      if (response.status === 200) {
+        setData(prev => prev.filter(e => e.id !== selectedEmployeeForDelete.id));
+        window.alert('Empleado eliminado exitosamente');
       }
+    } catch (error) {
+      console.error('Error:', error);
+      throw new Error(error.response?.data?.error || 'Error al eliminar');
     }
   };
 
@@ -793,6 +798,17 @@ function EmployeesView() {
             setSelectedEmployeeForBienvenida(null);
           }}
           employee={selectedEmployeeForBienvenida}
+        />
+      )}
+
+      {showDeleteModal && selectedEmployeeForDelete && (
+        <DeleteEmployeeModal
+          employee={selectedEmployeeForDelete}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedEmployeeForDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
         />
       )}
     </div>

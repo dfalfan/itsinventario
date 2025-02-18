@@ -43,6 +43,13 @@
   line-height: 1.5;
 }
 
+.modal-subtitle {
+  margin: 1rem 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .radio-options {
   display: flex;
   flex-direction: column;
@@ -72,6 +79,120 @@
   cursor: pointer;
 }
 
+/* Estilos específicos para el modal de egreso de empleados */
+.employee-delete-modal {
+  max-width: 600px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 1.25rem;
+  color: #1f2937;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modal-description {
+  color: #4b5563;
+  margin-bottom: 24px;
+}
+
+.modal-description p {
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.modal-description p:last-child {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+  background-color: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkbox-option:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+.checkbox-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkbox-option input[type="checkbox"]:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.checkbox-option input[type="checkbox"]:checked:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.checkbox-option .option-icon {
+  font-size: 1.25rem;
+  color: #4b5563;
+}
+
+.checkbox-option span {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+}
+
 .option-icon {
   font-size: 1.25rem;
 }
@@ -99,77 +220,58 @@
 }
 
 .error-message {
-  background-color: #fff3f3;
-  border: 1px solid #ffa7a7;
-  color: #d63031;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1.5rem;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-top: 16px;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
-.modal-actions {
+.modal-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
-.cancel-button,
-.confirm-button {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 6px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
-.cancel-button {
+.modal-buttons .cancel-button {
   background-color: white;
-  border: 1px solid #ddd;
-  color: #666;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
 }
 
-.cancel-button:hover:not(:disabled) {
-  background-color: #f5f5f5;
+.modal-buttons .cancel-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
 }
 
-.confirm-button {
+.modal-buttons .confirm-button {
+  background-color: #ef4444;
   border: none;
   color: white;
 }
 
-.confirm-button.success {
-  background-color: #10b981;
-}
-
-.confirm-button.warning {
-  background-color: #f59e0b;
-}
-
-.confirm-button.danger {
-  background-color: #ef4444;
-}
-
-.confirm-button.success:hover:not(:disabled) {
-  background-color: #059669;
-}
-
-.confirm-button.warning:hover:not(:disabled) {
-  background-color: #d97706;
-}
-
-.confirm-button.danger:hover:not(:disabled) {
+.modal-buttons .confirm-button:hover:not(:disabled) {
   background-color: #dc2626;
 }
 
-.cancel-button:disabled,
-.confirm-button:disabled {
-  opacity: 0.6;
+.modal-buttons button:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -181,13 +283,11 @@
     overflow-y: auto;
   }
 
-  .modal-actions {
-    flex-direction: column-reverse;
+  .modal-buttons {
+    flex-direction: column;
   }
 
-  .cancel-button,
-  .confirm-button {
+  .modal-buttons button {
     width: 100%;
-    padding: 0.75rem;
   }
 } 
