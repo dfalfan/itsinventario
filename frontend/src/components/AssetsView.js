@@ -285,6 +285,15 @@ function AssetsView() {
                   }}>
                     Copiar información
                   </button>
+                  {row.original.tipo?.toUpperCase() === 'LAPTOP' && 
+                   row.original.estado?.toLowerCase() === 'asignado' && (
+                    <button onClick={() => {
+                      handleVigilanciaSheet();
+                      setActiveActionMenu(null);
+                    }}>
+                      Imprimir hoja de vigilancia
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -576,6 +585,39 @@ ${asset.empleado ? `Asignado a: ${asset.empleado}` : 'Sin asignar'}
       alert('✅ El nombre del equipo sigue el formato correcto');
     } else {
       alert(`⚠️ El nombre del equipo debería comenzar con: ${formatoEsperado}`);
+    }
+  };
+
+  const handleVigilanciaSheet = async () => {
+    try {
+      // Obtener solo las laptops
+      const laptops = data.filter(asset => 
+        asset.tipo?.toUpperCase() === 'LAPTOP' && 
+        asset.estado?.toLowerCase() === 'asignado'
+      );
+
+      if (laptops.length === 0) {
+        alert('⚠️ No hay laptops asignadas para generar la hoja de vigilancia');
+        return;
+      }
+
+      const response = await fetch('http://192.168.141.50:5000/api/activos/hoja-vigilancia');
+      if (!response.ok) {
+        throw new Error('Error al generar la hoja de vigilancia');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hoja_vigilancia_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error generando hoja de vigilancia:', error);
+      alert('❌ Error al generar la hoja de vigilancia');
     }
   };
 

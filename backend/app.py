@@ -8,7 +8,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 from sqlalchemy.orm import joinedload
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
@@ -3544,6 +3544,151 @@ def generar_bienvenida():
         
     except Exception as e:
         print(f"Error generando imagen de bienvenida: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activos/hoja-vigilancia')
+def generar_hoja_vigilancia():
+    try:
+        # Obtener todas las laptops asignadas y ordenar por nombre de empleado
+        laptops = db.session.query(
+            Asset, Empleado
+        ).join(
+            Empleado, Asset.empleado_id == Empleado.id
+        ).filter(
+            Asset.tipo.ilike('LAPTOP'),
+            Asset.estado.ilike('ASIGNADO')
+        ).order_by(Empleado.nombre_completo).all()
+
+        if not laptops:
+            return jsonify({'error': 'No hay laptops asignadas'}), 404
+
+        # Crear el PDF
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=landscape(letter))
+        width, height = landscape(letter)
+
+        # Registrar la fuente Montserrat
+        pdfmetrics.registerFont(TTFont('Montserrat', 'static/Montserrat-Regular.ttf'))
+        pdfmetrics.registerFont(TTFont('Montserrat-Bold', 'static/Montserrat-Bold.ttf'))
+
+        # Añadir logo
+        p.drawImage('static/logo_sura.png', 50, height - 80, width=100, height=40)
+
+        # Título
+        p.setFont("Montserrat-Bold", 16)
+        titulo = "Control de Entrada y Salida de Laptops"
+        p.drawString((width - p.stringWidth(titulo, "Montserrat-Bold", 16)) / 2, height - 60, titulo)
+
+        # Fecha
+        p.setFont("Montserrat", 10)
+        p.drawString(width - 150, height - 40, "Fecha: _________________")
+
+        # Configuración de la tabla
+        margin_left = 20  # Reducido de 30 a 20
+        col_widths = [70, 45, 35, 35]  # Reducidos aún más los anchos de las columnas fijas
+        day_width = 110  # Aumentado de 90 a 110 para dar más espacio a las firmas
+
+        # Calcular posiciones X para las columnas
+        x_positions = [margin_left]
+        for width in col_widths:
+            x_positions.append(x_positions[-1] + width)
+        
+        # Agregar posiciones X para los días
+        for _ in range(5):  # 5 días
+            x_positions.append(x_positions[-1] + day_width)
+
+        # Altura de las filas
+        row_height = 25  # Aumentada de 20 a 25 para dar más espacio vertical para firmar
+        header_height = 25  # Altura para los encabezados (incluye entrada/salida)
+
+        # Posición inicial Y
+        y_start = height - 100
+        y = y_start
+
+        def draw_table_header(y_pos):
+            # Encabezados principales
+            headers = ['Nombre', 'Cédula', 'Marca', 'Activo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+            
+            # Dibujar línea superior de la tabla
+            p.line(margin_left, y_pos, x_positions[-1], y_pos)
+            
+            # Dibujar encabezados principales
+            p.setFont("Montserrat-Bold", 6)
+            for i, header in enumerate(headers):
+                # Centrar el texto en su columna
+                if i < 4:  # Columnas fijas
+                    x = x_positions[i] + 2
+                else:  # Días de la semana
+                    x = x_positions[i] + (day_width - p.stringWidth(header, "Montserrat-Bold", 6)) / 2
+                p.drawString(x, y_pos - 10, header)
+
+            # Dibujar subencabezados para los días
+            y_sub = y_pos - 18
+            for i in range(5):  # 5 días
+                base_x = x_positions[4 + i]
+                # Entrada
+                p.drawString(base_x + 10, y_sub, "Entrada")
+                # Salida
+                p.drawString(base_x + (day_width/2) + 10, y_sub, "Salida")
+
+            # Línea después de los encabezados principales
+            p.line(margin_left, y_pos - 12, x_positions[-1], y_pos - 12)
+            # Línea después de los subencabezados
+            p.line(margin_left, y_pos - header_height, x_positions[-1], y_pos - header_height)
+
+            # Dibujar líneas verticales
+            for x in x_positions:
+                p.line(x, y_pos, x, y_pos - header_height)
+
+            return y_pos - header_height
+
+        # Dibujar encabezado inicial
+        y = draw_table_header(y)
+
+        # Dibujar datos
+        p.setFont("Montserrat", 6)
+        for laptop, empleado in laptops:
+            # Verificar si necesitamos nueva página
+            if y < 50:
+                p.showPage()
+                y = y_start
+                y = draw_table_header(y)
+
+            # Datos principales (eliminado Serial)
+            p.drawString(x_positions[0] + 2, y - 10, empleado.nombre_completo or '')
+            p.drawString(x_positions[1] + 2, y - 10, empleado.cedula or '')
+            p.drawString(x_positions[2] + 2, y - 10, laptop.marca or '')
+            p.drawString(x_positions[3] + 2, y - 10, laptop.activo_fijo or '')
+
+            # Dibujar líneas para firmas (5 días)
+            for i in range(5):
+                base_x = x_positions[4 + i]  # Ajustado por eliminación de Serial
+                mid_x = base_x + day_width/2
+                # Línea vertical divisoria entre entrada/salida
+                p.line(mid_x, y, mid_x, y - row_height)
+
+            # Dibujar líneas verticales
+            for x in x_positions:
+                p.line(x, y, x, y - row_height)
+
+            # Línea horizontal inferior de la fila
+            p.line(margin_left, y - row_height, x_positions[-1], y - row_height)
+
+            y -= row_height
+
+        p.showPage()
+        p.save()
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name='hoja_vigilancia.pdf',
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        print(f"Error generando hoja de vigilancia: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
