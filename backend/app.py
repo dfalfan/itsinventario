@@ -27,9 +27,48 @@ from PIL import Image, ImageDraw, ImageFont
 from pysnmp.hlapi import *
 import time
 import ldap3
+from routes.auth import auth_bp
 
 app = Flask(__name__)
-CORS(app)
+
+# Configuración de CORS más permisiva para desarrollo
+CORS(app, 
+     resources={r"/*": {
+         "origins": ["http://192.168.141.50:3000", "http://192.168.141.50", "http://localhost:3000"],
+         "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "expose_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": True
+     }})
+
+# Middleware para logging de todas las peticiones
+@app.before_request
+def log_request_info():
+    print('=' * 50)
+    print(f"Headers: {dict(request.headers)}")
+    print(f"Method: {request.method}")
+    print(f"URL: {request.url}")
+    if request.is_json:
+        print(f"Data: {request.get_json()}")
+    print('=' * 50)
+
+# Middleware para CORS manual si es necesario
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    if origin in ["http://192.168.141.50:3000", "http://192.168.141.50", "http://localhost:3000"]:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    print(f"Response Headers: {dict(response.headers)}")
+    return response
+
+# Clave secreta para JWT (en producción, usar variable de entorno)
+app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta_muy_segura'
+
+# Registrar el blueprint de autenticación
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://its:sura@postgres:5432/itsinventario'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
