@@ -1,14 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaEllipsisH, FaPencilAlt, FaTimes, FaPlus, FaUser, FaHistory, FaBolt } from 'react-icons/fa';
+import { 
+  FaEllipsisH, 
+  FaPencilAlt, 
+  FaTimes, 
+  FaPlus, 
+  FaUser, 
+  FaHistory, 
+  FaBolt, 
+  FaMobileAlt,
+  FaSort, 
+  FaSortUp, 
+  FaSortDown, 
+  FaTrash 
+} from 'react-icons/fa';
 import TableView from './TableView';
 import AssignSmartphoneModal from './AssignSmartphoneModal';
 import EmployeeModal from './EmployeeModal';
 import TimelineView from './TimelineView';
-import axios from 'axios';
-import './AssetsView.css';
 import AddSmartphoneModal from './AddSmartphoneModal';
 import SmartphoneModal from './SmartphoneModal';
 import DeleteSmartphoneModal from './DeleteSmartphoneModal';
+import GlobalFilter from './GlobalFilter';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import axiosInstance from '../utils/axiosConfig';
+import './AssetsView.css';
 
 function SmartphonesView() {
   const [data, setData] = useState([]);
@@ -47,14 +62,8 @@ function SmartphonesView() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.141.50:5000/api/smartphones');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const jsonData = await response.json();
-      setData(jsonData);
+      const response = await axiosInstance.get('/api/smartphones');
+      setData(response.data);
       setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -67,13 +76,18 @@ function SmartphonesView() {
 
   const handleSave = async (id, field, value) => {
     try {
-      await axios.patch(`http://192.168.141.50:5000/api/smartphones/${id}`, { [field]: value });
-      // Actualizar el estado local
-      setData(prevData => prevData.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      ));
+      const response = await axiosInstance.patch(`/api/smartphones/${id}`, { [field]: value });
+      if (response.data.success) {
+        setData(old =>
+          old.map(row =>
+            row.id === id
+              ? { ...row, [field]: value }
+              : row
+          )
+        );
+      }
     } catch (error) {
-      console.error('Error al actualizar el smartphone:', error);
+      console.error('Error al actualizar:', error);
     }
   };
 
@@ -95,29 +109,24 @@ function SmartphonesView() {
 
   const handleUnassign = async () => {
     try {
-      await axios.post(`http://192.168.141.50:5000/api/smartphones/${selectedSmartphone.id}/desasignar`);
-      // Actualizar el estado local inmediatamente
-      setData(prevData => prevData.map(item => 
-        item.id === selectedSmartphone.id 
-          ? {
-              ...item,
-              empleado: null,
-              empleado_id: null,
-              estado: 'Disponible',
-              fecha_asignacion: null
-            }
-          : item
-      ));
+      await axiosInstance.post(`/api/smartphones/${selectedSmartphone.id}/desasignar`);
+      setData(prevData =>
+        prevData.map(smartphone =>
+          smartphone.id === selectedSmartphone.id
+            ? { ...smartphone, empleado_id: null, empleado: null }
+            : smartphone
+        )
+      );
       setShowConfirmModal(false);
-      setSelectedSmartphone(null);
     } catch (error) {
-      console.error('Error al desasignar el smartphone:', error);
+      console.error('Error al desasignar:', error);
+      alert('Error al desasignar el smartphone');
     }
   };
 
   const handleEmployeeClick = async (empleadoId) => {
     try {
-      const empleadoResponse = await axios.get(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
+      const empleadoResponse = await axiosInstance.get(`/api/empleados/${empleadoId}`);
       setSelectedEmployee(empleadoResponse.data);
       setShowEmployeeModal(true);
     } catch (error) {
@@ -187,7 +196,7 @@ ${smartphone.empleado ? `Asignado a: ${smartphone.empleado}` : 'Sin asignar'}
     fetchData();
   };
 
-  const EditableCell = ({ value, column, row, table, onSave }) => {
+  const EditableCell = ({ value, column, row, onSave }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
 

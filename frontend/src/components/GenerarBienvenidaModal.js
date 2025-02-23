@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { FaDownload, FaExclamationTriangle } from 'react-icons/fa';
+import axiosInstance from '../utils/axiosConfig';
 import './GenerarBienvenidaModal.css';
 
 const GenerarBienvenidaModal = ({ isOpen, onClose, employee }) => {
@@ -109,7 +109,7 @@ const GenerarBienvenidaModal = ({ isOpen, onClose, employee }) => {
         nombre_empleado: employee.nombre
       };
       
-      const response = await axios.post('http://192.168.141.50:5000/api/generar-bienvenida', dataToSend, {
+      const response = await axiosInstance.post('/api/generar-bienvenida', dataToSend, {
         responseType: 'blob'
       });
       

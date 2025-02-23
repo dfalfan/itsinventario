@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { FaTimes, FaSpinner } from 'react-icons/fa';
+import axiosInstance from '../utils/axiosConfig';
 import './Modal.css';
 
 const CreateADUserModal = ({ isOpen, onClose, employee }) => {
@@ -26,7 +27,7 @@ const CreateADUserModal = ({ isOpen, onClose, employee }) => {
     setError(null);
     
     try {
-      const response = await axios.post('http://192.168.141.50:5000/api/ad/create-user', {
+      const response = await axiosInstance.post('/api/ad/create-user', {
         username,
         fullName: employee?.nombre || '',
         departamento: employee?.departamento,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaEnvelope, FaDownload, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEnvelope, FaDownload, FaExclamationTriangle, FaTimes, FaSpinner } from 'react-icons/fa';
+import axiosInstance from '../utils/axiosConfig';
 import './Modal.css';
 
 const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
@@ -20,6 +20,21 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
     setNumeroCelular(employee?.numero_celular || '');
   }, [employee]);
 
+  const validatePhoneNumber = (number) => {
+    const regex = /^(0414|0424|0412|0416|0426)[0-9]{7}$/;
+    return regex.test(number);
+  };
+
+  const handleNumeroCelularChange = (e) => {
+    const value = e.target.value;
+    setNumeroCelular(value);
+    if (value && !validatePhoneNumber(value)) {
+      setValidationError('El número debe comenzar con 0414, 0424, 0412, 0416 o 0426 y tener 11 dígitos');
+    } else {
+      setValidationError(null);
+    }
+  };
+
   const handleGenerarFirma = async () => {
     if (validationError) return;
     
@@ -34,7 +49,7 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
         numero_celular: numeroCelular
       });
       
-      const response = await axios.post('http://192.168.141.50:5000/api/generar-firma', {
+      const response = await axiosInstance.post('/api/generar-firma', {
         nombre: employee.nombre,
         cargo: employee.cargo,
         extension: employee.extension,
@@ -93,7 +108,7 @@ const GenerarFirmaModal = ({ isOpen, onClose, employee }) => {
                   id="numeroCelular"
                   type="text"
                   value={numeroCelular}
-                  onChange={(e) => setNumeroCelular(e.target.value)}
+                  onChange={handleNumeroCelularChange}
                   placeholder="Ingrese número celular"
                 />
               </div>

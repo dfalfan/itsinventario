@@ -13,7 +13,7 @@ import GenerarFirmaModal from './GenerarFirmaModal';
 import GenerarBienvenidaModal from './GenerarBienvenidaModal';
 import DeleteEmployeeModal from './DeleteEmployeeModal';
 import './EmployeesView.css';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
 // Componente para celdas editables
 const EditableCell = ({ value, column, row, onSave }) => {
@@ -46,24 +46,24 @@ const EditableCell = ({ value, column, row, onSave }) => {
       let response;
       switch (field) {
         case 'gerencia':
-          response = await axios.get('http://192.168.141.50:5000/api/gerencias');
+          response = await axiosInstance.get('/api/gerencias');
           setOptions(response.data);
           break;
         case 'departamento':
           if (row.original.gerencia_id) {
-            response = await axios.get(`http://192.168.141.50:5000/api/departamentos/${row.original.gerencia_id}`);
+            response = await axiosInstance.get(`/api/departamentos/${row.original.gerencia_id}`);
             setOptions(response.data);
           }
           break;
         case 'area':
           if (row.original.departamento_id) {
-            response = await axios.get(`http://192.168.141.50:5000/api/areas/${row.original.departamento_id}`);
+            response = await axiosInstance.get(`/api/areas/${row.original.departamento_id}`);
             setOptions(response.data);
           }
           break;
         case 'cargo':
           if (row.original.area_id) {
-            response = await axios.get(`http://192.168.141.50:5000/api/cargos/${row.original.area_id}`);
+            response = await axiosInstance.get(`/api/cargos/${row.original.area_id}`);
             setOptions(response.data.filter(cargo => cargo.asignado));
           }
           break;
@@ -463,38 +463,18 @@ function EmployeesView() {
 
   const handleSave = async (id, field, value) => {
     try {
-      const response = await axios.patch(`http://192.168.141.50:5000/api/empleados/${id}`, { [field]: value });
-      
-      if (response.data.empleado) {
-        // Actualizar el estado local con todos los datos actualizados del empleado
-        setData(prevData => {
-          // Encontrar el índice del empleado a actualizar
-          const index = prevData.findIndex(emp => emp.id === id);
-          if (index === -1) return prevData;
-
-          // Crear una copia superficial del array
-          const newData = [...prevData];
-          
-          // Actualizar solo el empleado modificado
-          newData[index] = {
-            ...newData[index],
-            gerencia: response.data.empleado.gerencia,
-            gerencia_id: response.data.empleado.gerencia_id,
-            departamento: response.data.empleado.departamento,
-            departamento_id: response.data.empleado.departamento_id,
-            area: response.data.empleado.area,
-            area_id: response.data.empleado.area_id,
-            cargo: response.data.empleado.cargo,
-            cargo_id: response.data.empleado.cargo_id,
-            [field]: value
-          };
-
-          return newData;
-        });
+      const response = await axiosInstance.patch(`/api/empleados/${id}`, { [field]: value });
+      if (response.data.success) {
+        setData(old =>
+          old.map(row =>
+            row.id === id
+              ? { ...row, [field]: value }
+              : row
+          )
+        );
       }
     } catch (error) {
-      console.error('Error al actualizar el empleado:', error);
-      alert('Error al actualizar el campo');
+      console.error('Error al actualizar:', error);
     }
   };
 
@@ -505,9 +485,10 @@ function EmployeesView() {
 
   const handleConfirmDelete = async (options) => {
     try {
-      const response = await axios.delete(`http://192.168.141.50:5000/api/empleados/${selectedEmployeeForDelete.id}`);
-      if (response.status === 200) {
-        setData(prev => prev.filter(e => e.id !== selectedEmployeeForDelete.id));
+      const response = await axiosInstance.delete(`/api/empleados/${selectedEmployeeForDelete.id}`);
+      if (response.data.success) {
+        setData(data.filter(e => e.id !== selectedEmployeeForDelete.id));
+        setSelectedEmployeeForDelete(null);
         window.alert('Empleado eliminado exitosamente');
       }
     } catch (error) {
@@ -637,7 +618,7 @@ function EmployeesView() {
       setShowADUserModal(true);
 
       console.log('Haciendo petición al backend para:', expectedUsername);
-      const response = await axios.get(`http://192.168.141.50:5000/api/verify-ad-user/${expectedUsername}`);
+      const response = await axiosInstance.get(`/api/verify-ad-user/${expectedUsername}`);
       console.log('Respuesta del backend:', response.data);
       
       setADUserInfo({

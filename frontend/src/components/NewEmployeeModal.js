@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaLaptop, FaIdCard, FaUser, FaBuilding, FaSitemap, FaPhone, FaEnvelope, FaBriefcase, FaUsers, FaLayerGroup } from 'react-icons/fa';
+import { FaTimes, FaLaptop, FaIdCard, FaUser, FaBuilding, FaSitemap, FaPhone, FaEnvelope, FaBriefcase, FaUsers, FaLayerGroup, FaSpinner } from 'react-icons/fa';
 import AssignEquipmentModal from './AssignEquipmentModal';
 import './NewEmployeeModal.css';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
 // Agregar esta función de utilidad al inicio del componente
 const removeDuplicates = (array, key) => {
@@ -45,7 +45,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
   const fetchSedes = async () => {
     try {
-      const response = await axios.get('http://192.168.141.50:5000/api/sedes');
+      const response = await axiosInstance.get('/api/sedes');
       setSedes(response.data);
     } catch (error) {
       console.error('Error al cargar sedes:', error);
@@ -55,7 +55,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
   const fetchGerencias = async () => {
     try {
-      const response = await axios.get('http://192.168.141.50:5000/api/gerencias');
+      const response = await axiosInstance.get('/api/gerencias');
       setGerencias(response.data);
     } catch (error) {
       console.error('Error al cargar gerencias:', error);
@@ -65,7 +65,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
   const fetchDepartamentos = async (gerenciaId) => {
     try {
-      const response = await axios.get(`http://192.168.141.50:5000/api/departamentos/${gerenciaId}`);
+      const response = await axiosInstance.get(`/api/departamentos/${gerenciaId}`);
       const uniqueDepartamentos = removeDuplicates(response.data, 'nombre');
       setDepartamentos(uniqueDepartamentos);
     } catch (error) {
@@ -76,7 +76,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
   const fetchAreas = async (departamentoId) => {
     try {
-      const response = await axios.get(`http://192.168.141.50:5000/api/areas/${departamentoId}`);
+      const response = await axiosInstance.get(`/api/areas/${departamentoId}`);
       const uniqueAreas = removeDuplicates(response.data, 'nombre');
       setAreas(uniqueAreas);
     } catch (error) {
@@ -88,7 +88,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
   const fetchCargos = async (areaId) => {
     try {
       console.log('Fetching cargos for areaId:', areaId);
-      const response = await axios.get(`http://192.168.141.50:5000/api/cargos/${areaId}`);
+      const response = await axiosInstance.get(`/api/cargos/${areaId}`);
       
       // Filtrar solo los cargos asignados a esta área
       const cargosAsignados = response.data.filter(cargo => cargo.asignado);
@@ -214,7 +214,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
 
       console.log('Datos a enviar:', empleadoData);
 
-      const response = await axios.post('http://192.168.141.50:5000/api/empleados', empleadoData);
+      const response = await axiosInstance.post('/api/empleados', empleadoData);
       
       // Verificar si hay advertencias sobre el correo
       if (response.data.google_workspace?.warning) {
@@ -461,7 +461,7 @@ function NewEmployeeModal({ onClose, onEmployeeAdded }) {
                 Cancelar
               </button>
               <button type="submit" className="save-button" disabled={loading}>
-                {loading ? 'Guardando...' : 'Guardar'}
+                {loading ? <FaSpinner className="spinning-icon" /> : 'Guardar'}
               </button>
             </div>
           </div>

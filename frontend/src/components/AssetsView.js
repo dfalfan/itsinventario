@@ -10,7 +10,7 @@ import EmployeeModal from './EmployeeModal';
 import TimelineView from './TimelineView';
 import BrandLogo from './BrandLogo';
 import './AssetsView.css';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
 function AssetsView() {
   const [data, setData] = useState([]);
@@ -324,14 +324,8 @@ function AssetsView() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.141.50:5000/api/activos');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const jsonData = await response.json();
-      setData(jsonData);
+      const response = await axiosInstance.get('/api/activos');
+      setData(response.data);
       setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -344,10 +338,8 @@ function AssetsView() {
 
   const fetchSedes = async () => {
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/sedes');
-      if (!response.ok) throw new Error('Error al cargar sedes');
-      const data = await response.json();
-      setSedes(data);
+      const response = await axiosInstance.get('/api/sedes');
+      setSedes(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -355,10 +347,8 @@ function AssetsView() {
 
   const fetchMarcas = async () => {
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/marcas');
-      if (!response.ok) throw new Error('Error al cargar marcas');
-      const data = await response.json();
-      setMarcas(data);
+      const response = await axiosInstance.get('/api/marcas');
+      setMarcas(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -366,10 +356,8 @@ function AssetsView() {
 
   const fetchModelos = async () => {
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/modelos');
-      if (!response.ok) throw new Error('Error al cargar modelos');
-      const data = await response.json();
-      setModelos(data);
+      const response = await axiosInstance.get('/api/modelos');
+      setModelos(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -377,10 +365,8 @@ function AssetsView() {
 
   const fetchRams = async () => {
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/rams');
-      if (!response.ok) throw new Error('Error al cargar tipos de RAM');
-      const data = await response.json();
-      setRams(data);
+      const response = await axiosInstance.get('/api/rams');
+      setRams(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -388,10 +374,8 @@ function AssetsView() {
 
   const fetchDiscos = async () => {
     try {
-      const response = await fetch('http://192.168.141.50:5000/api/discos');
-      if (!response.ok) throw new Error('Error al cargar tipos de disco');
-      const data = await response.json();
-      setDiscos(data);
+      const response = await axiosInstance.get('/api/discos');
+      setDiscos(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -441,14 +425,8 @@ function AssetsView() {
 
   const handleViewEmployee = async (empleadoId) => {
     try {
-      const response = await fetch(`http://192.168.141.50:5000/api/empleados/${empleadoId}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener detalles del empleado');
-      }
-      
-      const empleado = await response.json();
-      setSelectedEmployee(empleado);
+      const response = await axiosInstance.get(`/api/empleados/${empleadoId}`);
+      setSelectedEmployee(response.data);
       setShowEmployeeModal(true);
     } catch (error) {
       console.error('Error:', error);
@@ -457,14 +435,18 @@ function AssetsView() {
 
   const handleSave = async (id, field, value) => {
     try {
-      await axios.patch(`http://192.168.141.50:5000/api/activos/${id}`, { [field]: value });
-      // Actualizar el estado local
-      setData(prevData => prevData.map(asset => 
-        asset.id === id ? { ...asset, [field]: value } : asset
-      ));
+      const response = await axiosInstance.patch(`/api/activos/${id}`, { [field]: value });
+      if (response.data.success) {
+        setData(old =>
+          old.map(row =>
+            row.id === id
+              ? { ...row, [field]: value }
+              : row
+          )
+        );
+      }
     } catch (error) {
-      console.error('Error al actualizar el activo:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
+      console.error('Error al actualizar:', error);
     }
   };
 
@@ -488,7 +470,7 @@ function AssetsView() {
       setShowADVerifyModal(true);
 
       console.log('Haciendo petición al backend para:', asset.nombre_equipo);
-      const response = await axios.get(`http://192.168.141.50:5000/api/verificar_equipos`);
+      const response = await axiosInstance.get('/api/verificar_equipos');
       console.log('Respuesta del backend:', response.data);
       
       const equipoInfo = response.data[asset.nombre_equipo];
@@ -601,12 +583,11 @@ ${asset.empleado ? `Asignado a: ${asset.empleado}` : 'Sin asignar'}
         return;
       }
 
-      const response = await fetch('http://192.168.141.50:5000/api/activos/hoja-vigilancia');
-      if (!response.ok) {
-        throw new Error('Error al generar la hoja de vigilancia');
-      }
+      const response = await axiosInstance.get('/api/activos/hoja-vigilancia', {
+        responseType: 'blob'
+      });
 
-      const blob = await response.blob();
+      const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -807,12 +788,11 @@ ${asset.empleado ? `Asignado a: ${asset.empleado}` : 'Sin asignar'}
               </button>
               <button onClick={async () => {
                 try {
-                  const constanciaResponse = await fetch(`http://192.168.141.50:5000/api/activos/${selectedAsset.id}/constancia`);
-                  if (!constanciaResponse.ok) {
-                    throw new Error('Error al generar la constancia');
-                  }
+                  const response = await axiosInstance.get(`/api/activos/${selectedAsset.id}/constancia`, {
+                    responseType: 'blob'
+                  });
 
-                  const blob = await constanciaResponse.blob();
+                  const blob = new Blob([response.data]);
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;

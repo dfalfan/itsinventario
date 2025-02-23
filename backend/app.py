@@ -38,7 +38,8 @@ CORS(app,
          "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          "allow_headers": ["Content-Type", "Authorization"],
          "expose_headers": ["Content-Type", "Authorization"],
-         "supports_credentials": True
+         "supports_credentials": True,
+         "max_age": 3600
      }})
 
 # Middleware para logging de todas las peticiones
@@ -60,7 +61,8 @@ def after_request(response):
         response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS')
+        response.headers.add('Access-Control-Max-Age', '3600')
     print(f"Response Headers: {dict(response.headers)}")
     return response
 

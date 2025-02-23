@@ -1,34 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { FaEnvelope } from 'react-icons/fa';
-import axios from 'axios';
+import { FaEnvelope, FaTimes, FaSpinner } from 'react-icons/fa';
+import axiosInstance from '../utils/axiosConfig';
 import './Modal.css';
 
 const CreateEmailModal = ({ isOpen, onClose, employee }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [emailUser, setEmailUser] = useState('');
   const [warning, setWarning] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [tempPassword, setTempPassword] = useState(null);
+  const [emailUser, setEmailUser] = useState('');
 
   useEffect(() => {
-    if (isOpen && employee?.nombre) {
-      console.log('Generando sugerencia de correo para:', employee.nombre);
-      // Generar correo sugerido basado en el nombre
+    if (employee?.nombre) {
       const parts = employee.nombre.trim().split(/\s+/);
-      console.log('Partes del nombre:', parts);
-      
       if (parts.length >= 2) {
-        const primerNombre = parts[parts.length - 1].toLowerCase();
-        const primerApellido = parts[0].toLowerCase();
-        const sugerencia = `${primerNombre}.${primerApellido}`;
-        console.log('Sugerencia de correo generada:', sugerencia);
-        setEmailUser(sugerencia);
-      } else {
-        console.warn('El nombre no tiene suficientes partes para generar una sugerencia');
+        const firstName = parts[parts.length - 1].toLowerCase();
+        const lastName = parts[0].toLowerCase();
+        setEmailUser(`${firstName}.${lastName}`);
       }
     }
-  }, [isOpen, employee]);
+  }, [employee]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,42 +34,42 @@ const CreateEmailModal = ({ isOpen, onClose, employee }) => {
     console.log('Datos del empleado:', employee);
     
     try {
-        console.log('Enviando solicitud al servidor...');
-        const response = await axios.post('http://192.168.141.50:5000/api/empleados/actualizar-correos', {
-            empleado_id: employee.id,
-            correo: emailCompleto
-        });
-        
-        console.log('Respuesta del servidor:', response.data);
-        
-        if (response.data.google_workspace?.success) {
-            setSuccess(true);
-            if (response.data.google_workspace?.temp_password) {
-                setTempPassword(response.data.google_workspace.temp_password);
-            } else {
-                setTimeout(() => {
-                    onClose();
-                }, 2000);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error completo:', error);
-        const errorData = error.response?.data;
-        
-        if (errorData?.message === 'already exists') {
-            setError('Este correo ya existe. Por favor, intente con otro.');
-        } else if (errorData?.error?.includes('No hay licencias disponibles')) {
-            setError('No hay licencias disponibles en Google Workspace.');
+      console.log('Enviando solicitud al servidor...');
+      const response = await axiosInstance.post('/api/empleados/actualizar-correos', {
+        empleado_id: employee.id,
+        correo: emailCompleto
+      });
+      
+      console.log('Respuesta del servidor:', response.data);
+      
+      if (response.data.google_workspace?.success) {
+        setSuccess(true);
+        if (response.data.google_workspace?.temp_password) {
+          setTempPassword(response.data.google_workspace.temp_password);
         } else {
-            setError(errorData?.error || 'Error al crear el correo electrónico');
+          setTimeout(() => {
+            onClose();
+          }, 2000);
         }
-        
-        if (errorData?.google_workspace?.warning) {
-            setWarning(errorData.google_workspace.warning);
-        }
+      }
+      
+    } catch (error) {
+      console.error('Error completo:', error);
+      const errorData = error.response?.data;
+      
+      if (errorData?.message === 'already exists') {
+        setError('Este correo ya existe. Por favor, intente con otro.');
+      } else if (errorData?.error?.includes('No hay licencias disponibles')) {
+        setError('No hay licencias disponibles en Google Workspace.');
+      } else {
+        setError(errorData?.error || 'Error al crear el correo electrónico');
+      }
+      
+      if (errorData?.google_workspace?.warning) {
+        setWarning(errorData.google_workspace.warning);
+      }
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
