@@ -1,4 +1,4 @@
-.login-page {
+.auth-page {
   position: fixed;
   top: 0;
   left: 0;
@@ -7,7 +7,7 @@
   z-index: 9999;
 }
 
-.login-view {
+.auth-view {
   min-height: 100vh;
   display: flex;
   background-color: #f5f5f5;
@@ -16,7 +16,7 @@
     radial-gradient(at 82% 65%, rgba(0, 82, 163, 0.04) 0, transparent 55%);
 }
 
-.login-container {
+.auth-container {
   width: 100%;
   display: flex;
   justify-content: center;
@@ -24,7 +24,7 @@
   padding: 2rem;
 }
 
-.login-box {
+.auth-box {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 12px;
@@ -35,54 +35,54 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  animation: fadeIn 0.6s ease-out;
+  animation: auth-fade-in 0.6s ease-out;
   transform-origin: center;
 }
 
-.login-header {
+.auth-header {
   text-align: center;
   margin-bottom: 2rem;
 }
 
-.login-logo {
+.auth-logo {
   width: 140px;
   height: auto;
-  animation: logoAppear 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+  animation: auth-logo-appear 0.8s cubic-bezier(0.19, 1, 0.22, 1);
   margin-bottom: 0.75rem;
 }
 
-.app-name {
+.auth-app-name {
   display: block;
   color: #666;
   font-size: 1.125rem;
   font-weight: 500;
   margin-top: 0.5rem;
-  animation: fadeIn 0.8s ease-out;
+  animation: auth-fade-in 0.8s ease-out;
   animation-delay: 0.2s;
   opacity: 0;
   animation-fill-mode: forwards;
 }
 
-.login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.form-group {
+.auth-form-group {
   position: relative;
-  animation: slideUp 0.4s ease-out backwards;
+  animation: auth-slide-up 0.4s ease-out backwards;
 }
 
-.form-group:nth-child(2) {
+.auth-form-group:nth-child(2) {
   animation-delay: 0.1s;
 }
 
-.input-icon-wrapper {
+.auth-input-wrapper {
   position: relative;
 }
 
-.input-icon {
+.auth-input-icon {
   position: absolute;
   left: 0.75rem;
   top: 50%;
@@ -92,7 +92,7 @@
   transition: color 0.2s ease;
 }
 
-.form-group input {
+.auth-input {
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 2.5rem;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -102,30 +102,30 @@
   transition: all 0.2s ease;
 }
 
-.form-group input:focus {
+.auth-input:focus {
   border-color: #0066cc;
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
   background: rgba(255, 255, 255, 1);
 }
 
-.form-group input:focus + .input-icon {
+.auth-input:focus + .auth-input-icon {
   color: #0066cc;
 }
 
-.form-group input.error {
+.auth-input.auth-error {
   border-color: #dc3545;
   background: rgba(255, 236, 236, 0.5);
 }
 
-.error-message {
+.auth-error-message {
   color: #dc3545;
   font-size: 0.75rem;
   margin-top: 0.25rem;
-  animation: fadeIn 0.3s ease-out;
+  animation: auth-fade-in 0.3s ease-out;
 }
 
-.error-alert {
+.auth-error-alert {
   color: #dc3545;
   background-color: rgba(255, 236, 236, 0.8);
   border: 1px solid rgba(220, 53, 69, 0.2);
@@ -134,10 +134,10 @@
   font-size: 0.75rem;
   text-align: center;
   margin-bottom: 0.5rem;
-  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  animation: auth-shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-.login-button {
+.auth-button {
   width: 100%;
   padding: 0.75rem;
   background-color: #0066cc;
@@ -154,11 +154,11 @@
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  animation: slideUp 0.4s ease-out backwards;
+  animation: auth-slide-up 0.4s ease-out backwards;
   animation-delay: 0.2s;
 }
 
-.login-button::before {
+.auth-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -175,46 +175,46 @@
   transition: 0.6s;
 }
 
-.login-button:hover::before {
+.auth-button:hover::before {
   transform: translateX(100%);
 }
 
-.login-button:hover:not(:disabled) {
+.auth-button:hover:not(:disabled) {
   background-color: #0052a3;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
-.login-button:active:not(:disabled) {
+.auth-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.login-button:disabled {
+.auth-button:disabled {
   background-color: #99c2ff;
   cursor: not-allowed;
 }
 
-.spinner {
-  animation: spin 0.8s linear infinite;
+.auth-spinner {
+  animation: auth-spin 0.8s linear infinite;
 }
 
-.login-footer {
+.auth-footer {
   margin-top: 1.5rem;
   text-align: center;
   color: #666;
   font-size: 0.75rem;
   opacity: 0.8;
-  animation: fadeIn 0.6s ease-out backwards;
+  animation: auth-fade-in 0.6s ease-out backwards;
   animation-delay: 0.3s;
 }
 
-@keyframes spin {
+@keyframes auth-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes fadeIn {
+@keyframes auth-fade-in {
   from {
     opacity: 0;
   }
@@ -223,7 +223,7 @@
   }
 }
 
-@keyframes slideUp {
+@keyframes auth-slide-up {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -234,7 +234,7 @@
   }
 }
 
-@keyframes logoAppear {
+@keyframes auth-logo-appear {
   from {
     opacity: 0;
     transform: scale(0.8);
@@ -245,7 +245,7 @@
   }
 }
 
-@keyframes shake {
+@keyframes auth-shake {
   10%, 90% {
     transform: translateX(-1px);
   }
@@ -261,15 +261,15 @@
 }
 
 @media (max-width: 480px) {
-  .login-container {
+  .auth-container {
     padding: 1rem;
   }
 
-  .login-box {
+  .auth-box {
     padding: 1.5rem;
   }
 
-  .login-logo {
+  .auth-logo {
     width: 120px;
   }
 } 
