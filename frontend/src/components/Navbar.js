@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaUser, FaChartBar, FaUsers, FaLaptop, FaMobileAlt, FaPrint, FaPhoneSquare } from 'react-icons/fa';
+import { FaUser, FaChartBar, FaUsers, FaLaptop, FaMobileAlt, FaPrint, FaPhoneSquare, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 import logo from './logo sura color.png';
 import './Navbar.css';
 
 function Navbar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <nav className="navbar">
@@ -15,8 +22,8 @@ function Navbar() {
       
       <div className="navbar-menu">
         <Link 
-          to="/" 
-          className={`navbar-item ${location.pathname === '/' ? 'active' : ''}`}
+          to="/dashboard" 
+          className={`navbar-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
         >
           <FaChartBar className="navbar-icon" />
           <span>Dashboard</span>
@@ -60,10 +67,25 @@ function Navbar() {
       </div>
 
       <div className="navbar-user">
-        <button className="user-button">
+        <button 
+          className="user-button" 
+          onClick={() => setShowDropdown(!showDropdown)}
+        >
           <FaUser className="navbar-icon" />
-          <span>Usuario</span>
+          <span>{user?.username || 'Usuario'}</span>
         </button>
+        {showDropdown && (
+          <div className="user-dropdown">
+            <div className="user-info">
+              <strong>{user?.username}</strong>
+              <span className="user-role">{user?.role}</span>
+            </div>
+            <button onClick={handleLogout} className="logout-button">
+              <FaSignOutAlt className="navbar-icon" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );
