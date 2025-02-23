@@ -18,27 +18,14 @@ import axiosInstance from '../utils/axiosConfig';
 // Componente para celdas editables
 const EditableCell = ({ value, column, row, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [currentValue, setValue] = useState(value);
+  const [currentValue, setCurrentValue] = useState(value);
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setValue(value);
+    console.log('Value changed:', { value, currentValue, column: column.id });
+    setCurrentValue(value);
   }, [value]);
-
-  // Función para obtener el mensaje del tooltip según el campo
-  const getTooltipMessage = () => {
-    switch (column.id) {
-      case 'departamento':
-        return !row.original.gerencia_id ? 'Primero debes seleccionar una Gerencia' : 'Doble clic para editar';
-      case 'area':
-        return !row.original.departamento_id ? 'Primero debes seleccionar un Departamento' : 'Doble clic para editar';
-      case 'cargo':
-        return !row.original.area_id ? 'Primero debes seleccionar un Área' : 'Doble clic para editar';
-      default:
-        return 'Doble clic para editar';
-    }
-  };
 
   const fetchOptions = async (field) => {
     setLoading(true);
@@ -64,60 +51,61 @@ const EditableCell = ({ value, column, row, onSave }) => {
         case 'cargo':
           if (row.original.area_id) {
             response = await axiosInstance.get(`/api/cargos/${row.original.area_id}`);
-            setOptions(response.data.filter(cargo => cargo.asignado));
+            setOptions(response.data);
           }
           break;
       }
     } catch (error) {
-      console.error('Error cargando opciones:', error);
+      console.error('Error loading options:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDoubleClick = () => {
-    if (['departamento', 'area', 'cargo'].includes(column.id)) {
-      if ((column.id === 'departamento' && !row.original.gerencia_id) ||
-          (column.id === 'area' && !row.original.departamento_id) ||
-          (column.id === 'cargo' && !row.original.area_id)) {
-        return;
-      }
-    }
-    
+    console.log('Double click, starting edit mode for:', column.id);
     if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
       fetchOptions(column.id);
     }
     setIsEditing(true);
   };
 
-  const handleChange = async (e) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-
-    if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
-      const selectedOption = options.find(opt => opt.id.toString() === newValue);
-      if (selectedOption) {
-        // Actualizar el campo con el ID correspondiente
-        await onSave(row.original.id, `${column.id}_id`, selectedOption.id);
-        
-        // Actualizar el estado local con el nuevo valor
-        setValue(selectedOption.nombre);
-      }
-    } else {
-      await onSave(row.original.id, column.id, newValue);
-    }
-    
-    setIsEditing(false);
+  const handleInputChange = (e) => {
+    console.log('Input value changed:', e.target.value);
+    setCurrentValue(e.target.value);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleChange(e);
+  const handleChange = async (e) => {
+    const newValue = e.target.value;
+    console.log('handleChange called:', { newValue, field: column.id });
+    
+    try {
+      let success;
+      if (['gerencia', 'departamento', 'area', 'cargo'].includes(column.id)) {
+        const selectedOption = options.find(opt => opt.id.toString() === newValue);
+        console.log('Selected option:', selectedOption);
+        if (selectedOption) {
+          success = await onSave(row.original.id, `${column.id}_id`, selectedOption.id);
+          if (success) {
+            setCurrentValue(selectedOption.nombre);
+          }
+        }
+      } else {
+        success = await onSave(row.original.id, column.id, newValue);
+        if (success) {
+          setCurrentValue(newValue);
+        }
+      }
+
+      if (!success) {
+        console.log('Save failed, reverting to:', value);
+        setCurrentValue(value);
+      }
+    } catch (error) {
+      console.error('Error in handleChange:', error);
+      setCurrentValue(value);
     }
-    if (e.key === 'Escape') {
-      setIsEditing(false);
-      setValue(value);
-    }
+    setIsEditing(false);
   };
 
   if (isEditing) {
@@ -126,8 +114,7 @@ const EditableCell = ({ value, column, row, onSave }) => {
         <select
           value={currentValue || ''}
           onChange={handleChange}
-          onBlur={handleChange}
-          onKeyDown={handleKeyPress}
+          onBlur={() => setIsEditing(false)}
           autoFocus
           className="editable-cell-input"
           disabled={loading}
@@ -146,9 +133,8 @@ const EditableCell = ({ value, column, row, onSave }) => {
       <input
         type="text"
         value={currentValue || ''}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleInputChange}
         onBlur={handleChange}
-        onKeyDown={handleKeyPress}
         autoFocus
         className="editable-cell-input"
       />
@@ -156,11 +142,7 @@ const EditableCell = ({ value, column, row, onSave }) => {
   }
 
   return (
-    <div 
-      onDoubleClick={handleDoubleClick} 
-      className="editable-cell"
-      title={getTooltipMessage()}
-    >
+    <div onDoubleClick={handleDoubleClick} className="editable-cell">
       {value || 'Sin asignar'}
     </div>
   );
@@ -463,18 +445,28 @@ function EmployeesView() {
 
   const handleSave = async (id, field, value) => {
     try {
+      console.log('handleSave called:', { id, field, value });
       const response = await axiosInstance.patch(`/api/empleados/${id}`, { [field]: value });
-      if (response.data.success) {
+      console.log('API Response:', response.data);
+      
+      if (response.data.message) {
+        const empleado = response.data.empleado || {};
+        console.log('Updating state with empleado data:', empleado);
+        
         setData(old =>
           old.map(row =>
             row.id === id
-              ? { ...row, [field]: value }
+              ? { ...row, ...empleado }
               : row
           )
         );
+        return true;
       }
+      console.log('Update not successful');
+      return false;
     } catch (error) {
-      console.error('Error al actualizar:', error);
+      console.error('Error in handleSave:', error);
+      return false;
     }
   };
 

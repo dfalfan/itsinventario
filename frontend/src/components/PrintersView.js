@@ -50,13 +50,22 @@ function PrintersView() {
 
   const handleSave = async (id, field, value) => {
     try {
-      await axios.patch(`http://192.168.141.50:5000/api/impresoras/${id}`, { [field]: value });
-      // Actualizar el estado local
-      setData(prevData => prevData.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      ));
+      console.log('handleSave called:', { id, field, value });
+      const response = await axios.patch(`http://192.168.141.50:5000/api/impresoras/${id}`, { [field]: value });
+      console.log('API Response:', response.data);
+      
+      if (response.data.message) {
+        console.log('Updating state with:', { field, value, updates: response.data.updated_fields });
+        setData(prevData => prevData.map(item => 
+          item.id === id ? { ...item, [field]: value, ...response.data.updated_fields } : item
+        ));
+        return true;
+      }
+      console.log('Update not successful');
+      return false;
     } catch (error) {
-      console.error('Error al actualizar la impresora:', error);
+      console.error('Error in handleSave:', error);
+      return false;
     }
   };
 
@@ -65,6 +74,11 @@ function PrintersView() {
     const [currentValue, setCurrentValue] = useState(value);
     const [sedes, setSedes] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      console.log('Value changed:', { value, currentValue, column: column.id });
+      setCurrentValue(value);
+    }, [value]);
 
     useEffect(() => {
       if (column.id === 'sede' && isEditing) {
@@ -78,44 +92,60 @@ function PrintersView() {
         const response = await fetch('http://192.168.141.50:5000/api/sedes');
         if (!response.ok) throw new Error('Error al cargar sedes');
         const data = await response.json();
+        console.log('Sedes loaded:', data);
         setSedes(data);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error loading sedes:', error);
       } finally {
         setLoading(false);
       }
     };
 
     const handleDoubleClick = () => {
+      console.log('Double click, starting edit mode');
       setIsEditing(true);
     };
 
-    const handleChange = (e) => {
+    const handleInputChange = (e) => {
+      console.log('Input value changed:', e.target.value);
+      setCurrentValue(e.target.value);
+    };
+
+    const handleChange = async (e) => {
       const newValue = e.target.value;
-      setCurrentValue(newValue);
+      console.log('handleChange called:', { newValue, field: column.id });
       
-      if (column.id === 'sede') {
-        const selectedSede = sedes.find(sede => sede.id.toString() === newValue);
-        onSave(row.original.id, 'sede_id', selectedSede.id);
-      } else if (column.id === 'marca') {
-        onSave(row.original.id, column.id, newValue);
-      } else if (column.id === 'proveedor') {
-        onSave(row.original.id, column.id, newValue);
-      } else {
-        onSave(row.original.id, column.id, newValue);
+      try {
+        let success;
+        if (column.id === 'sede') {
+          const selectedSede = sedes.find(sede => sede.id.toString() === newValue);
+          console.log('Selected sede:', selectedSede);
+          if (selectedSede) {
+            success = await onSave(row.original.id, 'sede_id', selectedSede.id);
+          }
+        } else if (column.id === 'marca' || column.id === 'proveedor') {
+          success = await onSave(row.original.id, column.id, newValue);
+        } else {
+          success = await onSave(row.original.id, column.id, newValue);
+        }
+
+        console.log('Save result:', success);
+        if (success) {
+          setCurrentValue(newValue);
+        } else {
+          console.log('Save failed, reverting to:', value);
+          setCurrentValue(value);
+        }
+      } catch (error) {
+        console.error('Error in handleChange:', error);
+        setCurrentValue(value);
       }
-      
       setIsEditing(false);
     };
 
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        handleChange(e);
-      }
-      if (e.key === 'Escape') {
-        setIsEditing(false);
-        setCurrentValue(value);
-      }
+    const handleBlur = () => {
+      console.log('Input/Select blurred');
+      setIsEditing(false);
     };
 
     if (isEditing) {
@@ -124,8 +154,7 @@ function PrintersView() {
           <select
             value={currentValue || ''}
             onChange={handleChange}
-            onBlur={handleChange}
-            onKeyDown={handleKeyPress}
+            onBlur={handleBlur}
             autoFocus
             className="editable-cell-input"
             disabled={loading}
@@ -145,8 +174,7 @@ function PrintersView() {
           <select
             value={currentValue || ''}
             onChange={handleChange}
-            onBlur={handleChange}
-            onKeyDown={handleKeyPress}
+            onBlur={handleBlur}
             autoFocus
             className="editable-cell-input"
           >
@@ -165,8 +193,7 @@ function PrintersView() {
           <select
             value={currentValue || ''}
             onChange={handleChange}
-            onBlur={handleChange}
-            onKeyDown={handleKeyPress}
+            onBlur={handleBlur}
             autoFocus
             className="editable-cell-input"
           >
@@ -181,9 +208,8 @@ function PrintersView() {
         <input
           type="text"
           value={currentValue || ''}
-          onChange={(e) => setCurrentValue(e.target.value)}
+          onChange={handleInputChange}
           onBlur={handleChange}
-          onKeyDown={handleKeyPress}
           autoFocus
           className="editable-cell-input"
         />

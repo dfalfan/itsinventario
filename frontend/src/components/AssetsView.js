@@ -435,18 +435,26 @@ function AssetsView() {
 
   const handleSave = async (id, field, value) => {
     try {
+      console.log('handleSave called:', { id, field, value });
       const response = await axiosInstance.patch(`/api/activos/${id}`, { [field]: value });
-      if (response.data.success) {
+      console.log('API Response:', response.data);
+      
+      if (response.data.message) {
+        console.log('Updating state with:', { field, value, updates: response.data.updated_fields });
         setData(old =>
           old.map(row =>
             row.id === id
-              ? { ...row, [field]: value }
+              ? { ...row, [field]: value, ...response.data.updated_fields }
               : row
           )
         );
+        return true;
       }
+      console.log('Update not successful');
+      return false;
     } catch (error) {
-      console.error('Error al actualizar:', error);
+      console.error('Error in handleSave:', error);
+      return false;
     }
   };
 
@@ -606,77 +614,118 @@ ${asset.empleado ? `Asignado a: ${asset.empleado}` : 'Sin asignar'}
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
 
+    useEffect(() => {
+      console.log('Value changed:', { value, currentValue, column: column.id });
+      setCurrentValue(value);
+    }, [value]);
+
     const handleDoubleClick = () => {
-        setIsEditing(true);
+      console.log('Double click, starting edit mode');
+      setIsEditing(true);
     };
 
-    const handleChange = (e) => {
-        const newValue = e.target.value;
-        setCurrentValue(newValue);
-        onSave(row.original.id, column.id, newValue);
-        setIsEditing(false);
+    const handleInputChange = (e) => {
+      console.log('Input value changed:', e.target.value);
+      setCurrentValue(e.target.value);
     };
 
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            const newValue = e.target.value;
-            setCurrentValue(newValue);
-            onSave(row.original.id, column.id, newValue);
-            setIsEditing(false);
+    const handleChange = async (e) => {
+      const newValue = e.target.value;
+      console.log('handleChange called:', { newValue, field: column.id });
+      
+      try {
+        let valueToSave = newValue;
+        
+        if (selectFields.includes(column.id)) {
+          valueToSave = newValue;
+          console.log('Using select value directly:', valueToSave);
         }
-        if (e.key === 'Escape') {
-            setIsEditing(false);
-            setCurrentValue(value);
+
+        console.log('Attempting to save:', { id: row.original.id, field: column.id, value: valueToSave });
+        const success = await onSave(row.original.id, column.id, valueToSave);
+        console.log('Save result:', success);
+        
+        if (success) {
+          setCurrentValue(newValue);
+        } else {
+          console.log('Save failed, reverting to:', value);
+          setCurrentValue(value);
         }
+      } catch (error) {
+        console.error('Error in handleChange:', error);
+        setCurrentValue(value);
+      }
+      setIsEditing(false);
     };
 
-    // Determinar si el campo debe ser un input de texto o un select
+    const handleBlur = () => {
+      console.log('Input/Select blurred');
+      setIsEditing(false);
+    };
+
     const textFields = ['modelo', 'nombre_equipo', 'serial', 'activo_fijo'];
     const selectFields = ['sede', 'tipo', 'marca', 'ram', 'disco'];
     const isTextField = textFields.includes(column.id);
     const isSelectField = selectFields.includes(column.id);
 
     if (isEditing && (isTextField || isSelectField)) {
-        if (isTextField) {
-            return (
-                <input
-                    type="text"
-                    value={currentValue || ''}
-                    onChange={(e) => setCurrentValue(e.target.value)}
-                    onBlur={handleChange}
-                    onKeyDown={handleKeyPress}
-                    autoFocus
-                    className="editable-cell-input"
-                />
-            );
+      if (isTextField) {
+        return (
+          <input
+            type="text"
+            value={currentValue || ''}
+            onChange={handleInputChange}
+            onBlur={handleChange}
+            autoFocus
+            className="editable-cell-input"
+          />
+        );
+      }
+
+      if (isSelectField) {
+        if (column.id === 'tipo') {
+          return (
+            <select
+              value={currentValue || ''}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              autoFocus
+            >
+              <option value="">Seleccionar...</option>
+              {['LAPTOP', 'DESKTOP', 'AIO'].map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          );
         }
 
-        if (isSelectField) {
-            return (
-                <select
-                    value={currentValue || ''}
-                    onChange={handleChange}
-                    onBlur={() => setIsEditing(false)}
-                    autoFocus
-                >
-                    <option value="">Seleccionar...</option>
-                    {Array.isArray(options) ? 
-                        options.map((option) => (
-                            <option key={option.id || option} value={option.nombre || option}>
-                                {option.nombre || option}
-                            </option>
-                        ))
-                        : null
-                    }
-                </select>
-            );
-        }
+        return (
+          <select
+            value={currentValue || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            autoFocus
+          >
+            <option value="">Seleccionar...</option>
+            {Array.isArray(options) ? 
+              options.map((option) => (
+                <option key={option.id || option} value={option.nombre || option}>
+                  {option.nombre || option}
+                </option>
+              ))
+              : null
+            }
+          </select>
+        );
+      }
     }
 
     return (
-        <div onDoubleClick={handleDoubleClick} className="editable-cell">
-            {value || 'Sin asignar'}
-        </div>
+      <div onDoubleClick={handleDoubleClick} className="editable-cell">
+        {value || 'Sin asignar'}
+      </div>
     );
   };
 
