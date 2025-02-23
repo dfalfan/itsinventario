@@ -70,8 +70,16 @@ app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta_muy_segura'
 # Registrar el blueprint de autenticación
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
+# Configuración de la base de datos con pool de conexiones optimizado
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://its:sura@postgres:5432/itsinventario'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 10,  # Número máximo de conexiones permanentes
+    'max_overflow': 20,  # Número máximo de conexiones adicionales
+    'pool_timeout': 60,  # Tiempo de espera para obtener una conexión
+    'pool_recycle': 1800,  # Reciclar conexiones después de 30 minutos
+    'pool_pre_ping': True  # Verificar conexión antes de usarla
+}
 
 db = SQLAlchemy(app)
 
