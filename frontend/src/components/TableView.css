@@ -1,3 +1,4 @@
+/* Contenedor principal de la tabla */
 .table-container {
   padding: 24px;
   background: white;
@@ -5,6 +6,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Controles de la tabla */
 .table-controls {
   display: flex;
   align-items: center;
@@ -13,6 +15,7 @@
   height: 32px;
 }
 
+/* Contenedor de búsqueda */
 .search-container {
   margin-bottom: -10px;
   flex: 1;
@@ -47,10 +50,7 @@
   transition: opacity 0.2s ease;
 }
 
-.search-input:focus + .search-results {
-  opacity: 0.7;
-}
-
+/* Botones y controles */
 .settings-button {
   height: 80%;
   padding: 10px 8px;
@@ -70,16 +70,17 @@
   border-color: #ccc;
 }
 
+/* Estructura de la tabla */
 .table-wrapper {
   overflow-x: auto;
-  margin: -1px;
+  margin: 0;
   border: 1px solid #eee;
+  position: relative;
 }
 
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   table-layout: auto;
   font-size: 12px;
 }
@@ -89,49 +90,11 @@ th, td {
   text-align: left;
   border-bottom: 1px solid #eee;
   white-space: nowrap;
-  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Ajustes específicos para columnas */
-th:nth-child(1), /* Sede */
-td:nth-child(1) {
-  width: 80px;
-  min-width: 80px;
-}
-
-th:nth-child(2), /* Nombre */
-td:nth-child(2) {
-  width: 180px;
-  min-width: 180px;
-}
-
-th:nth-child(3), /* Departamento */
-td:nth-child(3) {
-  width: 160px;
-  min-width: 160px;
-}
-
-th:nth-child(4), /* Cargo */
-td:nth-child(4) {
-  width: 160px;
-  min-width: 160px;
-}
-
-th:nth-child(5), /* Equipo Asignado */
-td:nth-child(5) {
-  width: 180px;
-  min-width: 180px;
-}
-
-th:last-child, /* Acciones */
-td:last-child {
-  width: 100px;
-  min-width: 100px;
-  text-align: center;
-}
-
+/* Encabezados y columnas especiales */
 th {
   background-color: #f8f9fa;
   font-weight: 600;
@@ -140,6 +103,22 @@ th {
   border-bottom: 2px solid #eee;
 }
 
+th:first-child, 
+td:first-child {
+  width: 50px;
+  min-width: 50px;
+}
+
+th:last-child, 
+td:last-child {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: center;
+  padding: 6px 12px;
+}
+
+/* Ordenamiento */
 th.sortable {
   cursor: pointer;
   user-select: none;
@@ -148,6 +127,328 @@ th.sortable {
 
 th.sortable:hover {
   background-color: #e9ecef;
+}
+
+.sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  color: #6c757d;
+  font-size: 0.8em;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* Filas y estados */
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+tr.row-with-active-menu {
+  background-color: #f8f9fa !important;
+  position: relative;
+  z-index: 1000;
+}
+
+tr.row-with-active-menu td {
+  opacity: 0.7;
+}
+
+tr.row-with-active-menu td:last-child {
+  opacity: 1;
+}
+
+/* Celdas editables */
+.editable-cell {
+  position: relative;
+  cursor: pointer;
+}
+
+.editable-cell:hover::after {
+  content: '✎';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #999;
+  opacity: 0.5;
+}
+
+.editable-cell div {
+  padding: 4px;
+  min-height: 24px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.editable-cell div:hover {
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.editable-cell-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  font-size: inherit;
+  font-family: inherit;
+  background-color: white;
+}
+
+.editable-cell-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Botones de acción */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.action-button {
+  padding: 6px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.action-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Estilos específicos de botones */
+.view-button {
+  color: #17a2b8;
+}
+
+.delete-button {
+  color: #dc3545;
+}
+
+.view-button:hover {
+  border-color: #17a2b8;
+  background-color: rgba(23, 162, 184, 0.1);
+}
+
+.delete-button:hover {
+  border-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Menú de acciones rápidas */
+.quick-actions-container {
+  position: relative;
+  display: inline-block;
+}
+
+.quick-actions-menu {
+  position: relative;
+  top: 100%;
+  right: 60px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  margin-top: 4px;
+  z-index: 1001;
+  overflow: hidden;
+}
+
+/* Botones del menú de acciones rápidas */
+.quick-actions-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.quick-actions-menu button:hover {
+  background-color: #f5f5f5;
+  transform: translateX(5px);
+}
+
+.quick-actions-menu button:not(:last-child) {
+  border-bottom: 1px solid #eee;
+}
+
+/* Estado activo del menú */
+.action-buttons.menu-active .action-button {
+  display: none;
+}
+
+.action-buttons.menu-active .quick-actions-container {
+  display: inline-block;
+}
+
+/* Ajuste para la última fila */
+tr:last-child .quick-actions-menu {
+  bottom: 100%;
+  top: auto;
+  margin-bottom: 4px;
+  margin-top: 0;
+}
+
+/* Animación del menú */
+@keyframes expandMenu {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+}
+
+.quick-actions-menu {
+  animation: expandMenu 0.3s ease-out;
+}
+
+/* Botón de acciones rápidas */
+.icon-button {
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.icon-button:hover {
+  color: #000;
+}
+
+.icon-button.active {
+  color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* Overlay cuando el menú está activo */
+.table-wrapper::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.menu-active .table-wrapper::after {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Asegurar que la última columna tenga overflow visible */
+td:last-child {
+  position: relative;
+  overflow: visible !important;
+}
+
+.action-buttons {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Estados y badges */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.estado-badge.disponible {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.estado-badge.asignado {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.estado-badge.reparacion,
+.estado-badge.mantenimiento {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.estado-badge.baja,
+.estado-badge.desincorporado {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Paginación */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.pagination button {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+/* Estados de carga y error */
+.loading, .error {
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+}
+
+.error {
+  color: #dc3545;
 }
 
 .header-content {
@@ -181,47 +482,6 @@ th.sortable:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sort-indicator {
-  display: inline-flex;
-  align-items: center;
-  color: #6c757d;
-  font-size: 0.8em;
-  margin-left: 4px;
-  flex-shrink: 0;
-}
-
-tr:hover {
-  background-color: #f5f5f5;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  font-size: 12px;
-}
-
-.pagination button {
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 12px;
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination button:hover:not(:disabled) {
-  background: #f5f5f5;
 }
 
 .column-settings {
@@ -331,30 +591,4 @@ tr:hover {
   width: 16px;
   height: 16px;
   margin: 0;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 20px;
-  font-size: 16px;
-}
-
-.error {
-  color: #dc3545;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.action-button {
-  padding: 3px;
-  font-size: 11px;
-}
-
-/* Ajustar el tamaño de los íconos */
-.action-button svg {
-  width: 12px;
-  height: 12px;
 } 

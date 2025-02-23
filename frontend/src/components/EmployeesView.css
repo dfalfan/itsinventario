@@ -229,17 +229,7 @@
   display: inline-block;
 }
 
-.quick-actions-menu {
-  position: relative;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
-  margin-top: 4px;
-  overflow: hidden;
-  animation: expandMenu 0.3s ease-out;
-}
+
 
 @keyframes expandMenu {
   from {
