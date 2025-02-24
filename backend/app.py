@@ -234,6 +234,40 @@ class Log(db.Model):
     item_id = db.Column(db.Integer)       # ID del elemento afectado
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Mantenimiento(db.Model):
+    __tablename__ = 'mantenimientos'
+    id = db.Column(db.Integer, primary_key=True)
+    activo_id = db.Column(db.Integer, db.ForeignKey('assets.id'))
+    fecha_inicio = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_fin = db.Column(db.DateTime)
+    estado = db.Column(db.String(50), default='En Progreso')  # En Progreso, Completado, Cancelado
+    descripcion = db.Column(db.Text)
+    diagnostico = db.Column(db.Text)
+    solucion = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    activo = db.relationship('Asset', backref='mantenimientos')
+    tareas = db.relationship('TareaMantenimiento', backref='mantenimiento', cascade='all, delete-orphan')
+    notas = db.relationship('NotaMantenimiento', backref='mantenimiento', cascade='all, delete-orphan')
+
+class TareaMantenimiento(db.Model):
+    __tablename__ = 'tareas_mantenimiento'
+    id = db.Column(db.Integer, primary_key=True)
+    mantenimiento_id = db.Column(db.Integer, db.ForeignKey('mantenimientos.id'))
+    descripcion = db.Column(db.String(200))
+    completada = db.Column(db.Boolean, default=False)
+    fecha_completado = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class NotaMantenimiento(db.Model):
+    __tablename__ = 'notas_mantenimiento'
+    id = db.Column(db.Integer, primary_key=True)
+    mantenimiento_id = db.Column(db.Integer, db.ForeignKey('mantenimientos.id'))
+    contenido = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 @app.route('/api/empleados')
 def get_empleados():
     try:
@@ -1678,6 +1712,16 @@ def cambiar_estado_activo(activo_id):
 
         activo.estado = estado
         activo.updated_at = datetime.utcnow()
+        
+        # Si el estado es REPARACION, crear un nuevo mantenimiento
+        if estado == 'REPARACION':
+            nuevo_mantenimiento = Mantenimiento(
+                activo_id=activo_id,
+                descripcion=data.get('descripcion', 'Mantenimiento iniciado'),
+                diagnostico=data.get('diagnostico', ''),
+                estado='En Progreso'  # Cambiado de REPARACION a En Progreso
+            )
+            db.session.add(nuevo_mantenimiento)
         
         # Registrar el log
         descripcion = f"Se cambió el estado del activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id}) a {estado}"
@@ -3878,6 +3922,169 @@ def desincorporar_smartphone(smartphone_id):
         
         return jsonify({
             "message": "Smartphone desincorporado exitosamente"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mantenimientos')
+def get_mantenimientos():
+    try:
+        mantenimientos = db.session.query(
+            Mantenimiento, Asset
+        ).join(
+            Asset
+        ).order_by(
+            Mantenimiento.created_at.desc()
+        ).all()
+        
+        return jsonify([{
+            'id': m.id,
+            'activo': {
+                'id': a.id,
+                'tipo': a.tipo,
+                'marca': a.marca,
+                'modelo': a.modelo,
+                'serial': a.serial
+            },
+            'fecha_inicio': m.fecha_inicio.isoformat() if m.fecha_inicio else None,
+            'fecha_fin': m.fecha_fin.isoformat() if m.fecha_fin else None,
+            'estado': m.estado,
+            'descripcion': m.descripcion,
+            'diagnostico': m.diagnostico,
+            'solucion': m.solucion,
+            'tareas': [{
+                'id': t.id,
+                'descripcion': t.descripcion,
+                'completada': t.completada,
+                'fecha_completado': t.fecha_completado.isoformat() if t.fecha_completado else None
+            } for t in m.tareas],
+            'notas': [{
+                'id': n.id,
+                'contenido': n.contenido,
+                'fecha': n.created_at.isoformat()
+            } for n in m.notas]
+        } for m, a in mantenimientos])
+    except Exception as e:
+        print(f"Error en get_mantenimientos: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mantenimientos/<int:mantenimiento_id>/tareas', methods=['POST'])
+def agregar_tarea_mantenimiento(mantenimiento_id):
+    try:
+        data = request.get_json()
+        descripcion = data.get('descripcion')
+        
+        if not descripcion:
+            return jsonify({"error": "La descripción es requerida"}), 400
+            
+        mantenimiento = Mantenimiento.query.get(mantenimiento_id)
+        if not mantenimiento:
+            return jsonify({"error": "Mantenimiento no encontrado"}), 404
+            
+        nueva_tarea = TareaMantenimiento(
+            mantenimiento_id=mantenimiento_id,
+            descripcion=descripcion
+        )
+        
+        db.session.add(nueva_tarea)
+        db.session.commit()
+        
+        return jsonify({
+            'id': nueva_tarea.id,
+            'descripcion': nueva_tarea.descripcion,
+            'completada': nueva_tarea.completada,
+            'fecha_completado': nueva_tarea.fecha_completado.isoformat() if nueva_tarea.fecha_completado else None
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mantenimientos/<int:mantenimiento_id>/tareas/<int:tarea_id>', methods=['PATCH'])
+def completar_tarea_mantenimiento(mantenimiento_id, tarea_id):
+    try:
+        tarea = TareaMantenimiento.query.get(tarea_id)
+        if not tarea or tarea.mantenimiento_id != mantenimiento_id:
+            return jsonify({"error": "Tarea no encontrada"}), 404
+            
+        tarea.completada = True
+        tarea.fecha_completado = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'id': tarea.id,
+            'completada': tarea.completada,
+            'fecha_completado': tarea.fecha_completado.isoformat()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mantenimientos/<int:mantenimiento_id>/notas', methods=['POST'])
+def agregar_nota_mantenimiento(mantenimiento_id):
+    try:
+        data = request.get_json()
+        contenido = data.get('contenido')
+        
+        if not contenido:
+            return jsonify({"error": "El contenido es requerido"}), 400
+            
+        mantenimiento = Mantenimiento.query.get(mantenimiento_id)
+        if not mantenimiento:
+            return jsonify({"error": "Mantenimiento no encontrado"}), 404
+            
+        nueva_nota = NotaMantenimiento(
+            mantenimiento_id=mantenimiento_id,
+            contenido=contenido
+        )
+        
+        db.session.add(nueva_nota)
+        db.session.commit()
+        
+        return jsonify({
+            'id': nueva_nota.id,
+            'contenido': nueva_nota.contenido,
+            'fecha': nueva_nota.created_at.isoformat()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mantenimientos/<int:mantenimiento_id>/completar', methods=['POST'])
+def completar_mantenimiento(mantenimiento_id):
+    try:
+        data = request.get_json()
+        solucion = data.get('solucion')
+        
+        if not solucion:
+            return jsonify({"error": "La solución es requerida"}), 400
+            
+        mantenimiento = Mantenimiento.query.get(mantenimiento_id)
+        if not mantenimiento:
+            return jsonify({"error": "Mantenimiento no encontrado"}), 404
+            
+        mantenimiento.estado = 'Completado'
+        mantenimiento.fecha_fin = datetime.utcnow()
+        mantenimiento.solucion = solucion
+        
+        # Cambiar estado del activo a Disponible
+        activo = mantenimiento.activo
+        if activo:
+            activo.estado = 'Disponible'
+            
+            # Registrar el log
+            descripcion = f"Se completó el mantenimiento del activo {activo.tipo} {activo.marca} {activo.modelo} (ID: {activo.id})"
+            registrar_log('assets', 'mantenimiento_completado', descripcion, activo.id)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Mantenimiento completado exitosamente',
+            'fecha_fin': mantenimiento.fecha_fin.isoformat()
         })
         
     except Exception as e:

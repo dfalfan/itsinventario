@@ -1,0 +1,239 @@
+.maintenance-view {
+  padding: 2rem;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.maintenance-header {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.maintenance-header h2 {
+  font-size: 2rem;
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 0;
+  position: relative;
+}
+
+.maintenance-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: #3498db;
+  border-radius: 2px;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+  min-height: calc(100vh - 200px);
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.kanban-column {
+  flex: 0 0 350px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.kanban-column::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.main-content {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.main-content::-webkit-scrollbar {
+  display: none;
+}
+
+.column-header {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+
+.column-header-pendientes {
+  background: #ff6b6b;
+}
+
+.column-header-reparando {
+  background: #ffd43b;
+}
+
+.column-header-completados {
+  background: #69db7c;
+}
+
+.column-counter {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.droppable-area {
+  flex: 1;
+  min-height: 200px;
+  border-radius: 8px;
+  padding: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.droppable-area.dragging-over {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.task-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+  cursor: grab;
+  position: relative;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task-card.dragging {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-title svg {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.8rem;
+}
+
+.badge-preventivo {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.badge-reparacion {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.card-meta {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-description {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.4;
+  border-left: 3px solid #e2e8f0;
+}
+
+.card-date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.8rem;
+}
+
+.date-completed {
+  margin-left: auto;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .kanban-board {
+    gap: 1rem;
+    max-width: 100%;
+    justify-content: flex-start;
+    padding: 1rem;
+  }
+  
+  .kanban-column {
+    flex: 0 0 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .maintenance-view {
+    padding: 1rem;
+  }
+  
+  .kanban-board {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .kanban-column {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+} 
