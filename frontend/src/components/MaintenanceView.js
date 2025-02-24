@@ -150,6 +150,58 @@ const columnColors = {
   completados: '#95CD41',
 };
 
+function CompletarMantenimientoModal({ show, onClose, onConfirm, item }) {
+  const [solucion, setSolucion] = useState('');
+  const [diagnostico, setDiagnostico] = useState('');
+
+  if (!show) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Completar Mantenimiento</h2>
+        <div className="modal-body">
+          <div className="form-group">
+            <label>Equipo:</label>
+            <p>{item?.equipo}</p>
+          </div>
+          <div className="form-group">
+            <label>Diagnóstico:</label>
+            <textarea
+              value={diagnostico}
+              onChange={(e) => setDiagnostico(e.target.value)}
+              placeholder="Ingrese el diagnóstico del problema..."
+              rows={3}
+            />
+          </div>
+          <div className="form-group">
+            <label>Solución:</label>
+            <textarea
+              value={solucion}
+              onChange={(e) => setSolucion(e.target.value)}
+              placeholder="Describa la solución aplicada..."
+              rows={3}
+              required
+            />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} className="button secondary">
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(diagnostico, solucion)}
+            className="button primary"
+            disabled={!solucion.trim()}
+          >
+            Completar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MaintenanceView() {
   const [items, setItems] = useState({
     pendientes: [],
@@ -158,6 +210,9 @@ function MaintenanceView() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showCompletarModal, setShowCompletarModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [dragMemory, setDragMemory] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -166,23 +221,68 @@ function MaintenanceView() {
       const response = await axiosInstance.get('/api/activos');
       const activos = response.data;
 
-      // Filtrar los activos por estado
-      const activosEnReparacion = activos.filter(activo => activo.estado === 'REPARACION').map(activo => ({
-        id: activo.id.toString(),
-        equipo: `${activo.tipo} ${activo.marca} ${activo.modelo}`,
-        tipo: 'Reparación',
-        responsable: 'Sin asignar',
-        observaciones: activo.notas || 'Sin observaciones',
-        fecha_programada: new Date().toISOString().split('T')[0],
-        estado: 'Pendiente',
-        serial: activo.serial
-      }));
+      // Obtener mantenimientos
+      const mantenimientosResponse = await axiosInstance.get('/api/mantenimientos');
+      const mantenimientos = mantenimientosResponse.data;
 
-      // Por ahora, solo mostraremos los activos en reparación en la columna "pendientes"
+      // Obtener IDs de activos que ya tienen mantenimientos en progreso o completados
+      const activosConMantenimiento = new Set(
+        mantenimientos.map(m => m.activo.id.toString())
+      );
+
+      // Filtrar los activos por estado, excluyendo los que ya tienen mantenimientos
+      const activosEnReparacion = activos
+        .filter(activo => 
+          activo.estado === 'REPARACION' && 
+          !activosConMantenimiento.has(activo.id.toString())
+        )
+        .map(activo => ({
+          id: activo.id.toString(),
+          equipo: `${activo.tipo} ${activo.marca} ${activo.modelo}`,
+          tipo: 'Reparación',
+          responsable: 'Sin asignar',
+          observaciones: activo.notas || 'Sin observaciones',
+          fecha_programada: new Date().toISOString().split('T')[0],
+          estado: 'Pendiente',
+          serial: activo.serial,
+          isHistoryCard: false
+        }));
+
+      // Organizar los mantenimientos
       const mantenimientosOrganizados = {
         pendientes: activosEnReparacion,
-        reparando: [],
-        completados: []
+        reparando: mantenimientos
+          .filter(m => m.estado === 'En Progreso')
+          .map(m => ({
+            id: m.id.toString(),
+            equipo: `${m.activo.tipo} ${m.activo.marca} ${m.activo.modelo}`,
+            tipo: 'Reparación',
+            responsable: 'Sin asignar',
+            observaciones: m.descripcion,
+            diagnostico: m.diagnostico,
+            fecha_programada: new Date(m.fecha_inicio).toISOString().split('T')[0],
+            estado: 'Reparando',
+            serial: m.activo.serial,
+            isHistoryCard: false,
+            activo_id: m.activo.id
+          })),
+        completados: mantenimientos
+          .filter(m => m.estado === 'Completado')
+          .map(m => ({
+            id: `hist_${m.id}`,
+            equipo: `${m.activo.tipo} ${m.activo.marca} ${m.activo.modelo}`,
+            tipo: 'Reparación',
+            responsable: 'Sin asignar',
+            observaciones: m.descripcion,
+            diagnostico: m.diagnostico,
+            solucion: m.solucion,
+            fecha_programada: new Date(m.fecha_inicio).toISOString().split('T')[0],
+            fecha_completado: m.fecha_fin ? new Date(m.fecha_fin).toISOString().split('T')[0] : null,
+            estado: 'Completado',
+            serial: m.activo.serial,
+            isHistoryCard: true,
+            activo_id: m.activo.id
+          }))
       };
 
       setItems(mantenimientosOrganizados);
@@ -205,45 +305,106 @@ function MaintenanceView() {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
+    // No permitir mover tarjetas de historial
+    const movedItem = items[source.droppableId].find(item => item.id === draggableId);
+    if (movedItem.isHistoryCard) return;
+
     // Crear una copia del estado actual
     const newItems = { ...items };
-    const [movedItem] = newItems[source.droppableId].splice(source.index, 1);
+    const [draggedItem] = newItems[source.droppableId].splice(source.index, 1);
 
-    // Actualizar el estado del item
-    movedItem.estado = destination.droppableId.charAt(0).toUpperCase() + destination.droppableId.slice(1);
-    
-    // Si se mueve a completados, agregar fecha de completado
+    // Si se mueve a completados
     if (destination.droppableId === 'completados') {
-      movedItem.fecha_completado = new Date().toISOString().split('T')[0];
+      setSelectedItem(draggedItem);
+      setDragMemory({ source, destination, draggedItem });
+      setShowCompletarModal(true);
+      // Devolver el item a su posición original hasta que se confirme
+      newItems[source.droppableId].splice(source.index, 0, draggedItem);
+    } else {
+      // Para otros movimientos
+      newItems[destination.droppableId].splice(destination.index, 0, draggedItem);
       
-      // Actualizar el estado del activo a "Disponible"
-      try {
-        await axiosInstance.patch(`/api/activos/${draggableId}/estado`, {
-          estado: 'DISPONIBLE'
-        });
-      } catch (error) {
-        console.error('Error updating asset status:', error);
-        setItems(items); // Revertir en caso de error
-        return;
-      }
-    } else if (destination.droppableId === 'reparando') {
-      // Si se mueve a reparando, mantener el estado en REPARACION
-      try {
-        await axiosInstance.patch(`/api/activos/${draggableId}/estado`, {
-          estado: 'REPARACION'
-        });
-      } catch (error) {
-        console.error('Error updating asset status:', error);
-        setItems(items); // Revertir en caso de error
-        return;
+      // Si se mueve a reparando, crear un nuevo mantenimiento
+      if (destination.droppableId === 'reparando' && source.droppableId === 'pendientes') {
+        try {
+          const response = await axiosInstance.post('/api/mantenimientos', {
+            activo_id: parseInt(draggedItem.id),
+            descripcion: draggedItem.observaciones,
+            estado: 'En Progreso'
+          });
+          
+          // Actualizar el ID del item con el ID del mantenimiento creado
+          const index = newItems.reparando.findIndex(item => item.id === draggedItem.id);
+          if (index !== -1) {
+            newItems.reparando[index] = {
+              ...newItems.reparando[index],
+              id: response.data.id.toString(),
+              activo_id: parseInt(draggedItem.id)
+            };
+          }
+          
+          // Eliminar el item de pendientes para evitar duplicados
+          newItems.pendientes = newItems.pendientes.filter(
+            item => item.id !== draggedItem.id
+          );
+          
+        } catch (error) {
+          console.error('Error creating maintenance:', error);
+          // Revertir en caso de error
+          newItems[source.droppableId].splice(source.index, 0, draggedItem);
+          newItems[destination.droppableId] = newItems[destination.droppableId]
+            .filter(item => item.id !== draggedItem.id);
+          setItems(newItems);
+          return;
+        }
       }
     }
 
-    // Insertar el item en la columna destino
-    newItems[destination.droppableId].splice(destination.index, 0, movedItem);
-
-    // Actualizar el estado localmente
     setItems(newItems);
+  };
+
+  const handleCompletarMantenimiento = async (diagnostico, solucion) => {
+    if (!dragMemory) return;
+
+    const { draggedItem } = dragMemory;
+    
+    // Determinar si estamos completando un activo pendiente o un mantenimiento en progreso
+    const activo_id = draggedItem.activo_id || parseInt(draggedItem.id);
+    const mantenimiento_id = draggedItem.activo_id ? draggedItem.id : null;
+
+    try {
+      let response;
+      
+      if (mantenimiento_id) {
+        // Si ya existe un mantenimiento, actualizarlo
+        response = await axiosInstance.patch(`/api/mantenimientos/${mantenimiento_id}`, {
+          diagnostico: diagnostico,
+          solucion: solucion,
+          estado: 'Completado',
+          fecha_fin: new Date().toISOString()
+        });
+      } else {
+        // Si no existe, crear uno nuevo
+        response = await axiosInstance.post('/api/mantenimientos', {
+          activo_id: activo_id,
+          descripcion: draggedItem.observaciones,
+          diagnostico: diagnostico,
+          solucion: solucion,
+          estado: 'Completado',
+          fecha_fin: new Date().toISOString()
+        });
+      }
+
+      setShowCompletarModal(false);
+      setSelectedItem(null);
+      setDragMemory(null);
+      
+      // Recargar los datos para asegurar sincronización
+      fetchData();
+    } catch (error) {
+      console.error('Error completing maintenance:', error);
+      alert('Error al completar el mantenimiento');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -299,16 +460,17 @@ function MaintenanceView() {
                   >
                     {items[columnId].map((item, index) => (
                       <Draggable
-                        key={item.id.toString()}
-                        draggableId={item.id.toString()}
+                        key={item.id}
+                        draggableId={item.id}
                         index={index}
+                        isDragDisabled={item.isHistoryCard}
                       >
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                            className={`task-card ${snapshot.isDragging ? 'dragging' : ''} ${item.isHistoryCard ? 'history-card' : ''}`}
                             style={{
                               ...provided.draggableProps.style,
                               transform: snapshot.isDragging ? 
@@ -329,6 +491,16 @@ function MaintenanceView() {
                             {item.observaciones && (
                               <div className="card-description">
                                 {item.observaciones}
+                                {item.diagnostico && (
+                                  <div className="diagnostico-text">
+                                    <strong>Diagnóstico:</strong> {item.diagnostico}
+                                  </div>
+                                )}
+                                {item.solucion && (
+                                  <div className="solution-text">
+                                    <strong>Solución:</strong> {item.solucion}
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div className="card-date">
@@ -352,6 +524,17 @@ function MaintenanceView() {
           ))}
         </div>
       </DragDropContext>
+
+      <CompletarMantenimientoModal
+        show={showCompletarModal}
+        onClose={() => {
+          setShowCompletarModal(false);
+          setSelectedItem(null);
+          setDragMemory(null);
+        }}
+        onConfirm={handleCompletarMantenimiento}
+        item={selectedItem}
+      />
     </div>
   );
 }
