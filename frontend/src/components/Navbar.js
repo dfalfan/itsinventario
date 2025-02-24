@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaUser, FaChartBar, FaUsers, FaLaptop, FaMobileAlt, FaPrint, FaPhoneSquare, FaSignOutAlt } from 'react-icons/fa';
+import { 
+  FaUser, 
+  FaChartBar, 
+  FaUsers, 
+  FaLaptop, 
+  FaMobileAlt, 
+  FaPrint, 
+  FaSignOutAlt,
+  FaNetworkWired,
+  FaServer,
+  FaTools
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import logo from './logo sura color.png';
 import './Navbar.css';
@@ -41,7 +52,7 @@ function Navbar() {
           className={`navbar-item ${location.pathname === '/activos' ? 'active' : ''}`}
         >
           <FaLaptop className="navbar-icon" />
-          <span>Activos</span>
+          <span>Equipos</span>
         </Link>
         <Link 
           to="/smartphones" 
@@ -58,11 +69,25 @@ function Navbar() {
           <span>Impresoras</span>
         </Link>
         <Link 
-          to="/extensiones" 
-          className={`navbar-item ${location.pathname === '/extensiones' ? 'active' : ''}`}
+          to="/redes" 
+          className={`navbar-item ${location.pathname === '/redes' ? 'active' : ''}`}
         >
-          <FaPhoneSquare className="navbar-icon" />
-          <span>Extensiones</span>
+          <FaNetworkWired className="navbar-icon" />
+          <span>Redes</span>
+        </Link>
+        <Link 
+          to="/servidores" 
+          className={`navbar-item ${location.pathname === '/servidores' ? 'active' : ''}`}
+        >
+          <FaServer className="navbar-icon" />
+          <span>Servidores</span>
+        </Link>
+        <Link 
+          to="/mantenimientos" 
+          className={`navbar-item maintenance-item ${location.pathname === '/mantenimientos' ? 'active' : ''}`}
+        >
+          <FaTools className="navbar-icon" />
+          <span>Mantenimientos</span>
         </Link>
       </div>
 

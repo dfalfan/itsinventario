@@ -9,6 +9,9 @@ import SmartphonesView from './components/SmartphonesView';
 import PrintersView from './components/PrintersView';
 import ExtensionsView from './components/ExtensionsView';
 import ExtensionsDirectoryView from './components/ExtensionsDirectoryView';
+import NetworksView from './components/NetworksView';
+import ServersView from './components/ServersView';
+import MaintenanceView from './components/MaintenanceView';
 import LoginView from './components/LoginView';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -18,7 +21,10 @@ import './App.css';
 const ROUTE_TITLES = {
   '/extensions-directory': 'Listado de Extensiones - SURA',
   '/login': 'Iniciar Sesión - SURA',
-  '/dashboard': 'Dashboard - SURA'
+  '/dashboard': 'Dashboard - SURA',
+  '/redes': 'Redes - SURA',
+  '/servidores': 'Servidores - SURA',
+  '/mantenimientos': 'Mantenimientos - SURA'
 };
 
 function AppContent() {
@@ -80,6 +86,21 @@ function AppContent() {
             <Route path="/extensiones" element={
               <PrivateRoute>
                 <ExtensionsView />
+              </PrivateRoute>
+            } />
+            <Route path="/redes" element={
+              <PrivateRoute>
+                <NetworksView />
+              </PrivateRoute>
+            } />
+            <Route path="/servidores" element={
+              <PrivateRoute>
+                <ServersView />
+              </PrivateRoute>
+            } />
+            <Route path="/mantenimientos" element={
+              <PrivateRoute>
+                <MaintenanceView />
               </PrivateRoute>
             } />
 

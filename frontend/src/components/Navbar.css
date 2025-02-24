@@ -74,6 +74,35 @@
     font-weight: 500;
 }
 
+/* Estilos especiales para el ítem de mantenimientos */
+.navbar-item.maintenance-item {
+    position: relative;
+    color: #b8860b;
+}
+
+.navbar-item.maintenance-item:hover {
+    color: #daa520;
+}
+
+.navbar-item.maintenance-item.active {
+    color: #daa520;
+    font-weight: 500;
+}
+
+.navbar-item.maintenance-item::before {
+    background-color: #daa520;
+}
+
+.navbar-item.maintenance-item .navbar-icon {
+    color: #daa520;
+    transition: all 0.3s ease;
+}
+
+.navbar-item.maintenance-item:hover .navbar-icon {
+    color: #b8860b;
+    transform: rotate(15deg) scale(1.1);
+}
+
 .navbar-icon {
     font-size: 1.3rem;
     transition: transform 0.2s ease;
@@ -138,6 +167,15 @@
 
     .navbar-logo {
         height: 35px;
+    }
+
+    .navbar-item.maintenance-item {
+        margin-left: 0.5rem;
+        padding-left: 1.5rem;
+    }
+
+    .navbar-item.maintenance-item::after {
+        margin-left: 0.5rem;
     }
 }
 
@@ -204,8 +242,4 @@
 .logout-button:hover {
     background-color: rgba(220, 53, 69, 0.1);
     border-radius: 4px;
-}
-
-.navbar-icon {
-    font-size: 1.2rem;
 }
