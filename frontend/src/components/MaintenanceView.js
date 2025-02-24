@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { FaTools, FaHistory, FaFileAlt, FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import './MaintenanceView.css';
+import axiosInstance from '../utils/axiosConfig';
 
 // Estilos CSS en línea
 const styles = {
@@ -149,93 +150,53 @@ const columnColors = {
   completados: '#95CD41',
 };
 
-// Datos de prueba
-const datosIniciales = {
-  pendientes: [
-    {
-      id: 1,
-      equipo: 'Laptop Dell XPS 13',
-      tipo: 'Mantenimiento Preventivo',
-      responsable: 'Juan Pérez',
-      observaciones: 'Limpieza general y actualización de software',
-      fecha_programada: '2024-02-24',
-      estado: 'Pendiente'
-    },
-    {
-      id: 2,
-      equipo: 'Impresora HP LaserJet',
-      tipo: 'Reparación',
-      responsable: 'María García',
-      observaciones: 'Atasco de papel frecuente',
-      fecha_programada: '2024-02-25',
-      estado: 'Pendiente'
-    }
-  ],
-  reparando: [
-    {
-      id: 3,
-      equipo: 'Monitor LG 27"',
-      tipo: 'Reparación',
-      responsable: 'Carlos Ruiz',
-      observaciones: 'Problemas de imagen intermitente',
-      fecha_programada: '2024-02-23',
-      estado: 'Reparando'
-    }
-  ],
-  completados: [
-    {
-      id: 4,
-      equipo: 'Desktop Lenovo ThinkCentre',
-      tipo: 'Mantenimiento Preventivo',
-      responsable: 'Ana Martínez',
-      observaciones: 'Actualización de RAM y limpieza',
-      fecha_programada: '2024-02-20',
-      estado: 'Completado',
-      fecha_completado: '2024-02-21'
-    }
-  ]
-};
-
 function MaintenanceView() {
-  const [items, setItems] = useState(datosIniciales);
+  const [items, setItems] = useState({
+    pendientes: [],
+    reparando: [],
+    completados: []
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.141.50:5000/api/mantenimientos');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const jsonData = await response.json();
-      
-      // Organizar los datos en las columnas correspondientes
-      const organizedData = {
-        pendientes: jsonData.filter(item => item.estado === 'Pendiente'),
-        reparando: jsonData.filter(item => item.estado === 'Reparando'),
-        completados: jsonData.filter(item => item.estado === 'Completado'),
+      // Obtener los activos en reparación
+      const response = await axiosInstance.get('/api/activos');
+      const activos = response.data;
+
+      // Filtrar los activos por estado
+      const activosEnReparacion = activos.filter(activo => activo.estado === 'REPARACION').map(activo => ({
+        id: activo.id.toString(),
+        equipo: `${activo.tipo} ${activo.marca} ${activo.modelo}`,
+        tipo: 'Reparación',
+        responsable: 'Sin asignar',
+        observaciones: activo.notas || 'Sin observaciones',
+        fecha_programada: new Date().toISOString().split('T')[0],
+        estado: 'Pendiente',
+        serial: activo.serial
+      }));
+
+      // Por ahora, solo mostraremos los activos en reparación en la columna "pendientes"
+      const mantenimientosOrganizados = {
+        pendientes: activosEnReparacion,
+        reparando: [],
+        completados: []
       };
-      
-      setItems(organizedData);
+
+      setItems(mantenimientosOrganizados);
       setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
       setError(`Error cargando datos: ${error.message}`);
-      // Si hay un error, mantener los datos de prueba
-      setItems(datosIniciales);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Por ahora usamos los datos de prueba
-    setLoading(false);
-    // Cuando el backend esté listo, descomentar:
-    // fetchData();
+    fetchData();
   }, []);
 
   const handleDragEnd = async (result) => {
@@ -252,36 +213,37 @@ function MaintenanceView() {
     movedItem.estado = destination.droppableId.charAt(0).toUpperCase() + destination.droppableId.slice(1);
     
     // Si se mueve a completados, agregar fecha de completado
-    if (destination.droppableId === 'completados' && !movedItem.fecha_completado) {
+    if (destination.droppableId === 'completados') {
       movedItem.fecha_completado = new Date().toISOString().split('T')[0];
+      
+      // Actualizar el estado del activo a "Disponible"
+      try {
+        await axiosInstance.patch(`/api/activos/${draggableId}/estado`, {
+          estado: 'DISPONIBLE'
+        });
+      } catch (error) {
+        console.error('Error updating asset status:', error);
+        setItems(items); // Revertir en caso de error
+        return;
+      }
+    } else if (destination.droppableId === 'reparando') {
+      // Si se mueve a reparando, mantener el estado en REPARACION
+      try {
+        await axiosInstance.patch(`/api/activos/${draggableId}/estado`, {
+          estado: 'REPARACION'
+        });
+      } catch (error) {
+        console.error('Error updating asset status:', error);
+        setItems(items); // Revertir en caso de error
+        return;
+      }
     }
 
     // Insertar el item en la columna destino
     newItems[destination.droppableId].splice(destination.index, 0, movedItem);
 
-    // Actualizar el estado localmente primero
+    // Actualizar el estado localmente
     setItems(newItems);
-
-    // Actualizar en el backend
-    try {
-      const response = await fetch(`http://192.168.141.50:5000/api/mantenimientos/${draggableId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          estado: movedItem.estado,
-          fecha_completado: movedItem.fecha_completado
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar el estado');
-      }
-    } catch (error) {
-      console.error('Error updating maintenance status:', error);
-      setItems(items); // Revertir en caso de error
-    }
   };
 
   const handleDelete = async (id) => {
@@ -290,9 +252,7 @@ function MaintenanceView() {
     }
 
     try {
-      const response = await fetch(`http://192.168.141.50:5000/api/mantenimientos/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await axiosInstance.delete(`/api/mantenimientos/${id}`);
 
       if (!response.ok) {
         throw new Error('Error al eliminar el mantenimiento');
@@ -364,7 +324,7 @@ function MaintenanceView() {
                               {item.tipo}
                             </div>
                             <div className="card-meta">
-                              <strong>Responsable:</strong> {item.responsable || 'Sin asignar'}
+                              <strong>Serial:</strong> {item.serial || 'Sin asignar'}
                             </div>
                             {item.observaciones && (
                               <div className="card-description">
@@ -380,7 +340,6 @@ function MaintenanceView() {
                                 </span>
                               )}
                             </div>
-                            
                           </div>
                         )}
                       </Draggable>
