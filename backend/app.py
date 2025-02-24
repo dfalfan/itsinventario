@@ -631,35 +631,72 @@ def get_activos_disponibles():
         print("Error en get_activos_disponibles:", str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activos/<int:asset_id>', methods=['PATCH'])
-def update_asset(asset_id):
-    try:
-        asset = Asset.query.get(asset_id)
-        if not asset:
-            return jsonify({'error': 'Activo no encontrado'}), 404
+def registrar_cambio_campo(categoria, item_id, campo, valor_anterior, valor_nuevo, item_info=None):
+    """
+    Registra un cambio en un campo específico.
+    
+    Args:
+        categoria (str): Categoría del item (assets, smartphones, empleados)
+        item_id (int): ID del elemento
+        campo (str): Nombre del campo modificado
+        valor_anterior: Valor anterior del campo
+        valor_nuevo: Nuevo valor del campo
+        item_info (dict): Información adicional del item (tipo, marca, modelo)
+    """
+    if categoria == 'assets':
+        descripcion = f"Se cambió el {campo} del activo {item_info['tipo']} {item_info['marca']} (ID: {item_id}) de '{valor_anterior or 'No especificado'}' a '{valor_nuevo or 'No especificado'}'"
+    elif categoria == 'smartphones':
+        descripcion = f"Se cambió el {campo} del smartphone {item_info['marca']} {item_info['modelo']} (ID: {item_id}) de '{valor_anterior or 'No especificado'}' a '{valor_nuevo or 'No especificado'}'"
+    elif categoria == 'empleados':
+        descripcion = f"Se cambió el {campo} del empleado (ID: {item_id}) de '{valor_anterior or 'No especificado'}' a '{valor_nuevo or 'No especificado'}'"
+    else:
+        descripcion = f"Se cambió el {campo} del item (ID: {item_id}) de '{valor_anterior or 'No especificado'}' a '{valor_nuevo or 'No especificado'}'"
+    
+    registrar_log(categoria, 'modificacion', descripcion, item_id)
 
+@app.route('/api/activos/<int:activo_id>', methods=['PATCH'])
+def update_activo(activo_id):
+    try:
         data = request.get_json()
+        activo = Asset.query.get(activo_id)
         
-        # Lista actualizada de campos permitidos para editar
-        allowed_fields = ['nombre_equipo', 'modelo', 'serial', 'activo_fijo', 'tipo', 'marca', 'ram', 'disco', 'sede', 'estado']
+        if not activo:
+            return jsonify({"error": "Activo no encontrado"}), 404
+            
+        # Campos que queremos trackear (actualizados para coincidir con el modelo)
+        campos_trackear = {
+            'nombre_equipo': 'nombre del equipo',
+            'marca': 'marca',
+            'modelo': 'modelo',
+            'tipo': 'tipo',
+            'serial': 'serial',
+            'ram': 'RAM',
+            'disco': 'disco',
+            'activo_fijo': 'activo fijo',
+            'notas': 'notas'
+        }
         
-        for field in data:
-            if field in allowed_fields:
-                if field == 'sede':
-                    # Buscar la sede por nombre y actualizar sede_id
-                    sede = Sede.query.filter_by(nombre=data[field]).first()
-                    if sede:
-                        asset.sede_id = sede.id
-                else:
-                    setattr(asset, field, data[field])
+        # Registrar cambios en campos trackeados
+        for campo, nombre_campo in campos_trackear.items():
+            if campo in data and data[campo] != getattr(activo, campo):
+                registrar_cambio_campo(
+                    'assets',
+                    activo_id,
+                    nombre_campo,
+                    getattr(activo, campo),
+                    data[campo],
+                    {
+                        'tipo': activo.tipo,
+                        'marca': activo.marca,
+                        'modelo': activo.modelo
+                    }
+                )
+                setattr(activo, campo, data[campo])
         
-        asset.updated_at = datetime.utcnow()
+        activo.updated_at = datetime.utcnow()
         db.session.commit()
         
-        return jsonify({
-            'message': 'Activo actualizado exitosamente',
-            'updated_fields': list(data.keys())
-        })
+        return jsonify({"message": "Activo actualizado exitosamente"})
         
     except Exception as e:
         db.session.rollback()
@@ -1208,26 +1245,43 @@ def get_smartphones():
 @app.route('/api/smartphones/<int:smartphone_id>', methods=['PATCH'])
 def update_smartphone(smartphone_id):
     try:
-        smartphone = Smartphone.query.get(smartphone_id)
-        if not smartphone:
-            return jsonify({'error': 'Smartphone no encontrado'}), 404
-
         data = request.get_json()
+        smartphone = Smartphone.query.get(smartphone_id)
         
-        # Lista de campos permitidos para editar
-        allowed_fields = ['marca', 'modelo', 'serial', 'imei', 'imei2', 'linea', 'estado']
+        if not smartphone:
+            return jsonify({"error": "Smartphone no encontrado"}), 404
+            
+        # Campos que queremos trackear (actualizados para coincidir con el modelo)
+        campos_trackear = {
+            'marca': 'marca',
+            'modelo': 'modelo',
+            'serial': 'serial',
+            'imei': 'IMEI',
+            'imei2': 'IMEI2',
+            'linea': 'línea',
+            'estado': 'estado'
+        }
         
-        for field in data:
-            if field in allowed_fields:
-                setattr(smartphone, field, data[field])
+        # Registrar cambios en campos trackeados
+        for campo, nombre_campo in campos_trackear.items():
+            if campo in data and data[campo] != getattr(smartphone, campo):
+                registrar_cambio_campo(
+                    'smartphones',
+                    smartphone_id,
+                    nombre_campo,
+                    getattr(smartphone, campo),
+                    data[campo],
+                    {
+                        'marca': smartphone.marca,
+                        'modelo': smartphone.modelo
+                    }
+                )
+                setattr(smartphone, campo, data[campo])
         
         smartphone.updated_at = datetime.utcnow()
         db.session.commit()
         
-        return jsonify({
-            'message': 'Smartphone actualizado exitosamente',
-            'updated_fields': list(data.keys())
-        })
+        return jsonify({"message": "Smartphone actualizado exitosamente"})
         
     except Exception as e:
         db.session.rollback()
@@ -1745,6 +1799,12 @@ def create_empleado():
         )
 
         db.session.add(new_empleado)
+        db.session.flush()  # Para obtener el ID sin hacer commit
+
+        # Registrar el log de creación
+        descripcion = f"Se creó el empleado {new_empleado.nombre_completo} (Ficha: {next_ficha}, Cédula: {data['cedula']})"
+        registrar_log('empleados', 'creación', descripcion, new_empleado.id)
+
         db.session.commit()
         print("✓ Empleado creado exitosamente en la base de datos")
 
@@ -1831,66 +1891,80 @@ def delete_empleado(empleado_id):
 @app.route('/api/empleados/<int:empleado_id>', methods=['PATCH'])
 def update_empleado(empleado_id):
     try:
-        empleado = Empleado.query.get(empleado_id)
-        if not empleado:
-            return jsonify({'error': 'Empleado no encontrado'}), 404
-
         data = request.get_json()
+        empleado = Empleado.query.get(empleado_id)
         
-        # Campos simples
-        if 'ficha' in data:
-            empleado.ficha = data['ficha']
-        if 'nombre_completo' in data:
-            empleado.nombre_completo = data['nombre_completo']
-        if 'cedula' in data:
-            empleado.cedula = data['cedula']
+        if not empleado:
+            return jsonify({"error": "Empleado no encontrado"}), 404
             
-        # Campos jerárquicos
-        if 'gerencia_id' in data:
-            empleado.gerencia_id = data['gerencia_id']
-            # Limpiar campos dependientes
-            empleado.departamento_id = None
-            empleado.area_id = None
-            empleado.cargo_area_id = None
-            
-        if 'departamento_id' in data:
-            empleado.departamento_id = data['departamento_id']
-            # Limpiar campos dependientes
-            empleado.area_id = None
-            empleado.cargo_area_id = None
-            
-        if 'area_id' in data:
-            empleado.area_id = data['area_id']
-            # Limpiar campo dependiente
-            empleado.cargo_area_id = None
-            
-        if 'cargo_id' in data:
-            empleado.cargo_area_id = data['cargo_id']
-            
+        # Campos que queremos trackear
+        campos_trackear = {
+            'nombre_completo': 'nombre',
+            'ficha': 'ficha',
+            'cedula': 'cédula',
+            'extension': 'extensión',
+            'correo': 'correo',
+            'sede_id': 'sede',
+            'gerencia_id': 'gerencia',
+            'departamento_id': 'departamento',
+            'area_id': 'área',
+            'cargo_area_id': 'cargo'
+        }
+        
+        # Registrar cambios en campos trackeados
+        for campo, nombre_campo in campos_trackear.items():
+            if campo in data and data[campo] != getattr(empleado, campo):
+                # Obtener valores legibles para campos con _id
+                valor_anterior = getattr(empleado, campo)
+                valor_nuevo = data[campo]
+                
+                if campo.endswith('_id'):
+                    if campo == 'sede_id':
+                        sede_anterior = Sede.query.get(valor_anterior)
+                        sede_nueva = Sede.query.get(valor_nuevo)
+                        valor_anterior = sede_anterior.nombre if sede_anterior else 'No especificada'
+                        valor_nuevo = sede_nueva.nombre if sede_nueva else 'No especificada'
+                    elif campo == 'gerencia_id':
+                        gerencia_anterior = Gerencia.query.get(valor_anterior)
+                        gerencia_nueva = Gerencia.query.get(valor_nuevo)
+                        valor_anterior = gerencia_anterior.nombre if gerencia_anterior else 'No especificada'
+                        valor_nuevo = gerencia_nueva.nombre if gerencia_nueva else 'No especificada'
+                    elif campo == 'departamento_id':
+                        depto_anterior = Departamento.query.get(valor_anterior)
+                        depto_nuevo = Departamento.query.get(valor_nuevo)
+                        valor_anterior = depto_anterior.nombre if depto_anterior else 'No especificado'
+                        valor_nuevo = depto_nuevo.nombre if depto_nuevo else 'No especificado'
+                    elif campo == 'area_id':
+                        area_anterior = Area.query.get(valor_anterior)
+                        area_nueva = Area.query.get(valor_nuevo)
+                        valor_anterior = area_anterior.nombre if area_anterior else 'No especificada'
+                        valor_nuevo = area_nueva.nombre if area_nueva else 'No especificada'
+                    elif campo == 'cargo_area_id':
+                        cargo_anterior = CargoArea.query.get(valor_anterior)
+                        cargo_nuevo = CargoArea.query.get(valor_nuevo)
+                        valor_anterior = cargo_anterior.cargo_base.nombre if cargo_anterior else 'No especificado'
+                        valor_nuevo = cargo_nuevo.cargo_base.nombre if cargo_nuevo else 'No especificado'
+
+                registrar_cambio_campo(
+                    'empleados',
+                    empleado_id,
+                    nombre_campo,
+                    valor_anterior,
+                    valor_nuevo,
+                    {
+                        'nombre': empleado.nombre_completo,
+                        'ficha': empleado.ficha
+                    }
+                )
+                setattr(empleado, campo, data[campo])
+        
+        empleado.updated_at = datetime.utcnow()
         db.session.commit()
         
-        # Obtener los datos actualizados para la respuesta
-        return jsonify({
-            'message': 'Empleado actualizado exitosamente',
-            'empleado': {
-                'id': empleado.id,
-                'nombre': empleado.nombre_completo,
-                'ficha': empleado.ficha,
-                'cedula': empleado.cedula,
-                'gerencia': empleado.gerencia.nombre if empleado.gerencia else None,
-                'gerencia_id': empleado.gerencia_id,
-                'departamento': empleado.departamento.nombre if empleado.departamento else None,
-                'departamento_id': empleado.departamento_id,
-                'area': empleado.area.nombre if empleado.area else None,
-                'area_id': empleado.area_id,
-                'cargo': empleado.cargo_area.cargo_base.nombre if empleado.cargo_area else None,
-                'cargo_id': empleado.cargo_area_id
-            }
-        })
+        return jsonify({"message": "Empleado actualizado exitosamente"})
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error en update_empleado: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 def update_extensions_pdf():
