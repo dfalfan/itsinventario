@@ -105,7 +105,7 @@
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   cursor: grab;
   position: relative;
 }
@@ -121,19 +121,72 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 .card-title {
   font-size: 1rem;
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .card-title svg {
   color: #64748b;
   font-size: 1rem;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.expand-button:hover {
+  background: #f0f0f0;
+  color: #495057;
+}
+
+.collapsed-card {
+  padding-bottom: 0.8rem;
+}
+
+.collapsed-card .card-date {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  padding: 0.3rem 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.card-expanded-content {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e9ecef;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .card-badge {
@@ -182,7 +235,10 @@
   gap: 0.5rem;
   font-size: 0.85rem;
   color: #64748b;
-  margin-top: 0.8rem;
+  background: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
 }
 
 .date-completed {
@@ -237,11 +293,13 @@
   cursor: default !important;
   transform: none !important;
   box-shadow: none !important;
+  transition: all 0.3s ease;
 }
 
 .history-card:hover {
   box-shadow: none !important;
   transform: none !important;
+  opacity: 0.9;
 }
 
 .history-card .card-description {
@@ -353,4 +411,97 @@
   margin-top: 0.8rem;
   padding-top: 0.8rem;
   border-top: 1px solid #e9ecef;
+}
+
+.notes-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.notes-content {
+  flex: 1;
+  word-break: break-word;
+}
+
+.edit-notes-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  opacity: 0.5;
+}
+
+.edit-notes-btn:hover {
+  background: #f0f0f0;
+  color: #495057;
+  opacity: 1;
+}
+
+.notes-container:hover .edit-notes-btn {
+  opacity: 1;
+}
+
+.editable-notes {
+  width: 100%;
+}
+
+.notes-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 0.5rem;
+  font-family: inherit;
+}
+
+.notes-textarea:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.notes-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.save-btn {
+  color: #10b981;
+}
+
+.save-btn:hover {
+  background: #d1fae5;
+}
+
+.cancel-btn {
+  color: #ef4444;
+}
+
+.cancel-btn:hover {
+  background: #fee2e2;
 } 

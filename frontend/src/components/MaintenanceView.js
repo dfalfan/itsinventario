@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { FaTools, FaHistory, FaFileAlt, FaTimes, FaCalendarAlt } from 'react-icons/fa';
+import { FaTools, FaHistory, FaFileAlt, FaTimes, FaCalendarAlt, FaChevronDown, FaChevronUp, FaEdit, FaCheck } from 'react-icons/fa';
 import './MaintenanceView.css';
 import axiosInstance from '../utils/axiosConfig';
 
@@ -213,6 +213,20 @@ function MaintenanceView() {
   const [showCompletarModal, setShowCompletarModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [dragMemory, setDragMemory] = useState(null);
+  const [expandedCards, setExpandedCards] = useState({});
+  const [editingNotes, setEditingNotes] = useState(null);
+  const [editedNote, setEditedNote] = useState('');
+
+  // Al cargar los datos, expandir por defecto las tarjetas de pendientes y reparando
+  useEffect(() => {
+    // Por defecto, todas las tarjetas estarán colapsadas
+    const newExpandedCards = {};
+    
+    // No expandimos ninguna tarjeta por defecto
+    // Las tarjetas se expandirán solo cuando el usuario haga clic en ellas
+    
+    setExpandedCards(prev => ({...prev, ...newExpandedCards}));
+  }, [items.pendientes.length, items.reparando.length]);
 
   const fetchData = async () => {
     try {
@@ -245,7 +259,9 @@ function MaintenanceView() {
           fecha_programada: new Date().toISOString().split('T')[0],
           estado: 'Pendiente',
           serial: activo.serial,
-          isHistoryCard: false
+          activo_fijo: activo.activo_fijo,
+          isHistoryCard: false,
+          nombre_equipo: activo.nombre_equipo
         }));
 
       // Organizar los mantenimientos
@@ -263,8 +279,10 @@ function MaintenanceView() {
             fecha_programada: new Date(m.fecha_inicio).toISOString().split('T')[0],
             estado: 'Reparando',
             serial: m.activo.serial,
+            activo_fijo: m.activo.activo_fijo,
             isHistoryCard: false,
-            activo_id: m.activo.id
+            activo_id: m.activo.id,
+            nombre_equipo: m.activo.nombre_equipo
           })),
         completados: mantenimientos
           .filter(m => m.estado === 'Completado')
@@ -280,8 +298,10 @@ function MaintenanceView() {
             fecha_completado: m.fecha_fin ? new Date(m.fecha_fin).toISOString().split('T')[0] : null,
             estado: 'Completado',
             serial: m.activo.serial,
+            activo_fijo: m.activo.activo_fijo,
             isHistoryCard: true,
-            activo_id: m.activo.id
+            activo_id: m.activo.id,
+            nombre_equipo: m.activo.nombre_equipo
           }))
       };
 
@@ -320,7 +340,45 @@ function MaintenanceView() {
       setShowCompletarModal(true);
       // Devolver el item a su posición original hasta que se confirme
       newItems[source.droppableId].splice(source.index, 0, draggedItem);
-    } else {
+    } 
+    // Si se mueve de reparando a pendientes (cancelar mantenimiento)
+    else if (source.droppableId === 'reparando' && destination.droppableId === 'pendientes') {
+      try {
+        // Verificar que tenemos el ID del mantenimiento
+        if (!draggedItem.id) {
+          throw new Error('ID de mantenimiento no disponible');
+        }
+        
+        // Eliminar el mantenimiento de la base de datos
+        await axiosInstance.delete(`/api/mantenimientos/${draggedItem.id}`);
+        
+        // Restaurar el item como un activo en pendientes
+        const activo_id = draggedItem.activo_id;
+        
+        // Modificar la tarjeta para que tenga el ID del activo y no del mantenimiento
+        const pendienteItem = {
+          ...draggedItem,
+          id: activo_id.toString(),
+          activo_id: undefined, // Eliminar esta propiedad para evitar confusiones
+          estado: 'Pendiente'
+        };
+        
+        // Añadir a pendientes
+        newItems.pendientes.splice(destination.index, 0, pendienteItem);
+        
+        // Aplicar los cambios
+        setItems(newItems);
+        
+      } catch (error) {
+        console.error('Error al cancelar mantenimiento:', error);
+        // Revertir en caso de error
+        newItems[source.droppableId].splice(source.index, 0, draggedItem);
+        setItems(newItems);
+        alert('Error al cancelar el mantenimiento');
+        return;
+      }
+    }
+    else {
       // Para otros movimientos
       newItems[destination.droppableId].splice(destination.index, 0, draggedItem);
       
@@ -431,6 +489,87 @@ function MaintenanceView() {
     }
   };
 
+  // Función para manejar la expansión/colapso de tarjetas
+  const toggleCardExpansion = (cardId) => {
+    console.log('Toggling card expansion for:', cardId);
+    setExpandedCards(prev => ({
+      ...prev,
+      [cardId]: !prev[cardId]
+    }));
+  };
+
+  // Función para formatear el título del equipo
+  const formatEquipoTitle = (item) => {
+    // Agregar log para depuración
+    console.log('formatEquipoTitle item:', item);
+    
+    // Extraer tipo, marca y modelo
+    const parts = item.equipo.split(' ');
+    if (parts.length < 3) return item.equipo;
+    
+    const tipo = parts[0];
+    const marca = parts[1];
+    const modelo = parts.slice(2).join(' ');
+    
+    // Obtener el nombre del equipo si existe y no está vacío
+    const nombreEquipo = item.nombre_equipo && item.nombre_equipo.trim() 
+      ? ` (${item.nombre_equipo})` 
+      : '';
+    
+    // Log del resultado final
+    console.log('Título formateado:', `${marca} ${modelo}${nombreEquipo}`);
+    
+    // Devolver formato: MARCA MODELO (NOMBRE EQUIPO)
+    return `${marca} ${modelo}${nombreEquipo}`;
+  };
+
+  // Función para iniciar la edición de notas
+  const startEditingNotes = (itemId, currentNote) => {
+    setEditingNotes(itemId);
+    setEditedNote(currentNote);
+  };
+
+  // Función para guardar las notas editadas
+  const saveEditedNotes = async (item) => {
+    try {
+      // Determinar si es un activo o un mantenimiento
+      if (item.activo_id) {
+        // Es un mantenimiento
+        await axiosInstance.patch(`/api/mantenimientos/${item.id}`, {
+          descripcion: editedNote
+        });
+      } else {
+        // Es un activo
+        await axiosInstance.patch(`/api/activos/${item.id}`, {
+          notas: editedNote
+        });
+      }
+      
+      // Actualizar el estado local
+      const newItems = { ...items };
+      Object.keys(newItems).forEach(columnId => {
+        newItems[columnId] = newItems[columnId].map(i => {
+          if (i.id === item.id) {
+            return { ...i, observaciones: editedNote };
+          }
+          return i;
+        });
+      });
+      
+      setItems(newItems);
+      setEditingNotes(null);
+    } catch (error) {
+      console.error('Error al guardar las notas:', error);
+      alert('Error al guardar las notas');
+    }
+  };
+
+  // Función para cancelar la edición
+  const cancelEditingNotes = () => {
+    setEditingNotes(null);
+    setEditedNote('');
+  };
+
   if (loading) return <div className="loading-state">Cargando...</div>;
   if (error) return <div className="error-state">Error: {error}</div>;
 
@@ -470,7 +609,7 @@ function MaintenanceView() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`task-card ${snapshot.isDragging ? 'dragging' : ''} ${item.isHistoryCard ? 'history-card' : ''}`}
+                            className={`task-card ${snapshot.isDragging ? 'dragging' : ''} ${item.isHistoryCard ? 'history-card' : ''} ${!expandedCards[item.id] ? 'collapsed-card' : ''}`}
                             style={{
                               ...provided.draggableProps.style,
                               transform: snapshot.isDragging ? 
@@ -478,40 +617,102 @@ function MaintenanceView() {
                                 provided.draggableProps.style.transform,
                             }}
                           >
-                            <div className="card-title">
-                              <FaTools />
-                              {item.equipo}
-                            </div>
-                            <div className={`card-badge ${item.tipo === 'Mantenimiento Preventivo' ? 'badge-preventivo' : 'badge-reparacion'}`}>
-                              {item.tipo}
-                            </div>
-                            <div className="card-meta">
-                              <strong>Serial:</strong> {item.serial || 'Sin asignar'}
-                            </div>
-                            {item.observaciones && (
-                              <div className="card-description">
-                                {item.observaciones}
-                                {item.diagnostico && (
-                                  <div className="diagnostico-text">
-                                    <strong>Diagnóstico:</strong> {item.diagnostico}
-                                  </div>
-                                )}
-                                {item.solucion && (
-                                  <div className="solution-text">
-                                    <strong>Solución:</strong> {item.solucion}
-                                  </div>
-                                )}
+                            <div className="card-header">
+                              <div className="card-title">
+                                <FaTools />
+                                {formatEquipoTitle(item)}
                               </div>
-                            )}
+                              
+                              <button 
+                                className="expand-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleCardExpansion(item.id);
+                                }}
+                              >
+                                {expandedCards[item.id] ? <FaChevronUp /> : <FaChevronDown />}
+                              </button>
+                            </div>
+
+                            {/* Mostrar fecha según el tipo de tarjeta */}
                             <div className="card-date">
                               <FaCalendarAlt />
-                              {new Date(item.fecha_programada).toLocaleDateString('es-ES')}
-                              {item.fecha_completado && (
-                                <span className="date-completed">
-                                  ✓ {new Date(item.fecha_completado).toLocaleDateString('es-ES')}
-                                </span>
-                              )}
+                              {item.isHistoryCard 
+                                ? <span className="date-completed">
+                                    ✓ {new Date(item.fecha_completado).toLocaleDateString('es-ES')}
+                                  </span>
+                                : new Date(item.fecha_programada).toLocaleDateString('es-ES')
+                              }
                             </div>
+
+                            {/* Contenido expandible */}
+                            {expandedCards[item.id] && (
+                              <div className="card-expanded-content">
+                                <div className="card-meta">
+                                  <strong>Serial:</strong> {item.serial || 'Sin asignar'}
+                                </div>
+                                {item.activo_fijo && (
+                                  <div className="card-meta">
+                                    <strong>Activo Fijo:</strong> {item.activo_fijo}
+                                  </div>
+                                )}
+                                
+                                {/* Notas editables */}
+                                <div className="card-description">
+                                  {editingNotes === item.id ? (
+                                    <div className="editable-notes">
+                                      <textarea
+                                        value={editedNote}
+                                        onChange={(e) => setEditedNote(e.target.value)}
+                                        rows={3}
+                                        className="notes-textarea"
+                                        autoFocus
+                                      />
+                                      <div className="notes-actions">
+                                        <button 
+                                          className="notes-action-btn save-btn"
+                                          onClick={() => saveEditedNotes(item)}
+                                          title="Guardar"
+                                        >
+                                          <FaCheck />
+                                        </button>
+                                        <button 
+                                          className="notes-action-btn cancel-btn"
+                                          onClick={cancelEditingNotes}
+                                          title="Cancelar"
+                                        >
+                                          <FaTimes />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="notes-container">
+                                      <div className="notes-content">
+                                        {item.observaciones || 'Sin observaciones'}
+                                      </div>
+                                      <button 
+                                        className="edit-notes-btn"
+                                        onClick={() => startEditingNotes(item.id, item.observaciones)}
+                                        title="Editar notas"
+                                      >
+                                        <FaEdit />
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {item.diagnostico && (
+                                    <div className="diagnostico-text">
+                                      <strong>Diagnóstico:</strong> {item.diagnostico}
+                                    </div>
+                                  )}
+                                  {item.solucion && (
+                                    <div className="solution-text">
+                                      <strong>Solución:</strong> {item.solucion}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </Draggable>

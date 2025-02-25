@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './DeleteAssetModal.css';
 import { FaTools, FaTrash, FaExclamationTriangle, FaCheck, FaTrashAlt } from 'react-icons/fa';
 import PropTypes from 'prop-types';
+import axiosInstance from '../utils/axiosConfig';
 
 function DeleteAssetModal({ asset, onClose, onSuccess }) {
   const [selectedState, setSelectedState] = useState('');
@@ -17,43 +18,22 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
       setLoading(true);
       setError(null);
 
-      // Si el activo está asignado, primero lo desasignamos
-      if (asset.empleado_id) {
-        const unassignResponse = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desasignar`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!unassignResponse.ok) {
-          throw new Error('Error al desasignar el activo');
-        }
-      }
-
+      // Ya no intentamos desasignar manualmente, el backend lo hace automáticamente
+      
       if (selectedState === 'ELIMINAR') {
         // Eliminar definitivamente el activo
-        const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/desincorporar`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!response.ok) {
+        const response = await axiosInstance.post(`/api/activos/${asset.id}/desincorporar`);
+        
+        if (!response.data || response.status !== 200) {
           throw new Error('Error al eliminar el activo');
         }
       } else {
         // Para todos los demás estados, usamos el endpoint de cambiar estado
-        const response = await fetch(`http://192.168.141.50:5000/api/activos/${asset.id}/cambiar-estado`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ estado: selectedState })
+        const response = await axiosInstance.post(`/api/activos/${asset.id}/cambiar-estado`, {
+          estado: selectedState
         });
-
-        if (!response.ok) {
+        
+        if (!response.data || response.status !== 200) {
           throw new Error(`Error al cambiar el estado del activo a ${selectedState}`);
         }
       }
@@ -62,7 +42,7 @@ function DeleteAssetModal({ asset, onClose, onSuccess }) {
       onClose();
     } catch (error) {
       console.error('Error:', error);
-      setError(error.message);
+      setError(error.message || 'Error al procesar la solicitud');
     } finally {
       setLoading(false);
     }
